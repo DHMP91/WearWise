@@ -83,61 +83,68 @@ fun GarmentCard(garment: Garment, modifier: Modifier = Modifier){
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ClothingScreenTopAppBar(clothingViewModel: ClothingViewModel = viewModel(), modifier: Modifier = Modifier) {
+fun ClothingScreenTopAppBar(clothingViewModel: ClothingViewModel = viewModel()) {
     TopAppBar(
         title = { Text("Filterable List") },
         actions = {
             IconButton(onClick = { clothingViewModel.showMenu = !clothingViewModel.showMenu }) {
                 Icon(imageVector = Icons.Filled.Menu, contentDescription = "Menu")
             }
-
-            DropdownMenu(
-                expanded = clothingViewModel.showMenu,
-                onDismissRequest = { clothingViewModel.showMenu= false }
-            ) {
-                DropdownMenuItem(
-                    text = {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(text = "Filter By Brand")
-                        }
-                   },
-                    onClick = {
-                        clothingViewModel.showBrandFilterMenu = true
-                    }
-                )
-
-            }
-
-
-            DropdownMenu(
-                expanded = clothingViewModel.showMenu && clothingViewModel.showBrandFilterMenu,
-                onDismissRequest = {
-                    clothingViewModel.showMenu= false
-                    clothingViewModel.showBrandFilterMenu = false
-                }
-            ) {
-                DropdownMenuItem(
-                    text = {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Checkbox(
-                                checked = true,  //TODO check selection state
-                                onCheckedChange = null // The click on the item handles this
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(text = "This BRAND")
-                        }
-                    },
-                    onClick = { /* todo */ }
-                )
-
-            }
+            ClothingMainMenu()
+            ClothingBrandSelectionMenu()
         }
     )
+}
+
+@Composable
+fun ClothingMainMenu(clothingViewModel: ClothingViewModel = viewModel()){
+    DropdownMenu(
+        expanded = clothingViewModel.showMenu,
+        onDismissRequest = { clothingViewModel.showMenu= false }
+    ) {
+        DropdownMenuItem(
+            text = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = "Filter By Brand")
+                }
+            },
+            onClick = {
+                clothingViewModel.showBrandFilterMenu = true
+            }
+        )
+
+    }
+}
+
+
+@Composable
+fun ClothingBrandSelectionMenu(clothingViewModel: ClothingViewModel = viewModel()){
+    DropdownMenu(
+        expanded = clothingViewModel.showMenu && clothingViewModel.showBrandFilterMenu,
+        onDismissRequest = {
+            clothingViewModel.showMenu= false
+            clothingViewModel.showBrandFilterMenu = false
+        }
+    ) {
+        DropdownMenuItem(
+            text = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Checkbox(
+                        checked = true,  //TODO check selection state
+                        onCheckedChange = null // The click on the item handles this
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = "This BRAND")
+                }
+            },
+            onClick = { /* todo */ }
+        )
+    }
 }
