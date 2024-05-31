@@ -12,30 +12,37 @@ import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
 
 @Composable
-fun WearWiseBottomAppBar() {
+fun WearWiseBottomAppBar(
+    navOutfit: () -> Unit,
+    navClothing: () -> Unit,
+    navNewClothing: () -> Unit,
+    navShop: () -> Unit,
+) {
     BottomAppBar(
         actions = {
-            IconButton(onClick = { /* do something */ }) {
+            IconButton(onClick = { navOutfit() }) {
                 Icon(Icons.Filled.AccountCircle, contentDescription = "Outfits")
             }
-            IconButton(onClick = { /* do something */ }) {
+            IconButton(onClick = { navClothing() }) {
                 Icon(
                     Icons.Rounded.List,
-                    contentDescription = "Pieces",
+                    contentDescription = "Clothing",
                 )
             }
-            IconButton(onClick = { /* do something */ }) {
+            IconButton(onClick = { navShop() }) {
                 Icon(
                     Icons.Filled.ShoppingCart,
-                    contentDescription = "Pieces",
+                    contentDescription = "Shop",
                 )
             }
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { /* do something */ },
+                onClick = { navNewClothing() },
                 containerColor = BottomAppBarDefaults.bottomAppBarFabColor,
                 elevation = FloatingActionButtonDefaults.bottomAppBarFabElevation()
             ) {

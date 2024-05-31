@@ -22,29 +22,24 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import dhmp.wearwise.R
 import dhmp.wearwise.model.Garment
-import dhmp.wearwise.model.garments
 import dhmp.wearwise.ui.AppViewModelProvider
 import dhmp.wearwise.ui.screens.common.WearWiseBottomAppBar
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
 
 @Composable
 fun ClothingScreen(clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.Factory)) {
     val clothingUiState by clothingViewModel.uiState.collectAsState()
+    clothingViewModel.collectGarments() //Start the flow for garment list
     Scaffold (
-        topBar = { ClothingScreenTopAppBar() },
-        bottomBar = { WearWiseBottomAppBar() }
+        topBar = { ClothingScreenTopAppBar() }
     ) {
         GarmentList(clothingUiState.garments, contentPadding = it)
     }
@@ -88,7 +83,9 @@ fun GarmentCard(garment: Garment, modifier: Modifier = Modifier){
 @Composable
 fun ClothingScreenTopAppBar(clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.Factory)) {
     TopAppBar(
-        title = { Text("Filterable List") },
+        title = {
+            Text(stringResource(id = R.string.inventory))
+        },
         actions = {
             IconButton(onClick = { clothingViewModel.showMenu = !clothingViewModel.showMenu }) {
                 Icon(imageVector = Icons.Filled.Menu, contentDescription = "Menu")
@@ -111,12 +108,24 @@ fun ClothingMainMenu(clothingViewModel: ClothingViewModel = viewModel(factory = 
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = "Filter By Brand")
+                    Text(text = stringResource(R.string.filter_by_brand))
                 }
             },
             onClick = {
                 clothingViewModel.showBrandFilterMenu = true
+            }
+        )
+        DropdownMenuItem(
+            text = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(text = stringResource(R.string.filter_by_category))
+                }
+            },
+            onClick = {
+                // TODO
             }
         )
 
