@@ -1,30 +1,46 @@
 package dhmp.wearwise.model
 
+import androidx.room.ColumnInfo
+import androidx.room.Entity
+import androidx.room.ForeignKey
+import androidx.room.PrimaryKey
 
+@Entity(
+    tableName = "Garments",
+    foreignKeys = [
+        ForeignKey(
+            entity = Category::class,
+            parentColumns = arrayOf("id"),
+            childColumns = arrayOf("categoryId")
+        )
+    ]
+)
 data class Garment (
+    @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
     val name: String? = null,
-    val category: Category? = null,
-    val subCategory: SubCategory? = null,
+    @ColumnInfo(index = true)
+    val categoryId: Int? = null,
+//    val subCategoryId: int? = null,
     val occasion: Occasion? = null,
     val brand: String? = null,
     val image: Byte? = null,
 )
 
+@Entity(tableName = "Categories")
 class Category(
+    @PrimaryKey
     val id: Int = 0,
     val name: String
 )
 
+@Entity(tableName = "SubCategories")
 class SubCategory(
     val id: Int = 0,
     val name: String,
     val category: Category,
 )
 
-class TopType(
-    val type: String = ""
-)
 
 enum class Occasion {
     FORMAL,
@@ -47,7 +63,7 @@ val garmentCategory: List<Category> =
 
 val garments: List<Garment> =
     listOf(
-        Garment(0, category = garmentCategory[0]),
+        Garment(0, categoryId = garmentCategory[0].id),
         Garment(1),
         Garment(2),
         Garment(3),

@@ -22,6 +22,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
@@ -33,17 +34,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.dp
 import dhmp.wearwise.model.Garment
 import dhmp.wearwise.model.garments
+import dhmp.wearwise.ui.AppViewModelProvider
 import dhmp.wearwise.ui.screens.common.WearWiseBottomAppBar
-
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 
 @Composable
-fun ClothingScreen(clothingViewModel: ClothingViewModel = viewModel()) {
+fun ClothingScreen(clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.Factory)) {
     val clothingUiState by clothingViewModel.uiState.collectAsState()
     Scaffold (
         topBar = { ClothingScreenTopAppBar() },
         bottomBar = { WearWiseBottomAppBar() }
     ) {
-        GarmentList(garments, contentPadding = it)
+        GarmentList(clothingUiState.garments, contentPadding = it)
     }
 }
 
@@ -83,7 +86,7 @@ fun GarmentCard(garment: Garment, modifier: Modifier = Modifier){
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ClothingScreenTopAppBar(clothingViewModel: ClothingViewModel = viewModel()) {
+fun ClothingScreenTopAppBar(clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.Factory)) {
     TopAppBar(
         title = { Text("Filterable List") },
         actions = {
@@ -97,7 +100,7 @@ fun ClothingScreenTopAppBar(clothingViewModel: ClothingViewModel = viewModel()) 
 }
 
 @Composable
-fun ClothingMainMenu(clothingViewModel: ClothingViewModel = viewModel()){
+fun ClothingMainMenu(clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.Factory)){
     DropdownMenu(
         expanded = clothingViewModel.showMenu,
         onDismissRequest = { clothingViewModel.showMenu= false }
@@ -122,7 +125,7 @@ fun ClothingMainMenu(clothingViewModel: ClothingViewModel = viewModel()){
 
 
 @Composable
-fun ClothingBrandSelectionMenu(clothingViewModel: ClothingViewModel = viewModel()){
+fun ClothingBrandSelectionMenu(clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.Factory)){
     DropdownMenu(
         expanded = clothingViewModel.showMenu && clothingViewModel.showBrandFilterMenu,
         onDismissRequest = {
