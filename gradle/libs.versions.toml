@@ -11,6 +11,11 @@ lifecycleVersion = "2.8.0"
 roomVersion = "2.6.1"
 navigationCompose = "2.7.4"
 ksp = "1.9.20-1.0.14"
+cameraxVersion = "1.4.0-beta01"
+coilCompose = "2.6.0"
+mlKitImage = "17.0.8"
+gsonVersion = "2.10.1"
+mlKitSubjectSegmentationVersion = "16.0.0-beta1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -34,6 +39,15 @@ androidx-room-runtime = { group = "androidx.room", name = "room-runtime", versio
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "roomVersion" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "roomVersion" }
 androidx-navigation = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
+androidx-camera-core = {group = "androidx.camera", name= "camera-core", version.ref = "cameraxVersion"}
+androidx-camera-camera2 = {group = "androidx.camera", name= "camera-camera2", version.ref = "cameraxVersion"}
+androidx-camera-view = {group = "androidx.camera", name= "camera-view", version.ref = "cameraxVersion"}
+androidx-camera-lifecycle = {group = "androidx.camera", name= "camera-lifecycle", version.ref = "cameraxVersion"}
+androidx-camera-extension = {group = "androidx.camera", name= "camera-extensions", version.ref = "cameraxVersion"}
+io-coil-compose = {group = "io.coil-kt", name= "coil-compose", version.ref = "coilCompose"}
+google-mlkit-image-labeling = {group = "com.google.mlkit", name= "image-labeling", version.ref = "mlKitImage"}
+google-mlkit-subject-segmentation = {group = "com.google.android.gms", name= "play-services-mlkit-subject-segmentation", version.ref = "mlKitSubjectSegmentationVersion"}
+google-gson = {group = "com.google.code.gson", name= "gson", version.ref = "gsonVersion"}
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
