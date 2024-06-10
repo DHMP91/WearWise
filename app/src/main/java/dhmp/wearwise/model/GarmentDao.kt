@@ -20,7 +20,7 @@ interface GarmentDao {
     suspend fun delete(item: Garment)
 
     @Query("SELECT * from Garments WHERE id = :id")
-    fun getGarment(id: Int): Flow<Garment>
+    fun getGarment(id: Long): Flow<Garment>
 
     @Query("SELECT * from Garments ORDER BY name ASC")
     fun getAllGarments(): Flow<List<Garment>>

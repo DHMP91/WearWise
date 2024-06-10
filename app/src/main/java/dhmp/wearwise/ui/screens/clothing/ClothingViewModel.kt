@@ -1,14 +1,17 @@
 package dhmp.wearwise.ui.screens.clothing
 
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Canvas
-import android.graphics.Color
+import android.graphics.ColorMatrix
+import android.graphics.ColorMatrixColorFilter
 import android.graphics.Matrix
+import android.graphics.Paint
+import android.net.Uri
 import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.mlkit.vision.common.InputImage
@@ -23,13 +26,20 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.io.ByteArrayOutputStream
 import java.io.File
+
 
 class ClothingViewModel(private val garmentRepository: GarmentsRepository): ViewModel() {
     private val tag: String = "ClothingViewModel"
     private val _uiState = MutableStateFlow(ClothingUIState())
     val uiState: StateFlow<ClothingUIState> = _uiState.asStateFlow()
+
+    private val _uiEditState = MutableStateFlow(EditClothingUIState())
+    val uiEditState: StateFlow<EditClothingUIState> = _uiEditState.asStateFlow()
+
+    private val _isProcessingBackground = MutableStateFlow(false)
+    val isProcessingBackground: StateFlow<Boolean> = _isProcessingBackground
+
     var showMenu by mutableStateOf(false)
     var showBrandFilterMenu by mutableStateOf(false)
 
@@ -57,25 +67,45 @@ class ClothingViewModel(private val garmentRepository: GarmentsRepository): View
                     )
                 }
             }
-            garmentRepository.insertGarment(Garment())
         }
     }
 
-    fun saveImage(appDir: File, image: Bitmap, rotation: Float) {
-        val now = System.currentTimeMillis()
-        val newFile = File(appDir, "GarmentImages").let {
-            it.mkdirs()
-            File(it, "Garment_$now.png")
+    fun getGarmentById(id: Long) {
+        viewModelScope.launch {
+            garmentRepository.getGarmentStream(id).flowOn(Dispatchers.IO).collect { c ->
+                c?.let {
+                    _uiEditState.update { currentState ->
+                        currentState.copy(
+                            editGarment = it
+                        )
+                    }
+                }
+            }
         }
-        if(!newFile.createNewFile()) {
-            Log.e(tag, "Error creating new file to store image")
-        }
+    }
 
+    fun saveImage(appDir: File, image:Bitmap, rotation: Float){
         val matrix = Matrix()
         matrix.postRotate(rotation)
         val rotatedBitmap = Bitmap.createBitmap(image, 0, 0, image.width, image.height, matrix, true)
+        viewModelScope.launch {
+            rotatedBitmap.let {
+                val uri = garmentRepository.saveImageToStorage(appDir, it)
+                val id = garmentRepository.insertGarment(Garment(image = uri.toString()))
+                _uiState.update { currentState ->
+                    currentState.copy(
+                        newItemId = id
+                    )
+                }
+            }
+        }
+    }
 
-        val inputImage = InputImage.fromBitmap(rotatedBitmap, 0)
+    fun removeBackGround(id: Long, path: String) {
+        _isProcessingBackground.value = true
+        val file = File(path)
+        val image = BitmapFactory.decodeFile(path)
+        val inputImage = InputImage.fromBitmap(image, 0)
         val options = SubjectSegmenterOptions.Builder()
             .enableForegroundConfidenceMask()
             .enableForegroundBitmap()
@@ -83,40 +113,65 @@ class ClothingViewModel(private val garmentRepository: GarmentsRepository): View
         val segmenter = SubjectSegmentation.getClient(options)
         segmenter.process(inputImage)
             .addOnSuccessListener { result ->
-//                val colors = IntArray(inputImage.width * inputImage.height)
-//
-//                val foregroundMask = result.foregroundConfidenceMask
-//                for (i in 0 until inputImage.width * inputImage.height) {
-//                    if ((foregroundMask?.get(i) ?: 0f) > 0.5f) {
-//                        colors[i] = Color.argb(128, 255, 0, 255)
-//                    }
-//                }
-//                val maskedBitmap = Bitmap.createBitmap(
-//                    colors, inputImage.width, inputImage.height, Bitmap.Config.ARGB_8888
-//                )
+                val colors = IntArray(image.width * image.height)
+                val resultBitmap = result.foregroundBitmap //subject of interest
 
-//                val resultBitmap = Bitmap.createBitmap(maskedBitmap.width, maskedBitmap.height, maskedBitmap.config)
-//                val canvas = Canvas(resultBitmap)
-//                canvas.drawBitmap(maskedBitmap, 0f, 0f, null)
-//                canvas.drawBitmap(rotatedBitmap, 0f, 0f, null)
+                // Gray out background
+                val finalImage = Bitmap.createBitmap(image.width, image.height, image.config)
+                val canvas = Canvas(finalImage)
+                val paint = Paint()
+                val colorMatrix = ColorMatrix()
+                colorMatrix.setSaturation(0f)
+                val colorFilter = ColorMatrixColorFilter(colorMatrix)
+                paint.colorFilter = colorFilter
+                canvas.drawBitmap(image, 0f, 0f, paint)
 
-                val resultBitmap = result.foregroundBitmap
-                val outputStream = ByteArrayOutputStream()
-                resultBitmap!!.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
-                newFile.writeBytes(outputStream.toByteArray())
-                val uri = newFile.toUri().toString()
+                //Easy "fake" blurr
+                val shrinkImage = Bitmap.createScaledBitmap(finalImage, 30, 30, false)
+                val blurredImage = Bitmap.createScaledBitmap(shrinkImage, image.width, image.height, true)
+
                 viewModelScope.launch {
-                    val id = garmentRepository.insertGarment(Garment(image = uri))
-                    _uiState.update { currentState ->
-                        currentState.copy(
-                            newItemId = id
-                        )
+                    resultBitmap?.let {
+                        canvas.drawBitmap(blurredImage, 0f, 0f, null)
+                        canvas.drawBitmap(it, 0f, 0f, null) // Add subject to grayed background
+                        val uri = garmentRepository.saveImageToStorage(file.parentFile!!, finalImage)
+                        garmentRepository.getGarmentStream(id).flowOn(Dispatchers.IO).collect { c ->
+                            c?.let {
+                                c.image = uri.toString()
+                                garmentRepository.updateGarment(c)
+                                _isProcessingBackground.value = false
+                            }
+                        }
                     }
                 }
             }
             .addOnFailureListener { e ->
                 Log.e(tag, "Failed to extract information using ML Kit on image: ${e.message}")
             }
+    }
+
+    fun deleteGarment(id: Long) {
+        viewModelScope.launch {
+            garmentRepository.getGarmentStream(id).flowOn(Dispatchers.IO).collect{ garment ->
+                garment?.let {
+                    it.image?.let { uri ->
+                        val deleted = Uri.parse(uri).path?.let { path ->
+                            try{
+                                File(path).delete()
+                            }catch (exception: SecurityException){
+                                Log.e(tag, "No permission to delete file")
+                                false
+                            }
+                        }
+                        when(deleted){
+                            true ->  garmentRepository.deleteGarment(it)
+                            else -> Log.e(tag, "Could not delete the file image")
+                        }
+                    }
+
+                }
+            }
+        }
     }
 
 }

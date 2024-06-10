@@ -30,7 +30,7 @@ fun AppNav(modifier: Modifier = Modifier, navController: NavHostController = rem
         modifier = modifier
     ) {
         composable(route = AppScreens.Clothing.name) {
-            ClothingScreen()
+            ClothingScreen(onEdit = { id: Long -> navController.navigate("${AppScreens.EditClothing.name}/$id")} )
         }
         composable(route = AppScreens.NewClothing.name) {
             NewClothingScreen(onFinish = { id: Long -> navController.navigate("${AppScreens.EditClothing.name}/$id")})
