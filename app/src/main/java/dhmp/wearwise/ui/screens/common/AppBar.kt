@@ -1,5 +1,6 @@
 package dhmp.wearwise.ui.screens.common
 
+import androidx.compose.foundation.background
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
@@ -11,9 +12,9 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
+import androidx.compose.ui.Modifier
 
 @Composable
 fun WearWiseBottomAppBar(
@@ -48,6 +49,8 @@ fun WearWiseBottomAppBar(
             ) {
                 Icon(Icons.Filled.Add, "Add Garment")
             }
-        }
+        },
+        containerColor = MaterialTheme.colorScheme.background,
+        modifier = Modifier.background(MaterialTheme.colorScheme.background)
     )
 }

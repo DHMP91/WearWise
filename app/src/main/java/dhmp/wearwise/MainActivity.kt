@@ -41,7 +41,7 @@ fun App(navController: NavHostController = rememberNavController()) {
                 navNewClothing = { navController.navigate(AppScreens.NewClothing.name) },
                 navShop = { navController.navigate(AppScreens.Shop.name) },
             )
-        }
+        },
     ) { innerPadding ->
         AppNav(modifier =  Modifier.padding(innerPadding), navController = navController)
     }

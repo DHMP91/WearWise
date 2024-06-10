@@ -1,6 +1,5 @@
 package dhmp.wearwise.model
 
-import android.net.Uri
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
@@ -23,14 +22,14 @@ import androidx.room.PrimaryKey
 )
 data class Garment (
     @PrimaryKey(autoGenerate = true)
-    val id: Int = 0,
-    val name: String? = null,
+    val id: Long = 0,
+    var name: String? = null,
     @ColumnInfo(index = true)
-    val categoryId: Int? = null,
+    var categoryId: Int? = null,
 //    val subCategoryId: int? = null,
-    val occasion: Occasion? = null,
-    val brand: String? = null,
-    val image: String? = null,
+    var occasion: Occasion? = null,
+    var brand: String? = null,
+    var image: String? = null,
 //    @ColumnInfo(index = true)
 //    val mlMetaDataId: Int? = 0
 )
@@ -38,13 +37,13 @@ data class Garment (
 @Entity(tableName="MLMetaData")
 class MLMetaData(
     @PrimaryKey
-    val id: Int = 0,
-    val labels: List<MLLabel> = listOf()
+    val id: Long = 0,
+    var labels: List<MLLabel> = listOf()
 )
 @Entity(tableName="MLLabels")
 class MLLabel(
     @PrimaryKey
-    val id: Int = 0,
+    val id: Long = 0,
     val name: String = "",
     val confidence: Double = 0.00
 )
@@ -58,7 +57,7 @@ class Category(
 
 @Entity(tableName = "SubCategories")
 class SubCategory(
-    val id: Int = 0,
+    val id: Long = 0,
     val name: String,
     val category: Category,
 )
