@@ -16,6 +16,7 @@ coilCompose = "2.6.0"
 mlKitImage = "17.0.8"
 gsonVersion = "2.10.1"
 mlKitSubjectSegmentationVersion = "16.0.0-beta1"
+paletteKtx = "1.0.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -48,6 +49,7 @@ io-coil-compose = {group = "io.coil-kt", name= "coil-compose", version.ref = "co
 google-mlkit-image-labeling = {group = "com.google.mlkit", name= "image-labeling", version.ref = "mlKitImage"}
 google-mlkit-subject-segmentation = {group = "com.google.android.gms", name= "play-services-mlkit-subject-segmentation", version.ref = "mlKitSubjectSegmentationVersion"}
 google-gson = {group = "com.google.code.gson", name= "gson", version.ref = "gsonVersion"}
+androidx-palette-ktx = { group = "androidx.palette", name = "palette-ktx", version.ref = "paletteKtx" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

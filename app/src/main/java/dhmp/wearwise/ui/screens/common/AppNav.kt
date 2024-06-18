@@ -39,10 +39,13 @@ fun AppNav(modifier: Modifier = Modifier, navController: NavHostController = rem
             route = "${AppScreens.EditClothing.name}/{garmentId}",
             arguments = listOf(navArgument("garmentId") { type = NavType.LongType })
         ) {backStackEntry ->
-            EditClothingScreen(
-                onFinish = {navController.navigate(AppScreens.Clothing.name)},
-                garmentId = backStackEntry.arguments?.getLong("garmentId")
-            )
+            when (val garmentId = backStackEntry.arguments?.getLong("garmentId")) {
+                null -> ClothingScreen(onEdit = { id: Long -> navController.navigate("${AppScreens.EditClothing.name}/$id") })
+                else -> EditClothingScreen(
+                    onFinish = { navController.navigate(AppScreens.Clothing.name) },
+                    garmentId = garmentId
+                )
+            }
         }
         composable(route = AppScreens.Outfit.name) {
             //TODO
