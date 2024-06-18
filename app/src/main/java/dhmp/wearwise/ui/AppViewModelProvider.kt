@@ -11,7 +11,8 @@ object AppViewModelProvider {
     val Factory = viewModelFactory {
         initializer {
             ClothingViewModel(
-                wearWiseApplication().container.garmentsRespository
+                wearWiseApplication().container.garmentsRespository,
+                wearWiseApplication().container.categoriesRepository
             )
         }
     }

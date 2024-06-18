@@ -230,7 +230,7 @@ fun WearWiseTheme(
 //        darkTheme -> darkScheme
 //        else -> lightScheme
 //    }
-    val colorScheme = lightScheme
+    val colorScheme = darkScheme
 
     val view = LocalView.current
     if (!view.isInEditMode) {
