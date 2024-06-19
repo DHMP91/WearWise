@@ -27,38 +27,6 @@ fun WearWiseBottomAppBar(
     navNewClothing: () -> Unit,
     navShop: () -> Unit,
 ) {
-//    BottomAppBar(
-//        actions = {
-//            IconButton(onClick = { navOutfit() }) {
-//                Icon(Icons.Filled.AccountCircle, contentDescription = "Outfits")
-//            }
-//            IconButton(onClick = { navClothing() }) {
-//                Icon(
-//                    Icons.Rounded.List,
-//                    contentDescription = "Clothing",
-//                )
-//            }
-//            IconButton(onClick = { navShop() }) {
-//                Icon(
-//                    Icons.Filled.ShoppingCart,
-//                    contentDescription = "Shop",
-//                )
-//            }
-//        },
-//        floatingActionButton = {
-//            FloatingActionButton(
-//                onClick = { navNewClothing() },
-//                containerColor = BottomAppBarDefaults.bottomAppBarFabColor,
-//                elevation = FloatingActionButtonDefaults.bottomAppBarFabElevation()
-//            ) {
-//                Icon(Icons.Filled.Add, "Add Garment")
-//            }
-//        },
-//        containerColor = MaterialTheme.colorScheme.background,
-//        modifier = Modifier.background(MaterialTheme.colorScheme.background)
-//    )
-
-
     Row(
         modifier = Modifier
             .fillMaxWidth()

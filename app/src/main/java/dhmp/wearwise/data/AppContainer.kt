@@ -5,6 +5,7 @@ import android.content.Context
 interface AppContainer {
     val garmentsRespository: GarmentsRepository
     val categoriesRepository: CategoriesRepository
+    val outfitsRepository: OutfitsRepository
 }
 
 class DefaultAppContainer(private val context: Context) : AppContainer {
@@ -15,6 +16,10 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
 
     override val categoriesRepository: CategoriesRepository by lazy {
         DefaultCategoryRepository(AppDatabase.getDatabase(context).categoryDao())
+    }
+
+    override val outfitsRepository: OutfitsRepository by lazy {
+        DefaultOutfitRepository(AppDatabase.getDatabase(context).outfitDao())
     }
 
 }

@@ -36,7 +36,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -82,7 +81,6 @@ fun ClothingScreen(
     onEdit: (Long) -> Unit,
     clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
-    val clothingUiState by clothingViewModel.uiState.collectAsState()
     clothingViewModel.collectGarments() //Start the flow for garment list
     Surface {
         Tabs(onEdit)
@@ -183,7 +181,6 @@ fun Tabs(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GarmentList(garments: List<Garment>, onEdit: (Long) -> Unit){
     LazyColumn(
@@ -198,7 +195,6 @@ fun GarmentList(garments: List<Garment>, onEdit: (Long) -> Unit){
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GarmentCard(garment: Garment, onEdit: (Long) -> Unit, modifier: Modifier = Modifier){
     Row (
@@ -257,7 +253,6 @@ fun GarmentCard(garment: Garment, onEdit: (Long) -> Unit, modifier: Modifier = M
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BuilderView(
     garments: List<Garment>,
@@ -268,18 +263,7 @@ fun BuilderView(
     val categories by clothingViewModel.categories.collectAsState()
     clothingViewModel.collectCategories()
 
-    val categoryToModelVarMap = listOf(
-        clothingViewModel::selectedHatsId,
-        clothingViewModel::selectedTopsId,
-        clothingViewModel::selectedBottomsId,
-        clothingViewModel::selectedOnePieceId,
-        clothingViewModel::selectedFootwearId,
-        clothingViewModel::SelectedOuterWearId,
-        clothingViewModel::selectedAccessoriesId,
-        clothingViewModel::selectedOtherId,
-        clothingViewModel::selectedIntimatesId,
-    )
-
+    val categoryToModelVarMap = clothingViewModel.outfitPiecesIdVariables()
     LazyColumn(
         modifier = Modifier
             .fillMaxWidth()
@@ -451,7 +435,7 @@ fun ClothBuilderRow(
 
 
 @Composable
-fun ClothBuilderItem(garment: Garment, onEdit: (Long) -> Unit, modifier: Modifier = Modifier){
+fun ClothBuilderItem(garment: Garment, onEdit: (Long) -> Unit){
     Card(
         modifier = Modifier
             .heightIn(max = 150.dp)
@@ -471,8 +455,6 @@ fun ClothBuilderItem(garment: Garment, onEdit: (Long) -> Unit, modifier: Modifie
 }
 
 
-
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ClothingScreenTopAppBar(clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.Factory)) {
     Row(
