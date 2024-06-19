@@ -14,6 +14,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.core.graphics.blue
+import androidx.core.graphics.green
+import androidx.core.graphics.red
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.palette.graphics.Palette
@@ -22,6 +25,7 @@ import com.google.mlkit.vision.segmentation.subject.SubjectSegmentation
 import com.google.mlkit.vision.segmentation.subject.SubjectSegmenterOptions
 import dhmp.wearwise.data.CategoriesRepository
 import dhmp.wearwise.data.GarmentsRepository
+import dhmp.wearwise.data.OutfitsRepository
 import dhmp.wearwise.model.Category
 import dhmp.wearwise.model.Garment
 import dhmp.wearwise.model.GarmentColorNames
@@ -34,9 +38,14 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.io.File
+import kotlin.reflect.KMutableProperty0
 
 
-class ClothingViewModel(private val garmentRepository: GarmentsRepository, private val categoriesRepository: CategoriesRepository): ViewModel() {
+class ClothingViewModel(
+    private val garmentRepository: GarmentsRepository,
+    private val categoriesRepository: CategoriesRepository,
+    private val outfitsRepository: OutfitsRepository,
+): ViewModel() {
     private val tag: String = "ClothingViewModel"
     private val _uiState = MutableStateFlow(ClothingUIState())
     val uiState: StateFlow<ClothingUIState> = _uiState.asStateFlow()
@@ -135,8 +144,34 @@ class ClothingViewModel(private val garmentRepository: GarmentsRepository, priva
         }
     }
 
+    fun outfitPiecesIdVariables(): List<KMutableProperty0<Long>>{
+        return listOf(
+            this::selectedHatsId,
+            this::selectedTopsId,
+            this::selectedBottomsId,
+            this::selectedOnePieceId,
+            this::selectedFootwearId,
+            this::SelectedOuterWearId,
+            this::selectedAccessoriesId,
+            this::selectedOtherId,
+            this::selectedIntimatesId,
+        )
+    }
+
     fun buildOutfit(){
         val newOutfit = Outfit()
+        val categoryToModelVarMap = outfitPiecesIdVariables()
+        categoryToModelVarMap.forEach{
+            val id = it.get()
+            if(id > 0){
+                newOutfit.garmentsId = newOutfit.garmentsId.plus(id)
+            }
+        }
+        if(newOutfit.garmentsId.isNotEmpty()) {
+            viewModelScope.launch {
+                outfitsRepository.insertOutfit(newOutfit)
+            }
+        }
     }
 
     fun analyzeGarment(id: Long){
@@ -145,11 +180,18 @@ class ClothingViewModel(private val garmentRepository: GarmentsRepository, priva
                 garment?.let {
                     val image = it.imageOfSubject ?: it.image
                     val bitmap = BitmapFactory.decodeFile(Uri.parse(image).path!!)
-                    Palette.Builder(bitmap).generate {it2 ->
+                        Palette.Builder(bitmap).generate { it2 ->
                         it2?.let { palette ->
                             val color = palette.getDominantColor(0)
                             if (color != 0 ) {
+                                // Convert Color to RGB components
+                                val red = color.red
+                                val green = color.green
+                                val blue = color.blue
+                                val hex = String.format("#%02X%02X%02X", red, green, blue)
                                 val colorName = getNearestColorName(color)
+                                it.color = colorName
+                                storeChanges(it)
                             }else{
                                 Log.w(tag, "Could not determine dominant color from image")
                             }
@@ -185,41 +227,14 @@ class ClothingViewModel(private val garmentRepository: GarmentsRepository, priva
                 paint.colorFilter = colorFilter
                 canvas.drawBitmap(image, 0f, 0f, paint)
 
-                //Easy "fake" blurr
                 val shrinkImage = Bitmap.createScaledBitmap(finalImage, 30, 30, false)
                 val blurredImage = Bitmap.createScaledBitmap(shrinkImage, image.width, image.height, true)
 
                 viewModelScope.launch {
                     resultBitmap?.let {
                         val subjectUri = garmentRepository.saveImageToStorage(file.parentFile!!, resultBitmap)
-//
-//                        Palette.Builder(resultBitmap).generate {it2 ->
-//                            it2?.let { palette ->
-//                                val color = palette.getDominantColor(0)
-//                                if (color != 0 ) {
-//
-//                                        // Convert Color to RGB components
-//                                        val red = color.red
-//                                        val green = color.green
-//                                        val blue = color.blue
-//
-//                                        // Calculate luminance
-//                                        val luminance = 0.2126 * red + 0.7152 * green + 0.0722 * blue
-//
-////                                        // Determine if the color is dark or light based on luminance
-////                                        if(luminance <= 0.4) {
-////                                            canvas
-////                                        }else {
-////                                        }
-////
-////                                    }
-//                                }else{
-//                                    Log.w(tag, "Could not determine dominant color from image")
-//                                }
-//                            }
-//                        }
+
                         canvas.drawBitmap(blurredImage, 0f, 0f, null)
-//                        canvas.drawRGB(211, 211, 211)
                         canvas.drawBitmap(it, 0f, 0f, null) // Add subject to grayed background
                         val uri = garmentRepository.saveImageToStorage(file.parentFile!!, finalImage)
 
