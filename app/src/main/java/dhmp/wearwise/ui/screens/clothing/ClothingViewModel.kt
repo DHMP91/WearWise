@@ -28,15 +28,17 @@ import dhmp.wearwise.data.GarmentsRepository
 import dhmp.wearwise.data.OutfitsRepository
 import dhmp.wearwise.model.Category
 import dhmp.wearwise.model.Garment
-import dhmp.wearwise.model.GarmentColorNames
 import dhmp.wearwise.model.Outfit
+import dhmp.wearwise.model.nearestColorMatchList
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import okhttp3.internal.closeQuietly
 import java.io.File
 import kotlin.reflect.KMutableProperty0
 
@@ -120,11 +122,11 @@ class ClothingViewModel(
         }
     }
 
-    fun saveImage(appDir: File, image:Bitmap, rotation: Float){
-        val matrix = Matrix()
-        matrix.postRotate(rotation)
-        val rotatedBitmap = Bitmap.createBitmap(image, 0, 0, image.width, image.height, matrix, true)
-        viewModelScope.launch {
+    fun saveImage(appDir: File, image:Bitmap, rotation: Float): Job {
+        val job = viewModelScope.launch(Dispatchers.IO) {
+            val matrix = Matrix()
+            matrix.postRotate(rotation)
+            val rotatedBitmap = Bitmap.createBitmap(image, 0, 0, image.width, image.height, matrix, true)
             rotatedBitmap.let {
                 val uri = garmentRepository.saveImageToStorage(appDir, it)
                 val id = garmentRepository.insertGarment(Garment(image = uri.toString()))
@@ -135,10 +137,11 @@ class ClothingViewModel(
                 }
             }
         }
+        return job
     }
 
     fun saveChanges(garment: Garment){
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             garmentRepository.updateGarment(garment)
             storeChanges(null)
         }
@@ -203,59 +206,70 @@ class ClothingViewModel(
     }
 
     fun removeBackGround(id: Long, path: String) {
-        _isProcessingBackground.value = true
-        val file = File(path)
-        val image = BitmapFactory.decodeFile(path)
-        val inputImage = InputImage.fromBitmap(image, 0)
-        val options = SubjectSegmenterOptions.Builder()
-            .enableForegroundConfidenceMask()
-            .enableForegroundBitmap()
-            .build()
-        val segmenter = SubjectSegmentation.getClient(options)
-        segmenter.process(inputImage)
-            .addOnSuccessListener { result ->
-                val colors = IntArray(image.width * image.height)
-                val resultBitmap = result.foregroundBitmap //subject of interest
+        viewModelScope.launch(Dispatchers.IO) {
+            _isProcessingBackground.value = true
+            val file = File(path)
+            val image = BitmapFactory.decodeFile(path)
+            val inputImage = InputImage.fromBitmap(image, 0)
+            val options = SubjectSegmenterOptions.Builder()
+                .enableForegroundConfidenceMask()
+                .enableForegroundBitmap()
+                .build()
 
-                // Gray out background
-                val finalImage = Bitmap.createBitmap(image.width, image.height, image.config)
-                val canvas = Canvas(finalImage)
-                val paint = Paint()
-                val colorMatrix = ColorMatrix()
-                colorMatrix.setSaturation(1f)
-                val colorFilter = ColorMatrixColorFilter(colorMatrix)
-                paint.colorFilter = colorFilter
-                canvas.drawBitmap(image, 0f, 0f, paint)
+            // Blurr background
+            val finalImage = Bitmap.createBitmap(image.width, image.height, image.config)
+            val canvas = Canvas(finalImage)
+            val paint = Paint()
+            val colorMatrix = ColorMatrix()
+            colorMatrix.setSaturation(1f)
+            val colorFilter = ColorMatrixColorFilter(colorMatrix)
+            paint.colorFilter = colorFilter
+            canvas.drawBitmap(image, 0f, 0f, paint)
 
-                val shrinkImage = Bitmap.createScaledBitmap(finalImage, 30, 30, false)
-                val blurredImage = Bitmap.createScaledBitmap(shrinkImage, image.width, image.height, true)
+            val shrinkImage = Bitmap.createScaledBitmap(finalImage, 30, 30, false)
+            val blurredImage = Bitmap.createScaledBitmap(shrinkImage, image.width, image.height, true)
+            shrinkImage.recycle()
 
-                viewModelScope.launch {
-                    resultBitmap?.let {
-                        val subjectUri = garmentRepository.saveImageToStorage(file.parentFile!!, resultBitmap)
-
-                        canvas.drawBitmap(blurredImage, 0f, 0f, null)
-                        canvas.drawBitmap(it, 0f, 0f, null) // Add subject to grayed background
-                        val uri = garmentRepository.saveImageToStorage(file.parentFile!!, finalImage)
-
-                        garmentRepository.getGarmentStream(id).flowOn(Dispatchers.IO).collect { c ->
-                            c?.let {
-                                c.image = uri.toString()
-                                c.imageOfSubject = subjectUri.toString()
-                                garmentRepository.updateGarment(c)
-                                _isProcessingBackground.value = false
-                            }
+            val segmenter = SubjectSegmentation.getClient(options)
+            val job = segmenter.process(inputImage)
+                .addOnSuccessListener { result ->
+                    val colors = IntArray(image.width * image.height)
+                    val resultBitmap = result.foregroundBitmap //subject of interest
+                    viewModelScope.launch {
+                        resultBitmap?.let {
+                            val subjectUri = garmentRepository.saveImageToStorage(
+                                file.parentFile!!,
+                                resultBitmap
+                            )
+                            canvas.drawBitmap(blurredImage, 0f, 0f, null)
+                            blurredImage.recycle()
+                            canvas.drawBitmap(it, 0f, 0f, null) // Add subject to grayed background
+                            val uri =
+                                garmentRepository.saveImageToStorage(file.parentFile!!, finalImage)
+                            it.recycle()
+                            garmentRepository.getGarmentStream(id).flowOn(Dispatchers.IO)
+                                .collect { c ->
+                                    c?.let {
+                                        c.image = uri.toString()
+                                        c.imageOfSubject = subjectUri.toString()
+                                        garmentRepository.updateGarment(c)
+                                        _isProcessingBackground.value = false
+                                        segmenter.closeQuietly()
+                                    }
+                                }
                         }
                     }
                 }
-            }
-            .addOnFailureListener { e ->
-                Log.e(tag, "Failed to extract information using ML Kit on image: ${e.message}")
-            }
+                .addOnFailureListener { e ->
+                    Log.e(tag, "Failed to extract information using ML Kit on image: ${e.message}")
+                    _isProcessingBackground.value = false
+                    segmenter.closeQuietly()
+                }
+        }
     }
 
     fun deleteGarment(id: Long) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             garmentRepository.getGarmentStream(id).flowOn(Dispatchers.IO).collect{ garment ->
                 garment?.let {
                     it.image?.let { uri ->
@@ -279,7 +293,7 @@ class ClothingViewModel(
     }
 
     fun collectCategories(){
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             categoriesRepository.getAllCategoriesStream().flowOn(Dispatchers.IO).collect { c ->
                 _categories.update { c }
             }
@@ -289,7 +303,7 @@ class ClothingViewModel(
         var nearestColorName = "Unknown"
         var minDistance = Double.MAX_VALUE
 
-        GarmentColorNames.forEach { colorName ->
+        nearestColorMatchList.forEach { colorName ->
             val distance = colorDistance(color, colorName.color)
             if (distance < minDistance) {
                 minDistance = distance

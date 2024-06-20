@@ -40,6 +40,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dhmp.wearwise.R
 import dhmp.wearwise.ui.AppViewModelProvider
+import kotlinx.coroutines.Job
 import java.io.File
 import java.util.concurrent.Executor
 
@@ -65,7 +66,7 @@ fun NewClothingScreen(
 }
 
 @Composable
-fun CameraScreen(saveImage: (File, Bitmap, Float) -> Unit) {
+fun CameraScreen(saveImage: (File, Bitmap, Float) -> Job) {
     val context = LocalContext.current
     val previewView: PreviewView = remember { PreviewView(context) }
     val cameraController = remember { LifecycleCameraController(context) }
@@ -105,7 +106,7 @@ fun CameraScreen(saveImage: (File, Bitmap, Float) -> Unit) {
     }
 }
 
-private fun savePhoto(context: Context, cameraController: LifecycleCameraController, saveImage: (File, Bitmap, Float) -> Unit){
+private fun savePhoto(context: Context, cameraController: LifecycleCameraController, saveImage: (File, Bitmap, Float) -> Job){
     val mainExecutor: Executor = ContextCompat.getMainExecutor(context)
     val appDir: File = context.filesDir
     cameraController.takePicture(

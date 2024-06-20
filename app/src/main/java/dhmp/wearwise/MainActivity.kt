@@ -37,8 +37,16 @@ fun App(navController: NavHostController = rememberNavController()) {
         bottomBar = {
             WearWiseBottomAppBar(
                 navOutfit = { navController.navigate(AppScreens.Outfit.name) },
-                navClothing = { navController.navigate(AppScreens.Clothing.name) },
-                navNewClothing = { navController.navigate(AppScreens.NewClothing.name) },
+                navClothing = {
+                    navController.navigate(AppScreens.Clothing.name){
+                        popUpTo(AppScreens.Clothing.name) {
+                            inclusive = true
+                        }
+                    }
+                },
+                navNewClothing = {
+                    navController.navigate(AppScreens.NewClothing.name)
+                },
                 navShop = { navController.navigate(AppScreens.Shop.name) },
             )
         },
