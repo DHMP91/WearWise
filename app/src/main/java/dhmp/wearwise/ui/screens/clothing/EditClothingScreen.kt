@@ -100,7 +100,6 @@ fun EditClothingScreen(
 
         }
 
-
         ClothingInfo(garmentId)
         Row(
             modifier = Modifier

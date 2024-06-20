@@ -3,6 +3,7 @@ package dhmp.wearwise.ui.screens.common
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -33,16 +34,24 @@ fun AppNav(modifier: Modifier = Modifier, navController: NavHostController = rem
             ClothingScreen(onEdit = { id: Long -> navController.navigate("${AppScreens.EditClothing.name}/$id")} )
         }
         composable(route = AppScreens.NewClothing.name) {
-            NewClothingScreen(onFinish = { id: Long -> navController.navigate("${AppScreens.EditClothing.name}/$id")})
+            NewClothingScreen(onFinish = { id: Long ->
+                navController.navigate("${AppScreens.EditClothing.name}/$id")
+            })
         }
         composable(
             route = "${AppScreens.EditClothing.name}/{garmentId}",
             arguments = listOf(navArgument("garmentId") { type = NavType.LongType })
         ) {backStackEntry ->
             when (val garmentId = backStackEntry.arguments?.getLong("garmentId")) {
-                null -> ClothingScreen(onEdit = { id: Long -> navController.navigate("${AppScreens.EditClothing.name}/$id") })
+                null -> navController.navigate(navController.graph.findStartDestination().id)
                 else -> EditClothingScreen(
-                    onFinish = { navController.navigate(AppScreens.Clothing.name) },
+                    onFinish = {
+                        navController.navigate(AppScreens.Clothing.name){
+                            popUpTo(AppScreens.Clothing.name) {
+                                inclusive = true
+                            }
+                        }
+                    },
                     garmentId = garmentId
                 )
             }
