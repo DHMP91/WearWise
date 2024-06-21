@@ -35,6 +35,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -179,25 +180,24 @@ class ClothingViewModel(
 
     fun analyzeGarment(id: Long){
         viewModelScope.launch {
-            garmentRepository.getGarmentStream(id).flowOn(Dispatchers.IO).collect { garment ->
-                garment?.let {
-                    val image = it.imageOfSubject ?: it.image
-                    val bitmap = BitmapFactory.decodeFile(Uri.parse(image).path!!)
-                        Palette.Builder(bitmap).generate { it2 ->
-                        it2?.let { palette ->
-                            val color = palette.getDominantColor(0)
-                            if (color != 0 ) {
-                                // Convert Color to RGB components
-                                val red = color.red
-                                val green = color.green
-                                val blue = color.blue
-                                val hex = String.format("#%02X%02X%02X", red, green, blue)
-                                val colorName = getNearestColorName(color)
-                                it.color = colorName
-                                storeChanges(it)
-                            }else{
-                                Log.w(tag, "Could not determine dominant color from image")
-                            }
+            val garment = garmentRepository.getGarmentStream(id).flowOn(Dispatchers.IO).firstOrNull()
+            garment?.let {
+                val image = it.imageOfSubject ?: it.image
+                val bitmap = BitmapFactory.decodeFile(Uri.parse(image).path!!)
+                    Palette.Builder(bitmap).generate { it2 ->
+                    it2?.let { palette ->
+                        val color = palette.getDominantColor(0)
+                        if (color != 0 ) {
+                            // Convert Color to RGB components
+                            val red = color.red
+                            val green = color.green
+                            val blue = color.blue
+                            val hex = String.format("#%02X%02X%02X", red, green, blue)
+                            val colorName = getNearestColorName(color)
+                            it.color = colorName
+                            storeChanges(it)
+                        }else{
+                            Log.w(tag, "Could not determine dominant color from image")
                         }
                     }
                 }
@@ -247,16 +247,14 @@ class ClothingViewModel(
                             val uri =
                                 garmentRepository.saveImageToStorage(file.parentFile!!, finalImage)
                             it.recycle()
-                            garmentRepository.getGarmentStream(id).flowOn(Dispatchers.IO)
-                                .collect { c ->
-                                    c?.let {
-                                        c.image = uri.toString()
-                                        c.imageOfSubject = subjectUri.toString()
-                                        garmentRepository.updateGarment(c)
-                                        _isProcessingBackground.value = false
-                                        segmenter.closeQuietly()
-                                    }
-                                }
+                            val garment = garmentRepository.getGarmentStream(id).flowOn(Dispatchers.IO).firstOrNull()
+                            garment?.let { c ->
+                                c.image = uri.toString()
+                                c.imageOfSubject = subjectUri.toString()
+                                garmentRepository.updateGarment(c)
+                                _isProcessingBackground.value = false
+                                segmenter.closeQuietly()
+                            }
                         }
                     }
                 }
@@ -270,23 +268,23 @@ class ClothingViewModel(
 
     fun deleteGarment(id: Long) {
         viewModelScope.launch(Dispatchers.IO) {
-            garmentRepository.getGarmentStream(id).flowOn(Dispatchers.IO).collect{ garment ->
-                garment?.let {
-                    it.image?.let { uri ->
-                        val deleted = Uri.parse(uri).path?.let { path ->
-                            try{
-                                File(path).delete()
-                            }catch (exception: SecurityException){
-                                Log.e(tag, "No permission to delete file")
-                                false
-                            }
-                        }
-                        when(deleted){
-                            true ->  garmentRepository.deleteGarment(it)
-                            else -> Log.e(tag, "Could not delete the file image")
+            val garment = garmentRepository.getGarmentStream(id).flowOn(Dispatchers.IO).firstOrNull()
+            garment?.let {
+                it.image?.let { uri ->
+
+                    val deleted = Uri.parse(uri).path?.let { path ->
+                        try{
+                            File(path).delete()
+                        }catch (exception: SecurityException){
+                            Log.e(tag, "No permission to delete file")
+                            false
                         }
                     }
 
+                    when(deleted){
+                        true ->  garmentRepository.deleteGarment(it)
+                        else -> Log.e(tag, "Could not delete the file image")
+                    }
                 }
             }
         }
@@ -294,11 +292,11 @@ class ClothingViewModel(
 
     fun collectCategories(){
         viewModelScope.launch(Dispatchers.IO) {
-            categoriesRepository.getAllCategoriesStream().flowOn(Dispatchers.IO).collect { c ->
-                _categories.update { c }
-            }
+            val categories = categoriesRepository.getAllCategoriesStream().flowOn(Dispatchers.IO).firstOrNull()
+            categories.let { _categories.update { it } }
         }
     }
+
     private fun getNearestColorName(color: Int): String {
         var nearestColorName = "Unknown"
         var minDistance = Double.MAX_VALUE
