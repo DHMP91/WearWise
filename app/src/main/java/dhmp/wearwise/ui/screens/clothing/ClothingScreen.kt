@@ -27,7 +27,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.rounded.ArrowForward
 import androidx.compose.material3.Button
@@ -54,6 +53,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
@@ -62,6 +62,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -73,13 +74,14 @@ import dhmp.wearwise.R
 import dhmp.wearwise.model.Garment
 import dhmp.wearwise.ui.AppViewModelProvider
 import kotlinx.coroutines.launch
+import java.util.Locale
 
 private val TAG = "ClothingScreen"
 
 @Composable
 fun ClothingScreen(
     onEdit: (Long) -> Unit,
-    clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.Factory)
+    clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)
 ) {
     clothingViewModel.collectGarments() //Start the flow for garment list
     Surface {
@@ -90,7 +92,7 @@ fun ClothingScreen(
 @Composable
 fun Tabs(
     onEdit: (Long) -> Unit,
-    clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.Factory)
+    clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)
 ){
     var showListView by remember { mutableStateOf(true) }
     var showBuildView by remember { mutableStateOf(false) }
@@ -173,6 +175,7 @@ fun Tabs(
         }
         Row {
             if (showListView) {
+                clothingViewModel.collectCategories()
                 GarmentList(clothingUiState.garments, onEdit)
             } else {
                 BuilderView(clothingUiState.garments, onEdit)
@@ -196,7 +199,11 @@ fun GarmentList(garments: List<Garment>, onEdit: (Long) -> Unit){
 }
 
 @Composable
-fun GarmentCard(garment: Garment, onEdit: (Long) -> Unit, modifier: Modifier = Modifier){
+fun GarmentCard(
+    garment: Garment, onEdit: (Long) -> Unit,
+    modifier: Modifier = Modifier,
+    clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)
+){
     Row (
         modifier = modifier
             .background(
@@ -206,6 +213,7 @@ fun GarmentCard(garment: Garment, onEdit: (Long) -> Unit, modifier: Modifier = M
             .heightIn(max = 120.dp)
             .fillMaxWidth()
             .clickable { onEdit(garment.id) }
+            .padding(10.dp)
     ) {
 
         AsyncImage(
@@ -213,42 +221,65 @@ fun GarmentCard(garment: Garment, onEdit: (Long) -> Unit, modifier: Modifier = M
             contentDescription = "GarmentImage",
             contentScale = ContentScale.FillWidth,
             modifier = Modifier
-                .weight(2.5f)
+                .weight(2f)
                 .fillMaxSize()
-                .padding(end = 5.dp)
+                .clip(RoundedCornerShape(10.dp))
         )
 
         Column(
             modifier = Modifier
-                .weight(1.5f)
-                .fillMaxSize(),
-            verticalArrangement = Arrangement.Center
+                .weight(3f)
+                .fillMaxSize()
+                .padding(10.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.Start
         ){
-            Text("Brand")
-            Text("Category")
-            Text("Ocassion")
+//            Text(text="${garment.id}")
+            Text(garment.brand ?: "Set Brand")
+            Text(
+                garment.occasion?.name?.lowercase()?.replaceFirstChar {
+                    it.titlecase(Locale.getDefault())
+                }
+                ?: "Set Occasion"
+            )
         }
 
-        Column(
-            modifier = Modifier
-                .weight(1.5f)
-                .fillMaxSize(),
-            verticalArrangement = Arrangement.Center
-        ){
-            Text("Category2")
-            Text("Color")
-            Text("Material")
-        }
+//        Column(
+//            modifier = Modifier
+//                .weight(1.5f)
+//                .fillMaxSize(),
+//            verticalArrangement = Arrangement.Center
+//        ){
+//            Text("Category2")
+//            Text("Color")
+//            Text("Material")
+//        }
         Column(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxSize()
-                .padding(16.dp),
+                .padding(start = 10.dp, top = 5.dp),
             verticalArrangement = Arrangement.Bottom,
             horizontalAlignment = Alignment.End
         ){
-            //TODO different icon for different clothing type
-            Icon(imageVector = Icons.Filled.Face, contentDescription = "Clothing Type")
+            val categories by clothingViewModel.categories.collectAsState()
+
+            val icon = garment.categoryId?.let {
+                val name = categories.find { c -> c.id == it }?.name?.lowercase()
+                when(name) {
+//                    "OUTERWEAR",
+//                    "INTIMATES",
+//                    "FOOTWEAR",
+//                    "ACCESSORIES",
+//                    "OTHER",
+                    "onepiece" -> R.drawable.dress_icon
+                    "hats" -> R.drawable.hats_icon
+                    "tops" -> R.drawable.shirt_icon
+                    "bottoms" -> R.drawable.pants_icon
+                    else -> R.drawable.question_mark
+                }
+            } ?: R.drawable.question_mark
+            Icon( painter= painterResource(icon), contentDescription = "Clothing Type")
         }
     }
 }
@@ -258,7 +289,7 @@ fun BuilderView(
     garments: List<Garment>,
     onEdit: (Long) -> Unit,
     contentPadding: PaddingValues = PaddingValues(0.dp),
-    clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.Factory)
+    clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)
 ){
     val categories by clothingViewModel.categories.collectAsState()
     clothingViewModel.collectCategories()
@@ -456,7 +487,7 @@ fun ClothBuilderItem(garment: Garment, onEdit: (Long) -> Unit){
 
 
 @Composable
-fun ClothingScreenTopAppBar(clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.Factory)) {
+fun ClothingScreenTopAppBar(clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -538,7 +569,7 @@ fun Collapsible(headerText: String, content: @Composable () -> Unit){
 }
 
 @Composable
-fun ClothingMainMenu(clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.Factory)){
+fun ClothingMainMenu(clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)){
     DropdownMenu(
         expanded = clothingViewModel.showMenu,
         onDismissRequest = { clothingViewModel.showMenu= false }
@@ -574,7 +605,7 @@ fun ClothingMainMenu(clothingViewModel: ClothingViewModel = viewModel(factory = 
 
 
 @Composable
-fun ClothingBrandSelectionMenu(clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.Factory)){
+fun ClothingBrandSelectionMenu(clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)){
     DropdownMenu(
         expanded = clothingViewModel.showMenu && clothingViewModel.showBrandFilterMenu,
         onDismissRequest = {

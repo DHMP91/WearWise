@@ -24,4 +24,7 @@ interface GarmentDao {
 
     @Query("SELECT * from Garments ORDER BY name ASC")
     fun getAllGarments(): Flow<List<Garment>>
+
+    @Query("SELECT DISTINCT Garments.brand from Garments WHERE Garments.brand IS NOT NULL ORDER BY brand ASC")
+    fun getBrands(): Flow<List<String>>
 }

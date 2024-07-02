@@ -59,6 +59,9 @@ class ClothingViewModel(
     private val _categories = MutableStateFlow(listOf<Category>())
     val categories: StateFlow<List<Category>> = _categories.asStateFlow()
 
+    private val _brands = MutableStateFlow(listOf<String>())
+    val brands: StateFlow<List<String>> = _brands.asStateFlow()
+
     private val _isProcessingBackground = MutableStateFlow(false)
     val isProcessingBackground: StateFlow<Boolean> = _isProcessingBackground
 
@@ -271,7 +274,6 @@ class ClothingViewModel(
             val garment = garmentRepository.getGarmentStream(id).flowOn(Dispatchers.IO).firstOrNull()
             garment?.let {
                 it.image?.let { uri ->
-
                     val deleted = Uri.parse(uri).path?.let { path ->
                         try{
                             File(path).delete()
@@ -280,7 +282,6 @@ class ClothingViewModel(
                             false
                         }
                     }
-
                     when(deleted){
                         true ->  garmentRepository.deleteGarment(it)
                         else -> Log.e(tag, "Could not delete the file image")
@@ -292,8 +293,23 @@ class ClothingViewModel(
 
     fun collectCategories(){
         viewModelScope.launch(Dispatchers.IO) {
-            val categories = categoriesRepository.getAllCategoriesStream().flowOn(Dispatchers.IO).firstOrNull()
-            categories.let { _categories.update { it } }
+            categoriesRepository
+                .getAllCategoriesStream()
+                .flowOn(Dispatchers.IO)
+                .collect{
+                    _categories.emit(it)
+                }
+        }
+    }
+
+    fun collectBrands(){
+        viewModelScope.launch(Dispatchers.IO) {
+             garmentRepository
+                 .getBrands()
+                 .flowOn(Dispatchers.IO)
+                 .collect{
+                     _brands.emit(it)
+                 }
         }
     }
 

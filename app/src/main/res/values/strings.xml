@@ -5,6 +5,7 @@
     <string name="edit_garment">Edit Clothing</string>
     <string name="process_image">Processing Image</string>
     <string name="outfit">Outfit</string>
+    <string name="edit_outfit">Edit Outfit</string>
     <string name="shop">Shop</string>
     <string name="filter_by_brand">Filter By Brand</string>
     <string name="filter_by_category">Filter By Category</string>
