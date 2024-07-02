@@ -39,6 +39,8 @@ interface GarmentsRepository {
      */
     suspend fun updateGarment(item: Garment)
 
+    suspend fun getBrands(): Flow<List<String>>
+
     suspend fun saveImageToStorage(appDir: File, image: Bitmap) : Uri
 
     suspend fun replaceImageInStorage(file: File, image: Bitmap)
@@ -86,4 +88,6 @@ class DefaultGarmentsRepository(private val itemDao: GarmentDao) : GarmentsRepos
             outputStream.close()
         }
     }
+
+    override suspend fun getBrands() = itemDao.getBrands()
 }

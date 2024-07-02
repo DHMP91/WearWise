@@ -26,15 +26,21 @@ data class Garment (
     var name: String? = null,
     @ColumnInfo(index = true)
     var categoryId: Int? = null,
-//    val subCategoryId: int? = null,
     var occasion: Occasion? = null,
-    var brand: String? = null,
     var image: String? = null,
     var imageOfSubject: String? = null,
     var color: String? = null
+//    val subCategoryId: int? = null,
 //    @ColumnInfo(index = true)
 //    val mlMetaDataId: Int? = 0
 )
+{
+    @ColumnInfo(name = "brand")
+    var brand: String? = null
+        set(value) {
+            field = value?.lowercase()?.trim()
+        }
+}
 
 @Entity(tableName="MLMetaData")
 class MLMetaData(

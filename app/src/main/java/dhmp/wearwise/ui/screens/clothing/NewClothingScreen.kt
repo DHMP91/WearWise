@@ -48,7 +48,7 @@ private val TAG = "NewClothingScreen"
 @Composable
 fun NewClothingScreen(
     onFinish: (Long) -> Unit,
-    clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.Factory),
+    clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory),
 ) {
     val uiState by clothingViewModel.uiState.collectAsState()
     if (uiState.newItemId != 0L ){

@@ -59,6 +59,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import dhmp.wearwise.R
 import dhmp.wearwise.model.GarmentColorNames
+import dhmp.wearwise.model.Occasion
 import dhmp.wearwise.ui.AppViewModelProvider
 
 
@@ -67,7 +68,7 @@ fun EditClothingScreen(
     onFinish: () -> Unit,
     modifier: Modifier = Modifier,
     garmentId: Long,
-    clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.Factory),
+    clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory),
     context: Context = LocalContext.current
 ){
     clothingViewModel.getGarmentById(garmentId)
@@ -85,11 +86,11 @@ fun EditClothingScreen(
             contentScale = ContentScale.Inside,
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(max=300.dp)
+                .heightIn(max = 300.dp)
                 .padding(10.dp, 10.dp, 10.dp, 10.dp)
                 .align(Alignment.CenterHorizontally)
         )
-        Text(text="Inventory Item #$garmentId")
+        Text(text="Piece #$garmentId")
         Row(
             modifier = Modifier
                 .align(Alignment.CenterHorizontally),
@@ -113,7 +114,7 @@ fun EditClothingScreen(
 }
 
 @Composable
-fun RemoveBackground(garmentId: Long, image: String?, clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.Factory)) {
+fun RemoveBackground(garmentId: Long, image: String?, clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)) {
     val isProcessing by clothingViewModel.isProcessingBackground.collectAsState()
     if(!isProcessing){
         Button(
@@ -146,7 +147,7 @@ fun RemoveBackground(garmentId: Long, image: String?, clothingViewModel: Clothin
 
 
 @Composable
-fun DeleteGarment(onFinish: ()-> Unit, garmentId: Long, clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.Factory)) {
+fun DeleteGarment(onFinish: ()-> Unit, garmentId: Long, clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)) {
     val isProcessing by clothingViewModel.isProcessingBackground.collectAsState()
     if(!isProcessing){
         Button(
@@ -171,7 +172,7 @@ fun DeleteGarment(onFinish: ()-> Unit, garmentId: Long, clothingViewModel: Cloth
 
 
 @Composable
-fun AnalyzeGarment(garmentId: Long, clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.Factory)) {
+fun AnalyzeGarment(garmentId: Long, clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)) {
     val isProcessing by clothingViewModel.isProcessingBackground.collectAsState()
     if(!isProcessing){
         Button(
@@ -190,7 +191,7 @@ fun AnalyzeGarment(garmentId: Long, clothingViewModel: ClothingViewModel = viewM
 
 
 @Composable
-fun Save(clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.Factory)) {
+fun Save(clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)) {
     val uiState by clothingViewModel.uiEditState.collectAsState()
     var buttonColor = ButtonDefaults.buttonColors(Color.Gray)
     var onClick = {}
@@ -223,11 +224,13 @@ fun Save(clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ClothingInfo(garmentId: Long, clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.Factory)){
-    val uiState by clothingViewModel.uiEditState.collectAsState()
-    val categories by clothingViewModel.categories.collectAsState()
+fun ClothingInfo(garmentId: Long, clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)){
     clothingViewModel.getGarmentById(garmentId)
     clothingViewModel.collectCategories()
+    clothingViewModel.collectBrands()
+    val uiState by clothingViewModel.uiEditState.collectAsState()
+    val categories by clothingViewModel.categories.collectAsState()
+    val brands by clothingViewModel.brands.collectAsState()
     val garment = uiState.changes ?: uiState.editGarment
 
     val categoryNames = categories.map { it.name }
@@ -237,28 +240,43 @@ fun ClothingInfo(garmentId: Long, clothingViewModel: ClothingViewModel = viewMod
         garment.categoryId = categories.find { it.name == name }?.id
         clothingViewModel.storeChanges(garment)
     }
-    GarmentDropdownMenu("Category", categoryNames, category?.name, updateCategory, allowCustomValue = false)
+    GarmentDropdownMenu("Category", categoryNames, category?.name, updateCategory)
 
     val colorNames = GarmentColorNames.map { it.name }
     val updateColor = { name: String ->
         garment.color = name
         clothingViewModel.storeChanges(garment)
     }
-    GarmentDropdownMenu("Color", colorNames, garment.color, updateColor, allowCustomValue = false)
+    GarmentDropdownMenu("Color", colorNames, garment.color, updateColor)
+
+
+    val updatebrand = { value: String ->
+        garment.brand = value
+        clothingViewModel.storeChanges(garment)
+    }
+    GarmentDropdownMenuCustom("Brand", brands, garment.brand, updatebrand)
+
+    val updateOccasion = { value: String ->
+        Occasion.valueOf(value)
+        garment.occasion = Occasion.valueOf(value)
+        clothingViewModel.storeChanges(garment)
+    }
+    val occasions = Occasion.entries.map { it.name }
+    GarmentDropdownMenuCustom("Occasion", occasions, garment.occasion?.name, updateOccasion)
 //    DropUpMenu("A")
 //    DropUpMenu("C")
 //    DropUpMenu("K")
 }
 
 @Composable
-fun GarmentDropdownMenu(label: String, options: List<String>, fieldValue: String?, updateField: (String) -> Unit, allowCustomValue: Boolean = true){
+fun GarmentDropdownMenu(label: String, options: List<String>, fieldValue: String?, updateField: (String) -> Unit){
     val density = LocalDensity.current
     val configuration = LocalConfiguration.current
     val screenHeightPx = configuration.screenHeightDp.dp
     var expanded by remember { mutableStateOf(false) }
     var expandedByFocus by remember { mutableStateOf(false) }
     var dismissed by remember { mutableStateOf(false) }
-    var selectedText = fieldValue
+    var staticSelectedText by remember { mutableStateOf( fieldValue ?: "")}
     var textFieldSize by remember { mutableStateOf(Size.Zero) }
     val menuHeight = with(density) {
         (screenHeightPx / 4).toPx().toDp()
@@ -271,11 +289,11 @@ fun GarmentDropdownMenu(label: String, options: List<String>, fieldValue: String
             .fillMaxWidth()
     ) {
         OutlinedTextField(
-            readOnly = !allowCustomValue,
-            value = selectedText ?: "",
+            readOnly = true,
+            value = if (staticSelectedText == "" && fieldValue != null) fieldValue else staticSelectedText,
             onValueChange = {
                 updateField(it)
-                selectedText = it
+                staticSelectedText = it
             },
             modifier = Modifier
                 .fillMaxWidth()
@@ -289,9 +307,6 @@ fun GarmentDropdownMenu(label: String, options: List<String>, fieldValue: String
                         //Expand once when focus on field (clicking directly)
                         expanded = true
                         expandedByFocus = true
-                    } else if (!it.hasFocus && expanded && allowCustomValue ) {
-                        expanded = false
-                        expandedByFocus = true
                     }
                 },
             label = { Text(label) },
@@ -302,10 +317,7 @@ fun GarmentDropdownMenu(label: String, options: List<String>, fieldValue: String
                     Modifier.clickable {
                         if(!dismissed){
                             expanded = !expanded
-                            if(expanded && allowCustomValue){
-                                focusRequester.requestFocus()
-                            }
-                        }else if(!allowCustomValue && !expanded){
+                        }else if(!expanded){
                             // Clickable is not called when readOnly (allowCustomValue = false)
                             expanded = true
                             dismissed = false //Reset, conflict event with closing + dismiss menu
@@ -330,7 +342,102 @@ fun GarmentDropdownMenu(label: String, options: List<String>, fieldValue: String
             modifier = Modifier
                 .width(textFieldWidthDp)
                 .height(menuHeight),
-            properties = PopupProperties(focusable = !allowCustomValue)
+            properties = PopupProperties(focusable = true)
+        ) {
+            options.forEach { label ->
+                DropdownMenuItem(
+                    text = {
+                        Text(text = label)
+                    },
+                    onClick = {
+                        updateField(label)
+                        staticSelectedText = label
+                        expanded = false
+                    }
+                )
+            }
+        }
+    }
+}
+
+
+
+@Composable
+fun GarmentDropdownMenuCustom(label: String, options: List<String>, fieldValue: String?, updateField: (String) -> Unit){
+    val density = LocalDensity.current
+    val configuration = LocalConfiguration.current
+    val screenHeightPx = configuration.screenHeightDp.dp
+    var expanded by remember { mutableStateOf(false) }
+    var expandedByFocus by remember { mutableStateOf(false) }
+    var dismissed by remember { mutableStateOf(false) }
+    var selectedText by remember { mutableStateOf( fieldValue?: "") }
+    var textFieldSize by remember { mutableStateOf(Size.Zero) }
+    val menuHeight = with(density) {
+        (screenHeightPx / 4).toPx().toDp()
+    }
+    val focusRequester = FocusRequester()
+    val icon = if (expanded) Icons.Filled.KeyboardArrowDown else Icons.Filled.KeyboardArrowRight
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+    ) {
+        OutlinedTextField(
+            value = if (selectedText == "" && fieldValue != null) fieldValue else selectedText,
+            onValueChange = {
+                updateField(it)
+                selectedText = it
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .onGloballyPositioned { coordinates ->
+                    //This value is used to assign to the DropDown the same width
+                    textFieldSize = coordinates.size.toSize()
+                }
+                .focusRequester(focusRequester)
+                .onFocusChanged {
+                    if (it.hasFocus && !expanded && !expandedByFocus) {
+                        //Expand once when focus on field (clicking directly)
+                        expanded = true
+                        expandedByFocus = true
+                    } else if (!it.hasFocus && expanded) {
+                        expanded = false
+                        expandedByFocus = true
+                    }
+                },
+            label = { Text(label) },
+            trailingIcon = {
+                Icon(
+                    icon,
+                    "contentDescription",
+                    Modifier.clickable {
+                        if(!dismissed){
+                            expanded = !expanded
+                            if(expanded){
+                                focusRequester.requestFocus()
+                            }
+                        }else{
+                            dismissed = false
+                        }
+                    }
+                )
+            }
+        )
+
+        val textFieldHeightDp: Dp = with(density) { textFieldSize.height.toDp() }
+        val textFieldWidthDp: Dp = with(density) { textFieldSize.width.toDp() }
+
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = {
+                expanded = false
+                dismissed = true
+            },
+            offset = DpOffset(x = 0.dp, y = -textFieldHeightDp),
+            modifier = Modifier
+                .width(textFieldWidthDp)
+                .heightIn(max=menuHeight),
+            properties = PopupProperties(focusable = false)
         ) {
             options.forEach { label ->
                 DropdownMenuItem(

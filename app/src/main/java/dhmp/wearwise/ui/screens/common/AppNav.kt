@@ -14,12 +14,14 @@ import dhmp.wearwise.R
 import dhmp.wearwise.ui.screens.clothing.ClothingScreen
 import dhmp.wearwise.ui.screens.clothing.EditClothingScreen
 import dhmp.wearwise.ui.screens.clothing.NewClothingScreen
+import dhmp.wearwise.ui.screens.clothing.OutfitScreen
 
 enum class AppScreens(@StringRes val title: Int) {
     Clothing(title = R.string.inventory),
     NewClothing(title= R.string.new_garment),
     EditClothing(title= R.string.edit_garment),
     Outfit(title = R.string.outfit),
+    EditOutfit(title= R.string.edit_outfit),
     Shop(title = R.string.shop),
 }
 
@@ -57,7 +59,7 @@ fun AppNav(modifier: Modifier = Modifier, navController: NavHostController = rem
             }
         }
         composable(route = AppScreens.Outfit.name) {
-            //TODO
+            OutfitScreen(onEdit = { id: Long -> navController.navigate("${AppScreens.EditOutfit.name}/$id")} )
         }
     }
 }

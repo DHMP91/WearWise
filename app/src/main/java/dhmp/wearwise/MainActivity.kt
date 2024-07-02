@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import dhmp.wearwise.ui.screens.clothing.OutfitScreen
 import dhmp.wearwise.ui.screens.common.AppNav
 import dhmp.wearwise.ui.screens.common.AppScreens
 import dhmp.wearwise.ui.screens.common.WearWiseBottomAppBar
@@ -62,5 +63,8 @@ fun GreetingPreview() {
     WearWiseTheme {
 //        ClothingScreen()
 //        App()
+        OutfitScreen(
+            onEdit = {}
+        )
     }
 }
