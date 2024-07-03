@@ -70,6 +70,7 @@ dependencies {
     implementation(libs.androidx.palette.ktx)
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.room.ktx)
+    implementation(libs.androidx.room.paging)
     implementation(libs.androidx.navigation)
     implementation(libs.io.coil.compose)
     implementation(libs.google.gson)
@@ -85,6 +86,11 @@ dependencies {
     implementation(libs.google.mlkit.image.labeling)
     implementation(libs.google.mlkit.subject.segmentation)
 
+    //Paging
+    implementation(libs.androidx.paging.runtime)
+    implementation(libs.androidx.paging.rx.java2)
+    implementation(libs.androidx.paging.rx.java3)
+    implementation(libs.androidx.paging.compose)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

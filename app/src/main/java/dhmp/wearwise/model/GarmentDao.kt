@@ -1,5 +1,6 @@
 package dhmp.wearwise.model
 
+import androidx.paging.PagingSource
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
@@ -22,9 +23,21 @@ interface GarmentDao {
     @Query("SELECT * from Garments WHERE id = :id")
     fun getGarment(id: Long): Flow<Garment>
 
-    @Query("SELECT * from Garments ORDER BY name ASC")
+    @Query("SELECT * from Garments")
     fun getAllGarments(): Flow<List<Garment>>
 
     @Query("SELECT DISTINCT Garments.brand from Garments WHERE Garments.brand IS NOT NULL ORDER BY brand ASC")
     fun getBrands(): Flow<List<String>>
+
+    @Query("SELECT DISTINCT Garments.brand from Garments WHERE Garments.brand IS NOT NULL ORDER BY brand ASC")
+    fun getGarments(): Flow<List<String>>
+
+    @Query("SELECT * FROM Garments")
+    fun getAllGarmentsPaged(): PagingSource<Int, Garment>
+
+    @Query("SELECT * FROM Garments WHERE Garments.categoryId = :categoryId")
+    fun getGarmentsByCategoryPaged(categoryId: Int?): PagingSource<Int, Garment>
+
+    @Query("SELECT * FROM Garments WHERE Garments.categoryId IS NULL")
+    fun getUncategorizedGarmentsPaged(): PagingSource<Int, Garment>
 }

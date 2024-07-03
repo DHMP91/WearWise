@@ -17,6 +17,7 @@ mlKitImage = "17.0.8"
 gsonVersion = "2.10.1"
 mlKitSubjectSegmentationVersion = "16.0.0-beta1"
 paletteKtx = "1.0.0"
+pagingVersion = "3.3.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -39,6 +40,7 @@ androidx-lifecycle-runtime-compose = { group = "androidx.lifecycle", name = "lif
 androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "roomVersion" }
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "roomVersion" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "roomVersion" }
+androidx-room-paging = { group = "androidx.room", name = "room-paging", version.ref = "roomVersion" }
 androidx-navigation = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
 androidx-camera-core = {group = "androidx.camera", name= "camera-core", version.ref = "cameraxVersion"}
 androidx-camera-camera2 = {group = "androidx.camera", name= "camera-camera2", version.ref = "cameraxVersion"}
@@ -50,6 +52,11 @@ google-mlkit-image-labeling = {group = "com.google.mlkit", name= "image-labeling
 google-mlkit-subject-segmentation = {group = "com.google.android.gms", name= "play-services-mlkit-subject-segmentation", version.ref = "mlKitSubjectSegmentationVersion"}
 google-gson = {group = "com.google.code.gson", name= "gson", version.ref = "gsonVersion"}
 androidx-palette-ktx = { group = "androidx.palette", name = "palette-ktx", version.ref = "paletteKtx" }
+androidx-paging-runtime = { group = "androidx.paging", name = "paging-runtime", version.ref = "pagingVersion" }
+androidx-paging-rx-java2 = { group = "androidx.paging", name = "paging-rxjava2", version.ref = "pagingVersion" }
+androidx-paging-rx-java3 = { group = "androidx.paging", name = "paging-rxjava3", version.ref = "pagingVersion" }
+androidx-paging-compose = { group = "androidx.paging", name = "paging-compose", version.ref = "pagingVersion" }
+
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

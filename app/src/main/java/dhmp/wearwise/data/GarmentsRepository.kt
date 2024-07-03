@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.net.Uri
 import android.util.Log
 import androidx.core.net.toUri
+import androidx.paging.PagingSource
 import dhmp.wearwise.model.Garment
 import dhmp.wearwise.model.GarmentDao
 import kotlinx.coroutines.Dispatchers
@@ -14,6 +15,8 @@ import java.io.File
 
 
 interface GarmentsRepository {
+    fun garmentsPagingSource(): PagingSource<Int, Garment>
+    fun garmentsByCategoryPagingSource(categoryId: Int?): PagingSource<Int, Garment>
     /**
      * Retrieve all the items from the the given data source.
      */
@@ -48,6 +51,16 @@ interface GarmentsRepository {
 
 class DefaultGarmentsRepository(private val itemDao: GarmentDao) : GarmentsRepository {
     private val tag: String = "Default Garments Repository"
+
+    override fun garmentsPagingSource() = itemDao.getAllGarmentsPaged()
+
+    override fun garmentsByCategoryPagingSource(categoryId: Int?): PagingSource<Int, Garment>{
+        return if (categoryId != null)
+            itemDao.getGarmentsByCategoryPaged(categoryId)
+        else
+            itemDao.getUncategorizedGarmentsPaged()
+    }
+
     override fun getAllGarmentsStream(): Flow<List<Garment>> = itemDao.getAllGarments()
 
     override fun getGarmentStream(id: Long): Flow<Garment?> = itemDao.getGarment(id)

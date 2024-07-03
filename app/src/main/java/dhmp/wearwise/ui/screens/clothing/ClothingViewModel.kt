@@ -19,6 +19,10 @@ import androidx.core.graphics.green
 import androidx.core.graphics.red
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
 import androidx.palette.graphics.Palette
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.segmentation.subject.SubjectSegmentation
@@ -32,6 +36,7 @@ import dhmp.wearwise.model.Outfit
 import dhmp.wearwise.model.nearestColorMatchList
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -43,7 +48,7 @@ import okhttp3.internal.closeQuietly
 import java.io.File
 import kotlin.reflect.KMutableProperty0
 
-
+private const val ITEMS_PER_PAGE = 3
 class ClothingViewModel(
     private val garmentRepository: GarmentsRepository,
     private val categoriesRepository: CategoriesRepository,
@@ -52,6 +57,16 @@ class ClothingViewModel(
     private val tag: String = "ClothingViewModel"
     private val _uiState = MutableStateFlow(ClothingUIState())
     val uiState: StateFlow<ClothingUIState> = _uiState.asStateFlow()
+
+    val garments: Flow<PagingData<Garment>> =
+        Pager(
+            config = PagingConfig(pageSize = ITEMS_PER_PAGE, enablePlaceholders = false),
+            pagingSourceFactory = { garmentRepository.garmentsPagingSource() }
+        )
+            .flow
+            .cachedIn(viewModelScope)
+
+    private var currentGarmentCategoryFlows: MutableMap<Int, Flow<PagingData<Garment>>> = mutableMapOf()
 
     private val _uiEditState = MutableStateFlow(EditClothingUIState())
     val uiEditState: StateFlow<EditClothingUIState> = _uiEditState.asStateFlow()
@@ -84,25 +99,6 @@ class ClothingViewModel(
         _uiState.value = ClothingUIState()
     }
 
-    /**
-     * This function is used to get all the garments from the database
-     * - viewModelScope.launch is used to launch a coroutine within the viewModel lifecycle.
-     * - repository.getAllGarmentsStream() is used to get all the garments from the database.
-     * - flowOn(Dispatchers.IO) is used to change the dispatcher of the flow to IO, which is optimal for IO operations, and does not block the main thread.
-     * - each time the flow emits a new value, the collect function will be called with the list of books.
-     */
-    fun collectGarments() {
-        viewModelScope.launch {
-            garmentRepository.getAllGarmentsStream().flowOn(Dispatchers.IO).collect { c ->
-                _uiState.update { currentState ->
-                    currentState.copy(
-                        garments = c
-                    )
-                }
-            }
-        }
-    }
-
     fun getGarmentById(id: Long) {
         viewModelScope.launch {
             garmentRepository.getGarmentStream(id).flowOn(Dispatchers.IO).collect { c ->
@@ -115,6 +111,22 @@ class ClothingViewModel(
                 }
             }
         }
+    }
+
+    fun getGarmentByCategory(categoryId: Int?):  Flow<PagingData<Garment>> {
+        val index = categoryId ?: -1
+        val storedPager = currentGarmentCategoryFlows[index]
+        if(storedPager != null){
+            return storedPager
+        }
+        val pager =  Pager(
+                config = PagingConfig(pageSize = ITEMS_PER_PAGE, enablePlaceholders = false),
+                pagingSourceFactory = { garmentRepository.garmentsByCategoryPagingSource(categoryId) }
+            )
+                .flow
+                .cachedIn(viewModelScope)
+        currentGarmentCategoryFlows[index] = pager
+        return pager
     }
 
     fun storeChanges(garment: Garment?) {
