@@ -1,5 +1,4 @@
 package dhmp.wearwise.ui.screens.clothing
-import android.util.Log
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -68,9 +67,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.paging.compose.LazyPagingItems
+import androidx.paging.compose.collectAsLazyPagingItems
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import dhmp.wearwise.R
+import dhmp.wearwise.model.Category
 import dhmp.wearwise.model.Garment
 import dhmp.wearwise.ui.AppViewModelProvider
 import kotlinx.coroutines.launch
@@ -83,7 +85,6 @@ fun ClothingScreen(
     onEdit: (Long) -> Unit,
     clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)
 ) {
-    clothingViewModel.collectGarments() //Start the flow for garment list
     Surface {
         Tabs(onEdit)
     }
@@ -96,8 +97,6 @@ fun Tabs(
 ){
     var showListView by remember { mutableStateOf(true) }
     var showBuildView by remember { mutableStateOf(false) }
-    val clothingUiState by clothingViewModel.uiState.collectAsState()
-
     val tabColor = MaterialTheme.colorScheme.onBackground
     val bottomBorderModifier = { showLine: Boolean ->
         Modifier
@@ -176,24 +175,30 @@ fun Tabs(
         Row {
             if (showListView) {
                 clothingViewModel.collectCategories()
-                GarmentList(clothingUiState.garments, onEdit)
+                GarmentList(onEdit)
             } else {
-                BuilderView(clothingUiState.garments, onEdit)
+                BuilderView(onEdit)
             }
         }
     }
 }
 
 @Composable
-fun GarmentList(garments: List<Garment>, onEdit: (Long) -> Unit){
+fun GarmentList(
+    onEdit: (Long) -> Unit,
+    clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)
+){
+    val garments: LazyPagingItems<Garment> = clothingViewModel.garments.collectAsLazyPagingItems()
     LazyColumn(
         modifier = Modifier
             .fillMaxWidth()
             .wrapContentHeight()
             .background(MaterialTheme.colorScheme.background),
     ) {
-        items(garments.size) { index ->
-            GarmentCard(garments[index], onEdit)
+        items(garments.itemCount) { index ->
+            garments[index]?.let {
+                GarmentCard(it, onEdit)
+            }
         }
     }
 }
@@ -286,7 +291,6 @@ fun GarmentCard(
 
 @Composable
 fun BuilderView(
-    garments: List<Garment>,
     onEdit: (Long) -> Unit,
     contentPadding: PaddingValues = PaddingValues(0.dp),
     clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)
@@ -294,7 +298,7 @@ fun BuilderView(
     val categories by clothingViewModel.categories.collectAsState()
     clothingViewModel.collectCategories()
 
-    val categoryToModelVarMap = clothingViewModel.outfitPiecesIdVariables()
+
     LazyColumn(
         modifier = Modifier
             .fillMaxWidth()
@@ -302,50 +306,19 @@ fun BuilderView(
             .padding(contentPadding)
             .background(MaterialTheme.colorScheme.background),
     ) {
-        categories.forEach() { c ->
-            val filteredGarments = garments.filter { it.categoryId == c.id }
-            val getterSetter = categoryToModelVarMap.find {
-                it.name.lowercase().contains(c.name.lowercase())
-            }
-            if(getterSetter != null) {
+        categories.forEach { category ->
                 item {
                     ClothBuilderRow(
-                        c.name,
-                        filteredGarments,
-                        onEdit,
-                        { index: Int ->
-                            if (index >= 0) {
-                                getterSetter.set(filteredGarments[index].id)
-                            }
-                        },
-                        {
-                            filteredGarments.indexOf(
-                                filteredGarments.find{it.id == getterSetter.get() }
-                            )
-                        }
+                        category,
+                        onEdit
                     )
                 }
-            }else {
-                Log.e(TAG, "No getter setter associated with category ${c.name}")
-                item {
-                    ClothBuilderRow(
-                        "${c.name} (Not selectable)",
-                        filteredGarments,
-                        onEdit,
-                        { _ -> },
-                        { -1 }
-                    )
-                }
-            }
         }
 
         item {
             ClothBuilderRow(
-                "Unidentified (Not selectable)",
-                garments.filter { it.categoryId == null },
+                null,
                 onEdit,
-                { _ -> },
-                { -1 }
             )
         }
 
@@ -365,11 +338,9 @@ fun BuilderView(
 
 @Composable
 fun ClothBuilderRow(
-    headerText: String,
-    garments: List<Garment>,
+    category: Category?,
     onEdit: (Long) -> Unit,
-    updateSelectedIndex: (Int) -> Unit,
-    getSelectedIndex: () -> Int
+    clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)
 ){
     val itemWidthDp = 150.dp // Assume each item is 150.dp wide, adjust as needed
     val itemHeightMax = 100.dp
@@ -378,11 +349,44 @@ fun ClothBuilderRow(
     val screenWidthDp = configuration.screenWidthDp.dp
     val startPadding = max((screenWidthDp - itemWidthDp) / 4, 0.dp)
 
+    val categoryToModelVarMap = clothingViewModel.outfitPiecesIdVariables()
+    val garments = clothingViewModel.getGarmentByCategory(category?.id).collectAsLazyPagingItems()
+    var headerText = "Unidentified (Not selectable)"
+    var updateSelectedIndex = { _ : Int -> }
+    var getSelectedIndex = { -1 }
+
+    if(category != null) {
+        headerText = category.name
+        val getterSetter = categoryToModelVarMap.find {
+            it.name.lowercase().contains(category.name.lowercase())
+        }
+        if(getterSetter != null) {
+            headerText = category?.name ?: headerText
+            updateSelectedIndex = { index: Int ->
+                if (index >= 0) {
+                    garments[index]?.let {
+                        getterSetter.set(it.id)
+                    }
+                }
+            }
+            getSelectedIndex = {
+                var itemIndex = -1
+                for (index in 0 until garments.itemCount) {
+                    val item = garments[index]
+                    if (item?.id == getterSetter.get()) {
+                        itemIndex = index
+                    }
+                }
+                itemIndex
+            }
+        }
+    }
+
     //Selected item state
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
     val offset = -1
-    Collapsible("${headerText} (${garments.size})"){
+    Collapsible("${headerText} (${garments.itemCount})"){
         LazyRow(
             state = listState,
             modifier = Modifier
@@ -420,7 +424,7 @@ fun ClothBuilderRow(
                     }
                 }
             }
-            items(garments.size) { index ->
+            items(garments.itemCount) { index ->
                 val isSelected = index == getSelectedIndex()
                 Box(
                     modifier = Modifier
@@ -437,7 +441,9 @@ fun ClothBuilderRow(
                             color = if (isSelected) Color.Gray else Color.Transparent
                         )
                 ) {
-                    ClothBuilderItem(garments[index], onEdit)
+                    garments[index]?.let {
+                        ClothBuilderItem(it, onEdit)
+                    }
                 }
             }
             item {
