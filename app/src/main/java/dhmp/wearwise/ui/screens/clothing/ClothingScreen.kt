@@ -75,6 +75,7 @@ import dhmp.wearwise.R
 import dhmp.wearwise.model.Category
 import dhmp.wearwise.model.Garment
 import dhmp.wearwise.ui.AppViewModelProvider
+import dhmp.wearwise.ui.screens.common.categoryIcon
 import kotlinx.coroutines.launch
 import java.util.Locale
 
@@ -268,22 +269,7 @@ fun GarmentCard(
             horizontalAlignment = Alignment.End
         ){
             val categories by clothingViewModel.categories.collectAsState()
-
-            val icon = garment.categoryId?.let {
-                val name = categories.find { c -> c.id == it }?.name?.lowercase()
-                when(name) {
-//                    "OUTERWEAR",
-//                    "INTIMATES",
-//                    "FOOTWEAR",
-//                    "ACCESSORIES",
-//                    "OTHER",
-                    "onepiece" -> R.drawable.dress_icon
-                    "hats" -> R.drawable.hats_icon
-                    "tops" -> R.drawable.shirt_icon
-                    "bottoms" -> R.drawable.pants_icon
-                    else -> R.drawable.question_mark
-                }
-            } ?: R.drawable.question_mark
+            val icon = categoryIcon(garment, categories)
             Icon( painter= painterResource(icon), contentDescription = "Clothing Type")
         }
     }
@@ -350,7 +336,7 @@ fun ClothBuilderRow(
     val startPadding = max((screenWidthDp - itemWidthDp) / 4, 0.dp)
 
     val categoryToModelVarMap = clothingViewModel.outfitPiecesIdVariables()
-    val garments = clothingViewModel.getGarmentByCategory(category?.id).collectAsLazyPagingItems()
+    val garments = clothingViewModel.getGarmentsByCategory(category?.id).collectAsLazyPagingItems()
     var headerText = "Unidentified (Not selectable)"
     var updateSelectedIndex = { _ : Int -> }
     var getSelectedIndex = { -1 }

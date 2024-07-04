@@ -1,11 +1,17 @@
 package dhmp.wearwise.data
 
+import androidx.paging.PagingSource
 import dhmp.wearwise.model.Outfit
 import dhmp.wearwise.model.OutfitDao
 import kotlinx.coroutines.flow.Flow
 
 
 interface OutfitsRepository {
+    /**
+     * Paginated method to get all the items from the the given data source.
+     */
+    fun getAllOutfitsPaged(): PagingSource<Int, Outfit>
+
     /**
      * Retrieve all the items from the the given data source.
      */
@@ -35,6 +41,9 @@ interface OutfitsRepository {
 
 class DefaultOutfitRepository(private val itemDao: OutfitDao) : OutfitsRepository {
     private val tag: String = "Default Outfit Repository"
+
+    override fun getAllOutfitsPaged(): PagingSource<Int, Outfit> = itemDao.getAllOutfitsPaged()
+
     override fun getAllOutfitsStream(): Flow<List<Outfit>> = itemDao.getAllOutfits()
 
     override fun getOutfitStream(id: Long): Flow<Outfit?> = itemDao.getOutfit(id)

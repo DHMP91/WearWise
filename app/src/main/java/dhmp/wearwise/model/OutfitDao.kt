@@ -1,5 +1,6 @@
 package dhmp.wearwise.model
 
+import androidx.paging.PagingSource
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
@@ -7,6 +8,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
+
 
 @Dao
 interface OutfitDao {
@@ -24,4 +26,7 @@ interface OutfitDao {
 
     @Query("SELECT * from Outfits")
     fun getAllOutfits(): Flow<List<Outfit>>
+
+    @Query("SELECT * from Outfits")
+    fun getAllOutfitsPaged(): PagingSource<Int, Outfit>
 }
