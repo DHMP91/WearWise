@@ -61,7 +61,7 @@ class ClothingViewModel(
     val garments: Flow<PagingData<Garment>> =
         Pager(
             config = PagingConfig(pageSize = ITEMS_PER_PAGE, enablePlaceholders = false),
-            pagingSourceFactory = { garmentRepository.garmentsPagingSource() }
+            pagingSourceFactory = { garmentRepository.getAllGarmentsPaged() }
         )
             .flow
             .cachedIn(viewModelScope)
@@ -113,7 +113,7 @@ class ClothingViewModel(
         }
     }
 
-    fun getGarmentByCategory(categoryId: Int?):  Flow<PagingData<Garment>> {
+    fun getGarmentsByCategory(categoryId: Int?):  Flow<PagingData<Garment>> {
         val index = categoryId ?: -1
         val storedPager = currentGarmentCategoryFlows[index]
         if(storedPager != null){
@@ -121,7 +121,7 @@ class ClothingViewModel(
         }
         val pager =  Pager(
                 config = PagingConfig(pageSize = ITEMS_PER_PAGE, enablePlaceholders = false),
-                pagingSourceFactory = { garmentRepository.garmentsByCategoryPagingSource(categoryId) }
+                pagingSourceFactory = { garmentRepository.getGarmentsByCategoryPaged(categoryId) }
             )
                 .flow
                 .cachedIn(viewModelScope)

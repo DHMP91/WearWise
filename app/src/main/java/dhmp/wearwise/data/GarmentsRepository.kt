@@ -15,8 +15,14 @@ import java.io.File
 
 
 interface GarmentsRepository {
-    fun garmentsPagingSource(): PagingSource<Int, Garment>
-    fun garmentsByCategoryPagingSource(categoryId: Int?): PagingSource<Int, Garment>
+    /**
+     * Paginated method to get all the items from the the given data source.
+     */
+    fun getAllGarmentsPaged(): PagingSource<Int, Garment>
+    /**
+     * Paginated method to get all the items of type category.
+     */
+    fun getGarmentsByCategoryPaged(categoryId: Int?): PagingSource<Int, Garment>
     /**
      * Retrieve all the items from the the given data source.
      */
@@ -52,9 +58,9 @@ interface GarmentsRepository {
 class DefaultGarmentsRepository(private val itemDao: GarmentDao) : GarmentsRepository {
     private val tag: String = "Default Garments Repository"
 
-    override fun garmentsPagingSource() = itemDao.getAllGarmentsPaged()
+    override fun getAllGarmentsPaged() = itemDao.getAllGarmentsPaged()
 
-    override fun garmentsByCategoryPagingSource(categoryId: Int?): PagingSource<Int, Garment>{
+    override fun getGarmentsByCategoryPaged(categoryId: Int?): PagingSource<Int, Garment>{
         return if (categoryId != null)
             itemDao.getGarmentsByCategoryPaged(categoryId)
         else

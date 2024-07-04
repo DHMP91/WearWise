@@ -11,6 +11,7 @@ import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import dhmp.wearwise.R
 import dhmp.wearwise.model.Category
 import dhmp.wearwise.model.CategoryDao
@@ -102,7 +103,10 @@ class Converters {
         return if (data.isEmpty()) {
             emptyList()
         } else {
-            data.split(",").map { it.toLong() }
+            data.let {
+                val listType = object : TypeToken<List<Long>>() {}.type
+                Gson().fromJson(it, listType)
+            }
         }
     }
 }
