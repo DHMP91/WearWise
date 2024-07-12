@@ -15,10 +15,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Done
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -38,6 +40,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
@@ -58,6 +61,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import dhmp.wearwise.R
+import dhmp.wearwise.model.Garment
 import dhmp.wearwise.model.GarmentColorNames
 import dhmp.wearwise.model.Occasion
 import dhmp.wearwise.ui.AppViewModelProvider
@@ -68,8 +72,7 @@ fun EditClothingScreen(
     onFinish: () -> Unit,
     modifier: Modifier = Modifier,
     garmentId: Long,
-    clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory),
-    context: Context = LocalContext.current
+    clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)
 ){
     clothingViewModel.getGarmentById(garmentId)
     val uiState by clothingViewModel.uiEditState.collectAsState()
@@ -80,37 +83,79 @@ fun EditClothingScreen(
             .verticalScroll(rememberScrollState())
             .padding(top = 5.dp)
     ) {
-        AsyncImage(
-            model = ImageRequest.Builder(context).data(uiState.editGarment.image).build(),
-            contentDescription = "icon",
-            contentScale = ContentScale.Inside,
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(max = 300.dp)
-                .padding(10.dp, 10.dp, 10.dp, 10.dp)
-                .align(Alignment.CenterHorizontally)
-        )
-        Text(text="Piece #$garmentId")
+        DeleteGarment(onFinish, garmentId)
+        GarmentImage(uiState.editGarment)
         Row(
             modifier = Modifier
-                .align(Alignment.CenterHorizontally),
+                .align(Alignment.CenterHorizontally)
+                .padding(start = 5.dp, top = 20.dp, end = 5.dp, bottom = 30.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ){
             RemoveBackground(garmentId, uiState.editGarment.image)
             AnalyzeGarment(garmentId)
-
+            Save()
         }
 
         ClothingInfo(garmentId)
-        Row(
-            modifier = Modifier
-                .align(Alignment.CenterHorizontally),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ){
-            Save()
-            DeleteGarment(onFinish, garmentId)
-        }
+//        Row(
+//            modifier = Modifier
+//                .align(Alignment.CenterHorizontally),
+//            horizontalArrangement = Arrangement.spacedBy(10.dp)
+//        ){
+//            Save()
+//        }
     }
+}
+
+@Composable
+fun DeleteGarment(onFinish: ()-> Unit, garmentId: Long, clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)) {
+    Box (
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(10.dp),
+        contentAlignment = Alignment.CenterEnd
+    ) {
+        Icon(
+            imageVector = Icons.Outlined.Delete,
+            "Delete",
+            modifier = Modifier
+                .clickable {
+                    clothingViewModel.deleteGarment(garmentId)
+                    onFinish()
+                }
+        )
+    }
+}
+
+@Composable
+fun GarmentImage(
+    garment: Garment,
+    context: Context = LocalContext.current,
+){
+    Box(modifier = Modifier
+        .fillMaxWidth()
+        .heightIn(max = 300.dp)
+        .padding(10.dp, 10.dp, 10.dp, 10.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        if(garment.image != null){
+                AsyncImage(
+                    model = ImageRequest.Builder(context).data(garment.image).build(),
+                    contentDescription = "icon",
+                    contentScale = ContentScale.Inside,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(10.dp))
+                )
+
+        } else {
+
+                CircularProgressIndicator(
+                    color = MaterialTheme.colorScheme.secondary,
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant
+                )
+
+        }
+        }
 }
 
 @Composable
@@ -145,30 +190,6 @@ fun RemoveBackground(garmentId: Long, image: String?, clothingViewModel: Clothin
     }
 }
 
-
-@Composable
-fun DeleteGarment(onFinish: ()-> Unit, garmentId: Long, clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)) {
-    val isProcessing by clothingViewModel.isProcessingBackground.collectAsState()
-    if(!isProcessing){
-        Button(
-            onClick = {
-                clothingViewModel.deleteGarment(garmentId)
-                onFinish()
-            },
-            colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.errorContainer),
-        ) {
-            Icon(
-                painter = painterResource(id = R.drawable.shadow_add),
-                contentDescription = "Blurr Background",
-                modifier = Modifier.size(18.dp)
-            )
-            Text(
-                text = "Delete",
-                style = MaterialTheme.typography.labelMedium,
-            )
-        }
-    }
-}
 
 
 @Composable
