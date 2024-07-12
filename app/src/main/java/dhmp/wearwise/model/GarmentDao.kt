@@ -32,12 +32,12 @@ interface GarmentDao {
     @Query("SELECT DISTINCT Garments.brand from Garments WHERE Garments.brand IS NOT NULL ORDER BY brand ASC")
     fun getGarments(): Flow<List<String>>
 
-    @Query("SELECT * FROM Garments")
+    @Query("SELECT * FROM Garments ORDER BY id DESC")
     fun getAllGarmentsPaged(): PagingSource<Int, Garment>
 
-    @Query("SELECT * FROM Garments WHERE Garments.categoryId = :categoryId")
+    @Query("SELECT * FROM Garments WHERE Garments.categoryId = :categoryId ORDER BY id DESC")
     fun getGarmentsByCategoryPaged(categoryId: Int?): PagingSource<Int, Garment>
 
-    @Query("SELECT * FROM Garments WHERE Garments.categoryId IS NULL")
+    @Query("SELECT * FROM Garments WHERE Garments.categoryId IS NULL ORDER BY id DESC")
     fun getUncategorizedGarmentsPaged(): PagingSource<Int, Garment>
 }

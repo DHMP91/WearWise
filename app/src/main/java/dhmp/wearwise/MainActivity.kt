@@ -36,7 +36,11 @@ fun App(navController: NavHostController = rememberNavController()) {
     Scaffold (
         bottomBar = {
             WearWiseBottomAppBar(
-                navOutfit = { navController.navigate(AppScreens.Outfit.name) },
+                navOutfit = { navController.navigate(AppScreens.Outfit.name){
+                    popUpTo(AppScreens.Outfit.name) {
+                        inclusive = false
+                    }
+                } },
                 navClothing = {
                     navController.navigate(AppScreens.Clothing.name){
                         popUpTo(AppScreens.Clothing.name) {

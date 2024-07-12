@@ -11,12 +11,8 @@ import android.graphics.Paint
 import android.net.Uri
 import android.util.Log
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.core.graphics.blue
-import androidx.core.graphics.green
-import androidx.core.graphics.red
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.Pager
@@ -29,10 +25,8 @@ import com.google.mlkit.vision.segmentation.subject.SubjectSegmentation
 import com.google.mlkit.vision.segmentation.subject.SubjectSegmenterOptions
 import dhmp.wearwise.data.CategoriesRepository
 import dhmp.wearwise.data.GarmentsRepository
-import dhmp.wearwise.data.OutfitsRepository
 import dhmp.wearwise.model.Category
 import dhmp.wearwise.model.Garment
-import dhmp.wearwise.model.Outfit
 import dhmp.wearwise.model.nearestColorMatchList
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -46,13 +40,11 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import okhttp3.internal.closeQuietly
 import java.io.File
-import kotlin.reflect.KMutableProperty0
 
 private const val ITEMS_PER_PAGE = 3
 class ClothingViewModel(
     private val garmentRepository: GarmentsRepository,
     private val categoriesRepository: CategoriesRepository,
-    private val outfitsRepository: OutfitsRepository,
 ): ViewModel() {
     private val tag: String = "ClothingViewModel"
     private val _uiState = MutableStateFlow(ClothingUIState())
@@ -82,15 +74,7 @@ class ClothingViewModel(
 
     var showMenu by mutableStateOf(false)
     var showBrandFilterMenu by mutableStateOf(false)
-    var selectedHatsId by mutableLongStateOf(-1)
-    var selectedIntimatesId by mutableLongStateOf(-1)
-    var selectedTopsId by mutableLongStateOf(-1)
-    var selectedBottomsId by mutableLongStateOf(-1)
-    var selectedOnePieceId by mutableLongStateOf(-1)
-    var selectedFootwearId by mutableLongStateOf(-1)
-    var SelectedOuterWearId by mutableLongStateOf(-1)
-    var selectedAccessoriesId by mutableLongStateOf(-1)
-    var selectedOtherId by mutableLongStateOf(-1)
+
     init {
         reset()
     }
@@ -112,6 +96,7 @@ class ClothingViewModel(
             }
         }
     }
+
 
     fun getGarmentsByCategory(categoryId: Int?):  Flow<PagingData<Garment>> {
         val index = categoryId ?: -1
@@ -138,19 +123,21 @@ class ClothingViewModel(
         }
     }
 
-    fun saveImage(appDir: File, image:Bitmap, rotation: Float): Job {
+    fun saveImage(appDir: File, image:Bitmap, rotation: Float, id: Long?): Job {
         val job = viewModelScope.launch(Dispatchers.IO) {
+            val garmentId = garmentRepository.insertGarment(Garment())
+            _uiState.update { currentState ->
+                currentState.copy(
+                    newItemId = garmentId
+                )
+            }
+
             val matrix = Matrix()
             matrix.postRotate(rotation)
             val rotatedBitmap = Bitmap.createBitmap(image, 0, 0, image.width, image.height, matrix, true)
             rotatedBitmap.let {
                 val uri = garmentRepository.saveImageToStorage(appDir, it)
-                val id = garmentRepository.insertGarment(Garment(image = uri.toString()))
-                _uiState.update { currentState ->
-                    currentState.copy(
-                        newItemId = id
-                    )
-                }
+                garmentRepository.updateGarment(Garment(id = garmentId, image = uri.toString()))
             }
         }
         return job
@@ -163,35 +150,6 @@ class ClothingViewModel(
         }
     }
 
-    fun outfitPiecesIdVariables(): List<KMutableProperty0<Long>>{
-        return listOf(
-            this::selectedHatsId,
-            this::selectedTopsId,
-            this::selectedBottomsId,
-            this::selectedOnePieceId,
-            this::selectedFootwearId,
-            this::SelectedOuterWearId,
-            this::selectedAccessoriesId,
-            this::selectedOtherId,
-            this::selectedIntimatesId,
-        )
-    }
-
-    fun buildOutfit(){
-        val newOutfit = Outfit()
-        val categoryToModelVarMap = outfitPiecesIdVariables()
-        categoryToModelVarMap.forEach{
-            val id = it.get()
-            if(id > 0){
-                newOutfit.garmentsId = newOutfit.garmentsId.plus(id)
-            }
-        }
-        if(newOutfit.garmentsId.isNotEmpty()) {
-            viewModelScope.launch {
-                outfitsRepository.insertOutfit(newOutfit)
-            }
-        }
-    }
 
     fun analyzeGarment(id: Long){
         viewModelScope.launch {
@@ -204,10 +162,10 @@ class ClothingViewModel(
                         val color = palette.getDominantColor(0)
                         if (color != 0 ) {
                             // Convert Color to RGB components
-                            val red = color.red
-                            val green = color.green
-                            val blue = color.blue
-                            val hex = String.format("#%02X%02X%02X", red, green, blue)
+//                            val red = color.red
+//                            val green = color.green
+//                            val blue = color.blue
+//                            val hex = String.format("#%02X%02X%02X", red, green, blue)
                             val colorName = getNearestColorName(color)
                             it.color = colorName
                             storeChanges(it)
@@ -246,9 +204,8 @@ class ClothingViewModel(
             shrinkImage.recycle()
 
             val segmenter = SubjectSegmentation.getClient(options)
-            val job = segmenter.process(inputImage)
+            segmenter.process(inputImage)
                 .addOnSuccessListener { result ->
-                    val colors = IntArray(image.width * image.height)
                     val resultBitmap = result.foregroundBitmap //subject of interest
                     viewModelScope.launch {
                         resultBitmap?.let {

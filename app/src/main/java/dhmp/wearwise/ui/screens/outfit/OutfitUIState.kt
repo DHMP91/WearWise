@@ -1,4 +1,4 @@
-package dhmp.wearwise.ui.screens.clothing
+package dhmp.wearwise.ui.screens.outfit
 
 import dhmp.wearwise.model.Outfit
 

@@ -20,6 +20,8 @@ interface OutfitDao {
 
     @Delete
     suspend fun delete(item: Outfit)
+    @Query("SELECT * from Outfits WHERE id = :id")
+    fun getOutfitOnce(id: Long): Outfit
 
     @Query("SELECT * from Outfits WHERE id = :id")
     fun getOutfit(id: Long): Flow<Outfit>
@@ -27,6 +29,6 @@ interface OutfitDao {
     @Query("SELECT * from Outfits")
     fun getAllOutfits(): Flow<List<Outfit>>
 
-    @Query("SELECT * from Outfits")
+    @Query("SELECT * from Outfits ORDER BY id DESC")
     fun getAllOutfitsPaged(): PagingSource<Int, Outfit>
 }
