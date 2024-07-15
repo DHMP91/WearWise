@@ -107,9 +107,21 @@ class OutfitViewModel (
         viewModelScope.launch(Dispatchers.IO) {
             _outfit.value?.let {
                 outfitsRepository.deleteOutfit(it)
+
+                //insert outfit id into each garment
+                it.garmentsId.forEach { garmentId ->
+                    val garment = garmentRepository.getGarmentStream(garmentId).first()
+                    garment?.let{ g ->
+                        g.outfitsId = g.outfitsId.minus(it.id)
+                        garmentRepository.updateGarment(g)
+                    }
+                }
+
                 _outfit.update {
                     null
                 }
+
+
             }
         }
     }
@@ -146,7 +158,7 @@ class OutfitViewModel (
     fun removeFromOutfit(garment: Garment){
         viewModelScope.launch {
             _outfit.value?.let { outfit ->
-                if(!outfit.garmentsId.contains(garment.id)) {
+                if(outfit.garmentsId.contains(garment.id)) {
                     _outfit.update {
                         outfit.copy(
                             garmentsId = outfit.garmentsId.minus(garment.id)
@@ -158,7 +170,6 @@ class OutfitViewModel (
                 }
             }
         }
-
     }
 
 
@@ -176,10 +187,37 @@ class OutfitViewModel (
         return withContext(Dispatchers.IO) {
             val id = if (outfit.id == 0L) {
                 val newId = outfitsRepository.insertOutfit(outfit)
+
+                //insert outfit id into each garment
+                outfit.garmentsId.forEach { garmentId ->
+                    val garment = garmentRepository.getGarmentStream(garmentId).first()
+                    garment?.let{
+                        it.outfitsId = it.outfitsId.plus(newId)
+                        garmentRepository.updateGarment(it)
+                    }
+                }
                 getOutfit(newId)
                 newId
             } else {
+                val oldOutfit = outfitsRepository.getOutfitStream(outfit.id).first()
+                val removedGarmentsId = oldOutfit?.garmentsId?.filter { !outfit.garmentsId.contains(it) } ?: listOf()
+                removedGarmentsId.forEach { garmentId ->
+                    val garment = garmentRepository.getGarmentStream(garmentId).first()
+                    garment?.let{
+                        it.outfitsId = it.outfitsId.minus(outfit.id)
+                        garmentRepository.updateGarment(it)
+                    }
+                }
                 outfitsRepository.updateOutfit(outfit)
+                outfit.garmentsId.forEach { garmentId ->
+                    val garment = garmentRepository.getGarmentStream(garmentId).first()
+                    garment?.let{
+                        if(!it.outfitsId.contains(outfit.id)) {
+                            it.outfitsId = it.outfitsId.plus(outfit.id)
+                        }
+                        garmentRepository.updateGarment(it)
+                    }
+                }
                 outfit.id
             }
             savedOutfitFlag.update { true }

@@ -197,6 +197,20 @@ fun GarmentCard(
             horizontalAlignment = Alignment.Start
         ){
 //            Text(text="${garment.id}")
+            Row(
+                verticalAlignment = Alignment.Bottom,
+                horizontalArrangement = Arrangement.Start
+            ) {
+                Text(
+                    "${garment.outfitsId.size}"
+                )
+                Icon(
+                    painter = painterResource(R.drawable.outfit),
+                    contentDescription = "Clothing Type",
+                    modifier = Modifier
+                        .sizeIn(maxHeight = dimensionResource(R.dimen.icon_max_height))
+                )
+            }
             Text(garment.brand ?: "Set Brand")
             Text(
                 garment.occasion?.name?.lowercase()?.replaceFirstChar {
@@ -204,6 +218,7 @@ fun GarmentCard(
                 }
                 ?: "Set Occasion"
             )
+
         }
 
 //        Column(
@@ -216,6 +231,7 @@ fun GarmentCard(
 //            Text("Color")
 //            Text("Material")
 //        }
+
         Column(
             modifier = Modifier
                 .weight(1f)
@@ -223,7 +239,7 @@ fun GarmentCard(
                 .padding(start = 10.dp, top = 5.dp),
             verticalArrangement = Arrangement.Bottom,
             horizontalAlignment = Alignment.End
-        ){
+        ) {
             val categories by clothingViewModel.categories.collectAsState()
             val icon = categoryIcon(garment, categories)
             Icon(
@@ -233,6 +249,7 @@ fun GarmentCard(
                     .sizeIn(maxHeight = dimensionResource(R.dimen.icon_max_height))
             )
         }
+
     }
 }
 
