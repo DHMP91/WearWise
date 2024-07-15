@@ -7,9 +7,11 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavHostController
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import dhmp.wearwise.ui.screens.common.AppNav
 import dhmp.wearwise.ui.screens.common.AppScreens
@@ -33,6 +35,11 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun App(navController: NavHostController = rememberNavController()) {
+    // Get the current back stack entry
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+
+    // Retrieve the current route
+    val currentRoute = navBackStackEntry?.destination?.route
     Scaffold (
         bottomBar = {
             WearWiseBottomAppBar(
@@ -52,6 +59,7 @@ fun App(navController: NavHostController = rememberNavController()) {
                     navController.navigate(AppScreens.NewClothing.name)
                 },
                 navShop = { navController.navigate(AppScreens.Shop.name) },
+                currentRoute
             )
         },
     ) { innerPadding ->

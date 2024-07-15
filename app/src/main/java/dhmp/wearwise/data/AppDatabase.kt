@@ -25,14 +25,13 @@ import dhmp.wearwise.model.OutfitDao
 
 @Database(
     entities = [Garment::class, Category::class, Outfit::class, MLMetaData::class, MLLabel::class],
-    version = 6,
+    version = 7,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
         AutoMigration(from = 2, to = 3),
-        AutoMigration(from = 3, to = 4),
         AutoMigration(from = 4, to = 5),
-        AutoMigration(from = 5, to = 6)
+        AutoMigration(from = 6, to = 7)
     ]
 )
 @TypeConverters(Converters::class)
@@ -112,9 +111,9 @@ class Converters {
 }
 
 val MIGRATION_3_4 = object : Migration(3, 4) {
-    override fun migrate(database: SupportSQLiteDatabase) {
+    override fun migrate(db: SupportSQLiteDatabase) {
         // Create the new table if it doesn't exist
-        database.execSQL("""
+        db.execSQL("""
             CREATE TABLE IF NOT EXISTS `Outfits` (
                 `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                 `name` TEXT,
@@ -127,8 +126,8 @@ val MIGRATION_3_4 = object : Migration(3, 4) {
 }
 
 val MIGRATION_5_6 = object : Migration(5, 6) {
-    override fun migrate(database: SupportSQLiteDatabase) {
+    override fun migrate(db: SupportSQLiteDatabase) {
         // Create the new table if it doesn't exist
-        database.execSQL("ALTER TABLE Garments ADD COLUMN color TEXT")
+        db.execSQL("ALTER TABLE Garments ADD COLUMN color TEXT")
     }
 }

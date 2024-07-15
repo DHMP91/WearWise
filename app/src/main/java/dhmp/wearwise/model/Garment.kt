@@ -29,7 +29,9 @@ data class Garment (
     var occasion: Occasion? = null,
     var image: String? = null,
     var imageOfSubject: String? = null,
-    var color: String? = null
+    var color: String? = null,
+    @ColumnInfo(defaultValue = "")
+    var outfitsId: List<Long> = listOf(),
 //    val subCategoryId: int? = null,
 //    @ColumnInfo(index = true)
 //    val mlMetaDataId: Int? = 0

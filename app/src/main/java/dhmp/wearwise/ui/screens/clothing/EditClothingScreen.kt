@@ -7,16 +7,16 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowRight
@@ -33,6 +33,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -51,6 +52,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
@@ -74,29 +76,55 @@ fun EditClothingScreen(
     garmentId: Long,
     clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)
 ){
-    clothingViewModel.getGarmentById(garmentId)
+    LaunchedEffect (garmentId) {
+        clothingViewModel.getGarmentById(garmentId)
+    }
     val uiState by clothingViewModel.uiEditState.collectAsState()
 
     Column(
         modifier = modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
+//            .verticalScroll(rememberScrollState())
             .padding(top = 5.dp)
     ) {
-        DeleteGarment(onFinish, garmentId)
-        GarmentImage(uiState.editGarment)
+        Row(modifier = Modifier
+            .fillMaxWidth()
+            .weight(0.3f)
+            .padding(top=10.dp, end = 20.dp)
+        ) {
+            DeleteGarment(onFinish, garmentId)
+        }
+
+        Row(modifier = Modifier
+            .fillMaxWidth()
+            .weight(2f)
+        ) {
+            GarmentImage(uiState.editGarment)
+        }
+
         Row(
             modifier = Modifier
                 .align(Alignment.CenterHorizontally)
-                .padding(start = 5.dp, top = 20.dp, end = 5.dp, bottom = 30.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ){
-            RemoveBackground(garmentId, uiState.editGarment.image)
-            AnalyzeGarment(garmentId)
-            Save()
+                .fillMaxWidth()
+                .padding(5.dp)
+                .weight(0.5f),
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Row (
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                RemoveBackground(garmentId, uiState.editGarment.image)
+                AnalyzeGarment(garmentId)
+                Save()
+            }
         }
 
-        ClothingInfo(garmentId)
+        Column(modifier = Modifier
+            .fillMaxWidth()
+            .weight(4f)
+        ) {
+            ClothingInfo(garmentId)
+        }
 //        Row(
 //            modifier = Modifier
 //                .align(Alignment.CenterHorizontally),
@@ -108,11 +136,14 @@ fun EditClothingScreen(
 }
 
 @Composable
-fun DeleteGarment(onFinish: ()-> Unit, garmentId: Long, clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)) {
+fun DeleteGarment(
+    onFinish: ()-> Unit,
+    garmentId: Long,
+    clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)
+) {
     Box (
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(10.dp),
+            .fillMaxWidth(),
         contentAlignment = Alignment.CenterEnd
     ) {
         Icon(
@@ -132,30 +163,63 @@ fun GarmentImage(
     garment: Garment,
     context: Context = LocalContext.current,
 ){
-    Box(modifier = Modifier
-        .fillMaxWidth()
-        .heightIn(max = 300.dp)
-        .padding(10.dp, 10.dp, 10.dp, 10.dp),
-        contentAlignment = Alignment.Center
+    Row(modifier = Modifier
+        .fillMaxSize()
     ) {
-        if(garment.image != null){
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight(),
+        ){
+
+        }
+        Column(
+            modifier = Modifier
+                .weight(2f)
+                .fillMaxHeight(),
+            verticalArrangement = Arrangement.Bottom,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            if (garment.image != null) {
                 AsyncImage(
                     model = ImageRequest.Builder(context).data(garment.image).build(),
                     contentDescription = "icon",
                     contentScale = ContentScale.Inside,
                     modifier = Modifier
                         .clip(RoundedCornerShape(10.dp))
+                        .heightIn(max=300.dp)
                 )
 
-        } else {
-
+            } else {
                 CircularProgressIndicator(
                     color = MaterialTheme.colorScheme.secondary,
                     trackColor = MaterialTheme.colorScheme.surfaceVariant
                 )
-
+            }
         }
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight(),
+            verticalArrangement = Arrangement.Bottom,
+            horizontalAlignment = Alignment.Start,
+        ){
+            Row(
+                verticalAlignment = Alignment.Bottom,
+                horizontalArrangement = Arrangement.Start
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.outfit),
+                    contentDescription = "outfit_count",
+                    modifier = Modifier
+                        .sizeIn(maxHeight = dimensionResource(R.dimen.icon_max_height))
+                )
+                Text(
+                    "${garment.outfitsId.size}"
+                )
+            }
         }
+    }
 }
 
 @Composable
@@ -246,9 +310,11 @@ fun Save(clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ClothingInfo(garmentId: Long, clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)){
-    clothingViewModel.getGarmentById(garmentId)
-    clothingViewModel.collectCategories()
-    clothingViewModel.collectBrands()
+    LaunchedEffect (garmentId) {
+        clothingViewModel.getGarmentById(garmentId)
+        clothingViewModel.collectCategories()
+        clothingViewModel.collectBrands()
+    }
     val uiState by clothingViewModel.uiEditState.collectAsState()
     val categories by clothingViewModel.categories.collectAsState()
     val brands by clothingViewModel.brands.collectAsState()
@@ -457,7 +523,7 @@ fun GarmentDropdownMenuCustom(label: String, options: List<String>, fieldValue: 
             offset = DpOffset(x = 0.dp, y = -textFieldHeightDp),
             modifier = Modifier
                 .width(textFieldWidthDp)
-                .heightIn(max=menuHeight),
+                .heightIn(max = menuHeight),
             properties = PopupProperties(focusable = false)
         ) {
             options.forEach { label ->
