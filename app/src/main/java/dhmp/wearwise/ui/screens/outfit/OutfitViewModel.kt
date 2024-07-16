@@ -39,7 +39,6 @@ class OutfitViewModel (
     val outfit: StateFlow<Outfit?> = _outfit.asStateFlow()
 
     val savedOutfitFlag = MutableStateFlow(true)
-    val navtocamera = MutableStateFlow(false)
 
     val outfits: Flow<PagingData<Outfit>> =
         Pager(
@@ -48,6 +47,16 @@ class OutfitViewModel (
         )
             .flow
             .cachedIn(viewModelScope)
+
+
+    fun getOutfitsByListOfId(outfitIds: List<Long>): Flow<PagingData<Outfit>> {
+        val data =  Pager(
+            config = PagingConfig(pageSize = ITEMS_PER_PAGE, enablePlaceholders = false),
+            pagingSourceFactory = { outfitsRepository.getOutfitsByListOfIdsPaged(outfitIds) }
+        ).flow.cachedIn(viewModelScope)
+
+        return data
+    }
 
     fun getGarments(outfit: Outfit): Flow<List<Garment>> = flow {
         val garments = mutableListOf<Garment>()
@@ -61,6 +70,7 @@ class OutfitViewModel (
         }
         emit(garments)
     }.flowOn(Dispatchers.IO)
+
 
     fun saveImage(appDir: File, image: Bitmap, rotation: Float, id: Long?): Job {
         outfitUri.value = Uri.EMPTY // Let UI continue to next screen while processing image

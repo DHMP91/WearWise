@@ -2,6 +2,7 @@ package dhmp.wearwise.ui.screens.clothing
 
 import android.content.Context
 import android.net.Uri
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,7 +17,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowRight
@@ -38,6 +42,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -67,15 +72,31 @@ import dhmp.wearwise.model.Garment
 import dhmp.wearwise.model.GarmentColorNames
 import dhmp.wearwise.model.Occasion
 import dhmp.wearwise.ui.AppViewModelProvider
+import dhmp.wearwise.ui.screens.common.ScreenTitle
+import kotlinx.coroutines.android.awaitFrame
+import kotlinx.coroutines.launch
 
 
 @Composable
 fun EditClothingScreen(
     onFinish: () -> Unit,
+    onOutfits: (Long) -> Unit,
     modifier: Modifier = Modifier,
+    onBack: () -> Unit,
     garmentId: Long,
     clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)
 ){
+    var backPressHandled by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
+    BackHandler(enabled = !backPressHandled) {
+        println("back pressed")
+        backPressHandled = true
+        coroutineScope.launch {
+            awaitFrame()
+            onBack()
+            backPressHandled = false
+        }
+    }
     LaunchedEffect (garmentId) {
         clothingViewModel.getGarmentById(garmentId)
     }
@@ -84,22 +105,21 @@ fun EditClothingScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-//            .verticalScroll(rememberScrollState())
-            .padding(top = 5.dp)
     ) {
         Row(modifier = Modifier
             .fillMaxWidth()
-            .weight(0.3f)
-            .padding(top=10.dp, end = 20.dp)
+            .wrapContentHeight()
+            .padding(dimensionResource(id = R.dimen.screen_title_padding))
         ) {
+            Title(garmentId)
             DeleteGarment(onFinish, garmentId)
         }
 
         Row(modifier = Modifier
             .fillMaxWidth()
-            .weight(2f)
+            .weight(4f)
         ) {
-            GarmentImage(uiState.editGarment)
+            GarmentImage(uiState.editGarment, onOutfits)
         }
 
         Row(
@@ -107,7 +127,7 @@ fun EditClothingScreen(
                 .align(Alignment.CenterHorizontally)
                 .fillMaxWidth()
                 .padding(5.dp)
-                .weight(0.5f),
+                .weight(0.75f),
             horizontalArrangement = Arrangement.Center
         ) {
             Row (
@@ -125,13 +145,19 @@ fun EditClothingScreen(
         ) {
             ClothingInfo(garmentId)
         }
-//        Row(
-//            modifier = Modifier
-//                .align(Alignment.CenterHorizontally),
-//            horizontalArrangement = Arrangement.spacedBy(10.dp)
-//        ){
-//            Save()
-//        }
+    }
+}
+
+
+@Composable
+fun Title(
+    garmentId: Long,
+){
+    Box(
+        contentAlignment = Alignment.CenterStart,
+        modifier = Modifier
+    ) {
+        ScreenTitle("Clothing Item #${garmentId}")
     }
 }
 
@@ -144,7 +170,7 @@ fun DeleteGarment(
     Box (
         modifier = Modifier
             .fillMaxWidth(),
-        contentAlignment = Alignment.CenterEnd
+        contentAlignment = Alignment.BottomEnd
     ) {
         Icon(
             imageVector = Icons.Outlined.Delete,
@@ -156,27 +182,31 @@ fun DeleteGarment(
                 }
         )
     }
+
 }
 
 @Composable
 fun GarmentImage(
     garment: Garment,
+    onOutfits: (Long) -> Unit,
     context: Context = LocalContext.current,
 ){
     Row(modifier = Modifier
         .fillMaxSize()
+        .padding(10.dp)
     ) {
         Column(
             modifier = Modifier
-                .weight(1f)
+                .weight(0.25f)
                 .fillMaxHeight(),
+            verticalArrangement = Arrangement.Top,
+            horizontalAlignment = Alignment.Start,
         ){
-
         }
         Column(
             modifier = Modifier
                 .weight(2f)
-                .fillMaxHeight(),
+                .fillMaxSize(),
             verticalArrangement = Arrangement.Bottom,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -184,7 +214,7 @@ fun GarmentImage(
                 AsyncImage(
                     model = ImageRequest.Builder(context).data(garment.image).build(),
                     contentDescription = "icon",
-                    contentScale = ContentScale.Inside,
+                    contentScale = ContentScale.Fit,
                     modifier = Modifier
                         .clip(RoundedCornerShape(10.dp))
                         .heightIn(max=300.dp)
@@ -199,14 +229,17 @@ fun GarmentImage(
         }
         Column(
             modifier = Modifier
-                .weight(1f)
+                .weight(0.25f)
                 .fillMaxHeight(),
             verticalArrangement = Arrangement.Bottom,
             horizontalAlignment = Alignment.Start,
         ){
             Row(
                 verticalAlignment = Alignment.Bottom,
-                horizontalArrangement = Arrangement.Start
+                horizontalArrangement = Arrangement.Start,
+                modifier = Modifier
+                    .clickable { onOutfits(garment.id) }
+                    .padding(bottom = 5.dp)
             ) {
                 Icon(
                     painter = painterResource(R.drawable.outfit),
@@ -320,39 +353,47 @@ fun ClothingInfo(garmentId: Long, clothingViewModel: ClothingViewModel = viewMod
     val brands by clothingViewModel.brands.collectAsState()
     val garment = uiState.changes ?: uiState.editGarment
 
-    val categoryNames = categories.map { it.name }
-    val categoryId = garment.categoryId
-    val category = categories.find { it.id == categoryId }
-    val updateCategory = { name: String ->
-        garment.categoryId = categories.find { it.name == name }?.id
-        clothingViewModel.storeChanges(garment)
-    }
-    GarmentDropdownMenu("Category", categoryNames, category?.name, updateCategory)
 
-    val colorNames = GarmentColorNames.map { it.name }
-    val updateColor = { name: String ->
-        garment.color = name
-        clothingViewModel.storeChanges(garment)
-    }
-    GarmentDropdownMenu("Color", colorNames, garment.color, updateColor)
+    Column (
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp)
+    ) {
+        val categoryNames = categories.map { it.name }
+        val categoryId = garment.categoryId
+        val category = categories.find { it.id == categoryId }
+        val updateCategory = { name: String ->
+            garment.categoryId = categories.find { it.name == name }?.id
+            clothingViewModel.storeChanges(garment)
+        }
+        GarmentDropdownMenu("Category", categoryNames, category?.name, updateCategory)
+
+        val colorNames = GarmentColorNames.map { it.name }
+        val updateColor = { name: String ->
+            garment.color = name
+            clothingViewModel.storeChanges(garment)
+        }
+        GarmentDropdownMenu("Color", colorNames, garment.color, updateColor)
 
 
-    val updatebrand = { value: String ->
-        garment.brand = value
-        clothingViewModel.storeChanges(garment)
-    }
-    GarmentDropdownMenuCustom("Brand", brands, garment.brand, updatebrand)
+        val updatebrand = { value: String ->
+            garment.brand = value
+            clothingViewModel.storeChanges(garment)
+        }
+        GarmentDropdownMenuCustom("Brand", brands, garment.brand, updatebrand)
 
-    val updateOccasion = { value: String ->
-        Occasion.valueOf(value)
-        garment.occasion = Occasion.valueOf(value)
-        clothingViewModel.storeChanges(garment)
-    }
-    val occasions = Occasion.entries.map { it.name }
-    GarmentDropdownMenuCustom("Occasion", occasions, garment.occasion?.name, updateOccasion)
+        val updateOccasion = { value: String ->
+            Occasion.valueOf(value)
+            garment.occasion = Occasion.valueOf(value)
+            clothingViewModel.storeChanges(garment)
+        }
+        val occasions = Occasion.entries.map { it.name }
+        GarmentDropdownMenu("Occasion", occasions, garment.occasion?.name, updateOccasion)
 //    DropUpMenu("A")
 //    DropUpMenu("C")
 //    DropUpMenu("K")
+    }
 }
 
 @Composable

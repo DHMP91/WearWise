@@ -67,8 +67,13 @@ class SubCategory(
 
 
 enum class Occasion {
-    FORMAL,
     CASUAL,
+    FORMAL,
+    LOUNGE,
+    SPORT,
+    SEMIFORMAL,
+    BUSINESS,
+    DRESSYCASUAL,
 }
 
 

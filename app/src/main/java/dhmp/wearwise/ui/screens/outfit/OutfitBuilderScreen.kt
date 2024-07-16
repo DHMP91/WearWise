@@ -66,6 +66,7 @@ import dhmp.wearwise.ui.AppViewModelProvider
 import dhmp.wearwise.ui.screens.clothing.ClothingViewModel
 import dhmp.wearwise.ui.screens.common.CameraScreen
 import dhmp.wearwise.ui.screens.common.Collapsible
+import dhmp.wearwise.ui.screens.common.ScreenTitle
 import dhmp.wearwise.ui.screens.common.categoryIcon
 import kotlinx.coroutines.android.awaitFrame
 import kotlinx.coroutines.launch
@@ -134,6 +135,34 @@ fun OutfitPictureScreen(
     }
 }
 
+@Composable
+fun OutfitBuilderHeader(
+    onFinish: () -> Unit,
+    outfitViewModel: OutfitViewModel = viewModel(factory = AppViewModelProvider.OutFitFactory)
+){
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(dimensionResource(id = R.dimen.screen_title_padding))
+    ) {
+        Title(outfitViewModel)
+        DeleteOutfit(onFinish = onFinish, outfitViewModel)
+    }
+}
+
+
+@Composable
+fun Title(
+    outfitViewModel: OutfitViewModel = viewModel(factory = AppViewModelProvider.OutFitFactory)
+){
+    val outfit by outfitViewModel.outfit.collectAsState()
+    Box(
+        contentAlignment = Alignment.CenterStart,
+    ) {
+        ScreenTitle("Outfit #${outfit?.id}")
+    }
+}
+
 
 @Composable
 fun BuilderColumn(
@@ -143,7 +172,9 @@ fun BuilderColumn(
     outfitViewModel: OutfitViewModel = viewModel(factory = AppViewModelProvider.OutFitFactory)
 ){
     Column {
-        DeleteOutfit(onFinish = onFinish, outfitViewModel)
+
+        OutfitBuilderHeader(onFinish, outfitViewModel)
+
 
         Row(modifier = Modifier
             .weight(1.5f)
@@ -182,8 +213,7 @@ fun DeleteOutfit(
 ){
     Box (
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(10.dp),
+            .fillMaxWidth(),
         contentAlignment = Alignment.CenterEnd
     ) {
         Icon(
