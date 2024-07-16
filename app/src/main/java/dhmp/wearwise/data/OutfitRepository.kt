@@ -13,6 +13,11 @@ interface OutfitsRepository {
     fun getAllOutfitsPaged(): PagingSource<Int, Outfit>
 
     /**
+     * Paginated method to get all outfits from given list of outfit ids
+     */
+    fun getOutfitsByListOfIdsPaged(ids: List<Long>): PagingSource<Int, Outfit>
+
+    /**
      * Retrieve all the items from the the given data source.
      */
     fun getAllOutfitsStream(): Flow<List<Outfit>>
@@ -43,6 +48,8 @@ class DefaultOutfitRepository(private val itemDao: OutfitDao) : OutfitsRepositor
     private val tag: String = "Default Outfit Repository"
 
     override fun getAllOutfitsPaged(): PagingSource<Int, Outfit> = itemDao.getAllOutfitsPaged()
+
+    override fun getOutfitsByListOfIdsPaged(ids: List<Long>): PagingSource<Int, Outfit> = itemDao.getOutfitsByListOfIdsPaged(ids)
 
     override fun getAllOutfitsStream(): Flow<List<Outfit>> = itemDao.getAllOutfits()
 

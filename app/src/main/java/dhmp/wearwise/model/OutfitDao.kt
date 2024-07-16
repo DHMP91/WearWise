@@ -31,4 +31,7 @@ interface OutfitDao {
 
     @Query("SELECT * from Outfits ORDER BY id DESC")
     fun getAllOutfitsPaged(): PagingSource<Int, Outfit>
+
+    @Query("SELECT * from Outfits WHERE id IN (:ids) ORDER BY id DESC")
+    fun getOutfitsByListOfIdsPaged(ids: List<Long>): PagingSource<Int, Outfit>
 }

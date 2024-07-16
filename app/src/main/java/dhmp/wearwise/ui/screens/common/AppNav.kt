@@ -18,6 +18,7 @@ import dhmp.wearwise.ui.screens.outfit.EditOutfitScreen
 import dhmp.wearwise.ui.screens.outfit.NewOutfitScreen
 import dhmp.wearwise.ui.screens.outfit.OutfitPictureScreen
 import dhmp.wearwise.ui.screens.outfit.OutfitScreen
+import dhmp.wearwise.ui.screens.outfit.OutfitsByIdsScreen
 
 enum class AppScreens(@StringRes val title: Int) {
     Clothing(title = R.string.inventory),
@@ -39,6 +40,14 @@ fun AppNav(modifier: Modifier = Modifier, navController: NavHostController = rem
     ) {
         val navToOutfit = {
             navController.navigate(AppScreens.Outfit.name) {
+                popUpTo(navController.graph.findStartDestination().id) {
+                    inclusive = true
+                }
+            }
+        }
+
+        val navClothings = {
+            navController.navigate(AppScreens.Clothing.name) {
                 popUpTo(navController.graph.findStartDestination().id) {
                     inclusive = true
                 }
@@ -70,6 +79,10 @@ fun AppNav(modifier: Modifier = Modifier, navController: NavHostController = rem
                             }
                         }
                     },
+                    onOutfits = { id: Long ->
+                        navController.navigate("${AppScreens.Outfit.name}?garmentId=$id")
+                    },
+                    onBack = navClothings,
                     garmentId = garmentId
                 )
             }
@@ -94,6 +107,41 @@ fun AppNav(modifier: Modifier = Modifier, navController: NavHostController = rem
                     }
                 }
             )
+        }
+        composable(
+            route = "${AppScreens.Outfit.name}?garmentId={garmentId}",
+            arguments = listOf(navArgument("garmentId") { type = NavType.LongType })
+        ) { backStackEntry ->
+            val garmentId = backStackEntry.arguments?.getLong("garmentId")
+            when(garmentId) {
+                null -> navController.navigate(navController.graph.findStartDestination().id)
+                else -> {
+                    OutfitsByIdsScreen(
+                        garmentId,
+                        onEdit = { id: Long ->
+                            navController.navigate("${AppScreens.EditOutfit.name}/$id") {
+                                popUpTo(AppScreens.Outfit.name) {
+                                    inclusive = false
+                                }
+                            }
+                        },
+                        onTakePicture = { id: Long ->
+                            navController.navigate("${AppScreens.OutfitPicture.name}/$id") {
+                                popUpTo(AppScreens.Outfit.name) {
+                                    inclusive = false
+                                }
+                            }
+                        },
+                        onNewOutfit = {
+                            navController.navigate(AppScreens.NewOutfit.name) {
+                                popUpTo(AppScreens.Outfit.name) {
+                                    inclusive = false
+                                }
+                            }
+                        }
+                    )
+                }
+            }
         }
         composable(
             route = "${AppScreens.OutfitPicture.name}/{outfitId}",
