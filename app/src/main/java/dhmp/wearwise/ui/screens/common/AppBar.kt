@@ -12,7 +12,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import dhmp.wearwise.R
@@ -25,10 +24,6 @@ fun WearWiseBottomAppBar(
     navShop: () -> Unit,
     route: String?
 ) {
-    val tabColor = MaterialTheme.colorScheme.onBackground
-    val clothingModifier = createModifier(route, "clothing", tabColor)
-    val outfitModifier =  createModifier(route, "outfit", tabColor)
-
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -47,11 +42,7 @@ fun WearWiseBottomAppBar(
                         .fillMaxWidth()
                         .weight(1f)
                 ) {
-                    Icon(
-                        painter = painterResource(R.drawable.hangar),
-                        contentDescription = "Clothing",
-                        modifier = clothingModifier
-                    )
+                    NavIcon(isCurrentRoute("clothing", route), R.drawable.hangar)
                 }
                 IconButton(
                     onClick = { navOutfit() },
@@ -59,11 +50,7 @@ fun WearWiseBottomAppBar(
                         .fillMaxWidth()
                         .weight(1f)
                 ) {
-                    Icon(
-                        painterResource(R.drawable.outfit),
-                        contentDescription = "Outfits",
-                        modifier = outfitModifier
-                    )
+                    NavIcon(isCurrentRoute("outfit", route), R.drawable.outfit)
                 }
 
 //                IconButton(onClick = { navShop() }) {
@@ -89,14 +76,16 @@ fun WearWiseBottomAppBar(
     }
 }
 
-private fun createModifier(currentRoute: String?, commonScreenName: String, tabColor: Color): Modifier{
+@Composable
+fun NavIcon(isCurrentRoute: Boolean, IconResource: Int){
+    val accentColor = MaterialTheme.colorScheme.onBackground
     val bottomBorderModifier =
         Modifier
             .drawBehind {
                 val strokeWidth = 2.dp.toPx()
                 val y = size.height - strokeWidth / 2
                 drawLine(
-                    color = tabColor,
+                    color = accentColor,
                     start = Offset(0f, y),
                     end = Offset(size.width, y),
                     strokeWidth = strokeWidth
@@ -104,6 +93,23 @@ private fun createModifier(currentRoute: String?, commonScreenName: String, tabC
             }
             .padding(bottom = 10.dp)
     val noBorder = Modifier.padding(bottom = 10.dp)
+    if(isCurrentRoute) {
+        return Icon(
+            painterResource(IconResource),
+            contentDescription = "",
+//            tint = accentColor,
+            modifier = bottomBorderModifier
+        )
+    }else{
+        Icon(
+            painterResource(IconResource),
+            contentDescription = "",
+            modifier = noBorder
+        )
+    }
+}
+
+fun isCurrentRoute(commonScreenName: String, currentRoute: String?): Boolean{
     var matches = listOf<String>()
 
     currentRoute?.let { r ->
@@ -115,6 +121,5 @@ private fun createModifier(currentRoute: String?, commonScreenName: String, tabC
             .map { it.name }
     }
 
-    val tabModifier = if(matches.isNotEmpty()) bottomBorderModifier else noBorder
-    return tabModifier
+    return matches.isNotEmpty()
 }

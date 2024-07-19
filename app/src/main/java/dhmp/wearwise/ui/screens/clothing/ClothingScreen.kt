@@ -18,7 +18,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material3.BottomAppBarDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -38,6 +37,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -70,7 +70,7 @@ fun ClothingScreen(
             GarmentList(onEdit)
             FloatingActionButton(
                 onClick = { onNewClothing() },
-                containerColor = BottomAppBarDefaults.bottomAppBarFabColor,
+                containerColor = colorResource(R.color.accent),
                 elevation = FloatingActionButtonDefaults.bottomAppBarFabElevation(),
                 modifier = Modifier
                     .align(Alignment.BottomEnd) // Align to bottom end of the Box
@@ -106,7 +106,6 @@ fun Header(
             Icon(
                 imageVector = Icons.Filled.Menu,
                 contentDescription = "Menu",
-                tint = Color.White,
                 modifier = Modifier.clickable  { clothingViewModel.showMenu = !clothingViewModel.showMenu }
             )
             ClothingMainMenu()
