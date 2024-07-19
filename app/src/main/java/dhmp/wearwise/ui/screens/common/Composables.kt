@@ -20,9 +20,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 
@@ -75,19 +73,19 @@ fun Collapsible(headerText: String, content: @Composable () -> Unit){
 
 @Composable
 fun ScreenTitle(text: String){
-    val tabColor = MaterialTheme.colorScheme.onBackground
+//    val tabColor = MaterialTheme.colorScheme.onBackground
     val bottomBorderModifier =
         Modifier
-            .drawBehind {
-                val strokeWidth = 2.dp.toPx()
-                val y = size.height - strokeWidth / 2
-                drawLine(
-                    color = tabColor,
-                    start = Offset(0f, y),
-                    end = Offset(size.width, y),
-                    strokeWidth = strokeWidth
-                )
-            }
+//            .drawBehind {
+//                val strokeWidth = 2.dp.toPx()
+//                val y = size.height - strokeWidth / 2
+//                drawLine(
+//                    color = tabColor,
+//                    start = Offset(0f, y),
+//                    end = Offset(size.width, y),
+//                    strokeWidth = strokeWidth
+//                )
+//            }
             .padding(bottom = 10.dp)
 
     Text(

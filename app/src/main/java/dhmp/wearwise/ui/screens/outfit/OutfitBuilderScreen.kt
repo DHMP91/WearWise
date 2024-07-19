@@ -23,7 +23,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material3.BottomAppBarDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -36,6 +35,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -50,6 +50,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
@@ -90,7 +91,6 @@ fun EditOutfitScreen(
     var backPressHandled by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
     BackHandler(enabled = !backPressHandled) {
-        println("back pressed")
         backPressHandled = true
         coroutineScope.launch {
             awaitFrame()
@@ -112,14 +112,20 @@ fun NewOutfitScreen(
         clothingViewModel.collectCategories()
     }
     BuilderColumn(onFinish, onTakePicture, clothingViewModel, outfitViewModel)
+
 }
 
 @Composable
 fun OutfitPictureScreen(
     outfitId: Long,
     onFinish: (Long) -> Unit,
+    navOutfit: () -> Unit,
     model: OutfitViewModel = viewModel(factory = AppViewModelProvider.OutFitFactory),
 ) {
+    LaunchedEffect(outfitId){
+        model.getOutfit(outfitId)
+    }
+    val outfit by model.outfit.collectAsState()
     val outfitUri by model.outfitUri.collectAsState()
     if (outfitUri != null){
         onFinish(outfitId)
@@ -133,6 +139,17 @@ fun OutfitPictureScreen(
             CameraScreen(model::saveImage, outfitId)
         }
     }
+
+    DisposableEffect(outfitId) {
+        onDispose {
+            outfit?.let{
+                if(it.image == null && it.garmentsId.isEmpty()){
+                    model.deleteOutfit()
+                    navOutfit()
+                }
+            }
+        }
+    }
 }
 
 @Composable
@@ -140,10 +157,15 @@ fun OutfitBuilderHeader(
     onFinish: () -> Unit,
     outfitViewModel: OutfitViewModel = viewModel(factory = AppViewModelProvider.OutFitFactory)
 ){
+    val pad = dimensionResource(id = R.dimen.screen_title_padding)
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(dimensionResource(id = R.dimen.screen_title_padding))
+            .padding(
+                start = pad,
+                top = dimensionResource(id = R.dimen.screen_title_padding),
+                end = pad
+            )
     ) {
         Title(outfitViewModel)
         DeleteOutfit(onFinish = onFinish, outfitViewModel)
@@ -175,9 +197,10 @@ fun BuilderColumn(
 
         OutfitBuilderHeader(onFinish, outfitViewModel)
 
-
         Row(modifier = Modifier
-            .weight(1.5f)
+            .fillMaxSize()
+            .weight(3f)
+            .padding(bottom = 10.dp)
         ) {
             OutfitImage(onTakePicture, outfitViewModel)
         }
@@ -238,7 +261,7 @@ fun SaveOutfit(
     val outfit by outfitViewModel.outfit.collectAsState()
     val buttonColor =
         if(savedOutfitFlagState) ButtonDefaults.buttonColors(Color.Gray)
-        else ButtonDefaults.buttonColors(Color(0xFF77DD77))
+        else ButtonDefaults.buttonColors(colorResource(R.color.accent))
     val coroutineScope = rememberCoroutineScope()
     Button(
         onClick = {
@@ -252,7 +275,10 @@ fun SaveOutfit(
             .padding(16.dp)
             .fillMaxWidth()
     ) {
-        Text(text = "Save Outfit")
+        Text(
+            text = "Save Outfit",
+            color = if(savedOutfitFlagState) Color.White else Color.Black
+        )
     }
 }
 
@@ -269,7 +295,6 @@ fun OutfitImage(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(end = 10.dp)
                         .padding(10.dp)
                         .clickable {
                             coroutineScope.launch {
@@ -285,7 +310,6 @@ fun OutfitImage(
                     Icon(
                         painter = painterResource(R.drawable.shutter_icon),
                         contentDescription = "Outfit Picture",
-                        tint = Color.White,
                         modifier = Modifier
                             .padding(5.dp)
                             .size(max(30.dp, 30.dp))
@@ -316,19 +340,17 @@ fun OutfitImage(
             else -> {
                 Column(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .padding(10.dp)
-                        .clip(RoundedCornerShape(10.dp)),
+                        .fillMaxSize(),
                     verticalArrangement = Arrangement.Center
                 ) {
                     AsyncImage(
                         model = ImageRequest.Builder(LocalContext.current).data(it.image)
                             .build(),
                         contentDescription = "2",
-                        contentScale = ContentScale.FillHeight,
+                        contentScale = ContentScale.Fit,
                         modifier = Modifier
                             .fillMaxSize()
-                            .clip(RoundedCornerShape(10.dp))
+                            .clip(RoundedCornerShape(10.dp)),
                     )
                 }
             }
@@ -401,7 +423,7 @@ fun SelectedGarments(
 
                                 FloatingActionButton(
                                     onClick = { outfitViewModel.removeFromOutfit(item) },
-                                    containerColor = BottomAppBarDefaults.bottomAppBarFabColor,
+                                    containerColor = colorResource(R.color.accent),
                                     elevation = FloatingActionButtonDefaults.bottomAppBarFabElevation(),
                                     modifier = Modifier
                                         .align(Alignment.BottomEnd)
@@ -440,7 +462,7 @@ fun CategorizedGarments(
         modifier = Modifier
             .wrapContentHeight()
             .fillMaxWidth()
-            .padding(top = 20.dp, bottom = 20.dp),
+            .padding(top = 5.dp, bottom = 5.dp),
     ) {
         categories.forEach { category ->
             item {

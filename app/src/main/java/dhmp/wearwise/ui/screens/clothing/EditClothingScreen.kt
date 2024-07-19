@@ -57,6 +57,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
@@ -106,10 +107,11 @@ fun EditClothingScreen(
         modifier = modifier
             .fillMaxSize()
     ) {
+        val pad = dimensionResource(id = R.dimen.screen_title_padding)
         Row(modifier = Modifier
             .fillMaxWidth()
             .wrapContentHeight()
-            .padding(dimensionResource(id = R.dimen.screen_title_padding))
+            .padding(start = pad, top = dimensionResource(id = R.dimen.screen_title_padding), end = pad)
         ) {
             Title(garmentId)
             DeleteGarment(onFinish, garmentId)
@@ -314,7 +316,7 @@ fun Save(clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModel
     var buttonColor = ButtonDefaults.buttonColors(Color.Gray)
     var onClick = {}
     uiState.changes?.let{
-        buttonColor = ButtonDefaults.buttonColors(Color(0xFF77DD77))
+        buttonColor = ButtonDefaults.buttonColors(colorResource(R.color.accent))
         onClick = {
             clothingViewModel.saveChanges(it)
         }
@@ -327,10 +329,12 @@ fun Save(clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModel
         Icon(
             imageVector = Icons.Outlined.Done,
             contentDescription = "Save Changes",
+            tint = if(uiState.changes == null) Color.White else Color.Black,
             modifier = Modifier.size(18.dp)
         )
         Text(
             text = "Save",
+            color = if(uiState.changes == null) Color.White else Color.Black,
             style = MaterialTheme.typography.labelMedium,
         )
     }
