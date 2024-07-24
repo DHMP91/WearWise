@@ -41,6 +41,8 @@ interface OutfitsRepository {
      * Update item in the data source
      */
     suspend fun updateOutfit(item: Outfit)
+
+    suspend fun getOutfitThumbnail(outfit: Outfit): String?
 }
 
 
@@ -62,4 +64,12 @@ class DefaultOutfitRepository(private val itemDao: OutfitDao) : OutfitsRepositor
     override suspend fun deleteOutfit(item: Outfit) = itemDao.delete(item)
 
     override suspend fun updateOutfit(item: Outfit) = itemDao.update(item)
+
+    override suspend fun getOutfitThumbnail(outfit: Outfit): String? {
+        outfit.image?.let {
+            return getThumbnail(it)
+        }
+        return null
+    }
+
 }

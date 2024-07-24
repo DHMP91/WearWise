@@ -19,16 +19,20 @@ import dhmp.wearwise.ui.screens.outfit.NewOutfitScreen
 import dhmp.wearwise.ui.screens.outfit.OutfitPictureScreen
 import dhmp.wearwise.ui.screens.outfit.OutfitScreen
 import dhmp.wearwise.ui.screens.outfit.OutfitsByIdsScreen
+import java.net.URLDecoder
+import java.net.URLEncoder
+import kotlin.text.Charsets.UTF_8
 
 enum class AppScreens(@StringRes val title: Int) {
     Clothing(title = R.string.inventory),
-    NewClothing(title= R.string.new_garment),
-    EditClothing(title= R.string.edit_garment),
+    NewClothing(title = R.string.new_garment),
+    EditClothing(title = R.string.edit_garment),
     Outfit(title = R.string.outfit),
     OutfitPicture(title = R.string.outfitPicture),
-    EditOutfit(title= R.string.edit_outfit),
-    NewOutfit(title= R.string.new_outfit),
+    EditOutfit(title = R.string.edit_outfit),
+    NewOutfit(title = R.string.new_outfit),
     Shop(title = R.string.shop),
+    ViewImage(title = R.string.view_image)
 }
 
 @Composable
@@ -54,10 +58,20 @@ fun AppNav(modifier: Modifier = Modifier, navController: NavHostController = rem
             }
         }
 
+        val onViewImage = { image: String ->
+            val imageEncoded = URLEncoder.encode(image, UTF_8.toString())
+            navController.navigate("${AppScreens.ViewImage.name}/$imageEncoded")
+        }
+
+        val onViewGarmentsOutfits = { id: Long ->
+            navController.navigate("${AppScreens.Outfit.name}?garmentId=$id")
+        }
+
         composable(route = AppScreens.Clothing.name) {
             ClothingScreen(
                 onEdit = { id: Long -> navController.navigate("${AppScreens.EditClothing.name}/$id")},
-                onNewClothing = { navController.navigate(AppScreens.NewClothing.name)}
+                onNewClothing = { navController.navigate(AppScreens.NewClothing.name)},
+                onOutfits = onViewGarmentsOutfits
             )
         }
         composable(route = AppScreens.NewClothing.name) {
@@ -79,9 +93,8 @@ fun AppNav(modifier: Modifier = Modifier, navController: NavHostController = rem
                             }
                         }
                     },
-                    onOutfits = { id: Long ->
-                        navController.navigate("${AppScreens.Outfit.name}?garmentId=$id")
-                    },
+                    onOutfits = onViewGarmentsOutfits,
+                    onClickPicture = onViewImage,
                     onBack = navClothings,
                     garmentId = garmentId
                 )
@@ -181,6 +194,7 @@ fun AppNav(modifier: Modifier = Modifier, navController: NavHostController = rem
                 else -> EditOutfitScreen(
                     id = outfitId,
                     onTakePicture = { id: Long -> navController.navigate("${AppScreens.OutfitPicture.name}/$id") },
+                    onClickPicture = onViewImage,
                     onFinish = navToOutfit,
                     onBack = navToOutfit
                 )
@@ -197,8 +211,25 @@ fun AppNav(modifier: Modifier = Modifier, navController: NavHostController = rem
                         }
                     }
                 },
+                onClickPicture = onViewImage,
                 onFinish = navToOutfit
             )
+        }
+        composable(
+            route = "${AppScreens.ViewImage}/{image}",
+            arguments = listOf(navArgument("image") {
+                type = NavType.StringType
+                defaultValue = ""  // Default value to handle the case when outfitId is not provided
+            })
+        ) { backStackEntry ->
+            val image = backStackEntry.arguments?.getString("image")
+
+            if(image.isNullOrEmpty()) {
+                navController.navigate(navController.graph.findStartDestination().id)
+            }
+            else {
+                ViewImage(URLDecoder.decode(image, UTF_8.toString()))
+            }
         }
     }
 }

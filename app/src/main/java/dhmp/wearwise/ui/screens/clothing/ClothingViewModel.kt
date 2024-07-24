@@ -23,9 +23,7 @@ import androidx.palette.graphics.Palette
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.segmentation.subject.SubjectSegmentation
 import com.google.mlkit.vision.segmentation.subject.SubjectSegmenterOptions
-import dhmp.wearwise.data.CategoriesRepository
 import dhmp.wearwise.data.GarmentsRepository
-import dhmp.wearwise.model.Category
 import dhmp.wearwise.model.Garment
 import dhmp.wearwise.model.nearestColorMatchList
 import kotlinx.coroutines.Dispatchers
@@ -35,16 +33,16 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import okhttp3.internal.closeQuietly
 import java.io.File
 
-private const val ITEMS_PER_PAGE = 3
+private const val ITEMS_PER_PAGE = 10
 class ClothingViewModel(
     private val garmentRepository: GarmentsRepository,
-    private val categoriesRepository: CategoriesRepository,
 ): ViewModel() {
     private val tag: String = "ClothingViewModel"
     private val _uiState = MutableStateFlow(ClothingUIState())
@@ -62,9 +60,6 @@ class ClothingViewModel(
 
     private val _uiEditState = MutableStateFlow(EditClothingUIState())
     val uiEditState: StateFlow<EditClothingUIState> = _uiEditState.asStateFlow()
-
-    private val _categories = MutableStateFlow(listOf<Category>())
-    val categories: StateFlow<List<Category>> = _categories.asStateFlow()
 
     private val _brands = MutableStateFlow(listOf<String>())
     val brands: StateFlow<List<String>> = _brands.asStateFlow()
@@ -122,6 +117,18 @@ class ClothingViewModel(
             )
         }
     }
+
+
+    fun getGarmentThumbnail(garment: Garment): Flow<String> = flow {
+        val thumbnail = garmentRepository.getGarmentThumbnail(garment)
+        if (thumbnail.isNullOrEmpty() ){
+            garment.image?.let {
+                emit(it)
+            }
+        } else{
+            emit(thumbnail)
+        }
+    }.flowOn(Dispatchers.IO)
 
     fun saveImage(appDir: File, image:Bitmap, rotation: Float, id: Long?): Job {
         val job = viewModelScope.launch(Dispatchers.IO) {
@@ -210,14 +217,14 @@ class ClothingViewModel(
                     viewModelScope.launch {
                         resultBitmap?.let {
                             val subjectUri = garmentRepository.saveImageToStorage(
-                                file.parentFile!!,
+                                file.parentFile!!.parentFile!!,
                                 resultBitmap
                             )
                             canvas.drawBitmap(blurredImage, 0f, 0f, null)
                             blurredImage.recycle()
                             canvas.drawBitmap(it, 0f, 0f, null) // Add subject to grayed background
                             val uri =
-                                garmentRepository.saveImageToStorage(file.parentFile!!, finalImage)
+                                garmentRepository.saveImageToStorage(file.parentFile!!.parentFile!!, finalImage)
                             it.recycle()
                             val garment = garmentRepository.getGarmentStream(id).flowOn(Dispatchers.IO).firstOrNull()
                             garment?.let { c ->
@@ -257,17 +264,6 @@ class ClothingViewModel(
                     }
                 }
             }
-        }
-    }
-
-    fun collectCategories(){
-        viewModelScope.launch(Dispatchers.IO) {
-            categoriesRepository
-                .getAllCategoriesStream()
-                .flowOn(Dispatchers.IO)
-                .collect{
-                    _categories.emit(it)
-                }
         }
     }
 

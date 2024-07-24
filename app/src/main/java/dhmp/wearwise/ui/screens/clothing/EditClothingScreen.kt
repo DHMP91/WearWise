@@ -69,6 +69,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import dhmp.wearwise.R
+import dhmp.wearwise.model.Categories
 import dhmp.wearwise.model.Garment
 import dhmp.wearwise.model.GarmentColorNames
 import dhmp.wearwise.model.Occasion
@@ -82,9 +83,10 @@ import kotlinx.coroutines.launch
 fun EditClothingScreen(
     onFinish: () -> Unit,
     onOutfits: (Long) -> Unit,
-    modifier: Modifier = Modifier,
+    onClickPicture: (String) -> Unit,
     onBack: () -> Unit,
     garmentId: Long,
+    modifier: Modifier = Modifier,
     clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)
 ){
     var backPressHandled by remember { mutableStateOf(false) }
@@ -121,7 +123,7 @@ fun EditClothingScreen(
             .fillMaxWidth()
             .weight(4f)
         ) {
-            GarmentImage(uiState.editGarment, onOutfits)
+            GarmentImage(uiState.editGarment, onOutfits, onClickPicture)
         }
 
         Row(
@@ -191,6 +193,7 @@ fun DeleteGarment(
 fun GarmentImage(
     garment: Garment,
     onOutfits: (Long) -> Unit,
+    onClickPicture: (String) -> Unit,
     context: Context = LocalContext.current,
 ){
     Row(modifier = Modifier
@@ -220,6 +223,11 @@ fun GarmentImage(
                     modifier = Modifier
                         .clip(RoundedCornerShape(10.dp))
                         .heightIn(max=300.dp)
+                        .clickable {
+                            garment.image?.let{
+                                onClickPicture(it)
+                            }
+                        }
                 )
 
             } else {
@@ -349,11 +357,10 @@ fun Save(clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModel
 fun ClothingInfo(garmentId: Long, clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)){
     LaunchedEffect (garmentId) {
         clothingViewModel.getGarmentById(garmentId)
-        clothingViewModel.collectCategories()
         clothingViewModel.collectBrands()
     }
     val uiState by clothingViewModel.uiEditState.collectAsState()
-    val categories by clothingViewModel.categories.collectAsState()
+    val categories = Categories
     val brands by clothingViewModel.brands.collectAsState()
     val garment = uiState.changes ?: uiState.editGarment
 

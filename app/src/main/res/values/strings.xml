@@ -11,4 +11,5 @@
     <string name="shop">Shop</string>
     <string name="filter_by_brand">Filter By Brand</string>
     <string name="filter_by_category">Filter By Category</string>
+    <string name="view_image">View Image</string>
 </resources>

@@ -61,6 +61,7 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import dhmp.wearwise.R
+import dhmp.wearwise.model.Categories
 import dhmp.wearwise.model.Category
 import dhmp.wearwise.model.Garment
 import dhmp.wearwise.ui.AppViewModelProvider
@@ -77,6 +78,7 @@ import kotlinx.coroutines.launch
 fun EditOutfitScreen(
     id: Long,
     onTakePicture: (Long) -> Unit,
+    onClickPicture: (String) -> Unit,
     onFinish: () -> Unit,
     clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory),
     outfitViewModel: OutfitViewModel = viewModel(factory = AppViewModelProvider.OutFitFactory),
@@ -84,9 +86,8 @@ fun EditOutfitScreen(
 ) {
     LaunchedEffect(id) {
         outfitViewModel.getOutfit(id)
-        clothingViewModel.collectCategories()
     }
-    BuilderColumn(onFinish, onTakePicture, clothingViewModel, outfitViewModel)
+    BuilderColumn(onFinish, onTakePicture, onClickPicture, clothingViewModel, outfitViewModel)
 
     var backPressHandled by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
@@ -103,15 +104,15 @@ fun EditOutfitScreen(
 @Composable
 fun NewOutfitScreen(
     onTakePicture: (Long) -> Unit,
+    onClickPicture: (String) -> Unit,
     onFinish: () -> Unit,
     clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory),
     outfitViewModel: OutfitViewModel = viewModel(factory = AppViewModelProvider.OutFitFactory),
 ) {
     LaunchedEffect(null) {
         outfitViewModel.newOutfit()
-        clothingViewModel.collectCategories()
     }
-    BuilderColumn(onFinish, onTakePicture, clothingViewModel, outfitViewModel)
+    BuilderColumn(onFinish, onTakePicture, onClickPicture, clothingViewModel, outfitViewModel)
 
 }
 
@@ -190,9 +191,11 @@ fun Title(
 fun BuilderColumn(
     onFinish: () -> Unit,
     onTakePicture: (Long) -> Unit,
+    onClickPicture: (String) -> Unit,
     clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory),
     outfitViewModel: OutfitViewModel = viewModel(factory = AppViewModelProvider.OutFitFactory)
 ){
+    val outfit by outfitViewModel.outfit.collectAsState()
     Column {
 
         OutfitBuilderHeader(onFinish, outfitViewModel)
@@ -202,7 +205,7 @@ fun BuilderColumn(
             .weight(3f)
             .padding(bottom = 10.dp)
         ) {
-            OutfitImage(onTakePicture, outfitViewModel)
+            OutfitImage(onTakePicture, onClickPicture, outfitViewModel)
         }
 
         Row(modifier = Modifier
@@ -220,7 +223,6 @@ fun BuilderColumn(
                 .weight(2f)
         ) {
             CategorizedGarments(
-                onFinish,
                 clothingViewModel,
                 outfitViewModel
             )
@@ -258,7 +260,6 @@ fun SaveOutfit(
     outfitViewModel: OutfitViewModel = viewModel(factory = AppViewModelProvider.OutFitFactory)
 ){
     val savedOutfitFlagState by outfitViewModel.savedOutfitFlag.collectAsState()
-    val outfit by outfitViewModel.outfit.collectAsState()
     val buttonColor =
         if(savedOutfitFlagState) ButtonDefaults.buttonColors(Color.Gray)
         else ButtonDefaults.buttonColors(colorResource(R.color.accent))
@@ -285,6 +286,7 @@ fun SaveOutfit(
 @Composable
 fun OutfitImage(
     onTakePicture: (Long) -> Unit,
+    onClickPicture: (String) -> Unit,
     outfitViewModel: OutfitViewModel = viewModel(factory = AppViewModelProvider.OutFitFactory)
 ){
     val outfit by outfitViewModel.outfit.collectAsState()
@@ -323,11 +325,11 @@ fun OutfitImage(
             }
 
             "PROCESSING" -> {
-                Box(
+                Column(
                     modifier = Modifier
-                        .fillMaxWidth()
+                        .fillMaxSize()
                         .padding(10.dp),
-                    contentAlignment = Alignment.Center
+                    verticalArrangement = Arrangement.Center,
                 ) {
                     CircularProgressIndicator(
                         modifier = Modifier.width(64.dp),
@@ -338,20 +340,58 @@ fun OutfitImage(
             }
 
             else -> {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize(),
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    AsyncImage(
-                        model = ImageRequest.Builder(LocalContext.current).data(it.image)
-                            .build(),
-                        contentDescription = "2",
-                        contentScale = ContentScale.Fit,
+                Row {
+                    Column(
                         modifier = Modifier
                             .fillMaxSize()
-                            .clip(RoundedCornerShape(10.dp)),
-                    )
+                            .weight(0.5f)
+                    ) {
+                    }
+
+                    Column(
+                        modifier = Modifier
+                            .weight(2f)
+                            .fillMaxSize(),
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        AsyncImage(
+                            model = ImageRequest.Builder(LocalContext.current).data(it.image)
+                                .build(),
+                            contentDescription = "2",
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(RoundedCornerShape(10.dp))
+                                .clickable {
+                                    it.image?.let { image -> onClickPicture(image) }
+                                },
+                        )
+                    }
+
+                    Column(
+                        modifier = Modifier
+                            .weight(0.5f)
+                            .fillMaxSize()
+                            .padding(
+                                end = dimensionResource(id = R.dimen.screen_title_padding)
+                            ),
+                        verticalArrangement = Arrangement.Bottom,
+                        horizontalAlignment = Alignment.End
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.camera_retake),
+                            "Retake Image",
+                            modifier = Modifier
+                                .clickable {
+                                    coroutineScope.launch {
+                                        val id = outfitViewModel.saveOutfit() //Save current changes it any
+                                        id?.let {
+                                            onTakePicture(id)
+                                        }
+                                    }
+                                }
+                        )
+                    }
                 }
             }
         }
@@ -369,7 +409,7 @@ fun SelectedGarments(
         val selectedItems by outfitViewModel.getGarments(it).collectAsState(
             initial = null
         )
-        val categories by clothingViewModel.categories.collectAsState()
+        val categories = Categories
 
         Card(
             modifier = Modifier
@@ -453,11 +493,10 @@ fun SelectedGarments(
 
 @Composable
 fun CategorizedGarments(
-    onFinish: () -> Unit,
     clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory),
     outfitViewModel: OutfitViewModel = viewModel(factory = AppViewModelProvider.OutFitFactory)
 ){
-    val categories by clothingViewModel.categories.collectAsState()
+    val categories = Categories
     LazyColumn(
         modifier = Modifier
             .wrapContentHeight()

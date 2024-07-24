@@ -13,7 +13,6 @@ object AppViewModelProvider {
         initializer {
             ClothingViewModel(
                 wearWiseApplication().container.garmentsRespository,
-                wearWiseApplication().container.categoriesRepository,
             )
         }
     }

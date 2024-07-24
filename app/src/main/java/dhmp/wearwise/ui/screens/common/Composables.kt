@@ -3,8 +3,10 @@ package dhmp.wearwise.ui.screens.common
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -21,8 +23,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 
 @Composable
 fun Collapsible(headerText: String, content: @Composable () -> Unit){
@@ -94,4 +100,20 @@ fun ScreenTitle(text: String){
         maxLines = 1,
         modifier = bottomBorderModifier
     )
+}
+
+
+@Composable
+fun ViewImage(imagePath: String){
+    Box(modifier = Modifier
+        .fillMaxSize()){
+        AsyncImage(
+            model = ImageRequest.Builder(LocalContext.current).data(imagePath)
+                .build(),
+            contentDescription = "",
+            contentScale = ContentScale.Fit,
+            modifier = Modifier
+                .fillMaxSize()
+        )
+    }
 }

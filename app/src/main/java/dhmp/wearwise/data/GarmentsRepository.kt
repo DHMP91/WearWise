@@ -53,6 +53,8 @@ interface GarmentsRepository {
     suspend fun saveImageToStorage(appDir: File, image: Bitmap) : Uri
 
     suspend fun replaceImageInStorage(file: File, image: Bitmap)
+
+    suspend fun getGarmentThumbnail(garment: Garment): String?
 }
 
 class DefaultGarmentsRepository(private val itemDao: GarmentDao) : GarmentsRepository {
@@ -109,4 +111,11 @@ class DefaultGarmentsRepository(private val itemDao: GarmentDao) : GarmentsRepos
     }
 
     override suspend fun getBrands() = itemDao.getBrands()
+
+    override suspend fun getGarmentThumbnail(garment: Garment): String? {
+        garment.image?.let {
+            return getThumbnail(it)
+        }
+        return null
+    }
 }
