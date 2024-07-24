@@ -28,7 +28,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -48,6 +47,7 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import dhmp.wearwise.R
+import dhmp.wearwise.model.Categories
 import dhmp.wearwise.model.Garment
 import dhmp.wearwise.ui.AppViewModelProvider
 import dhmp.wearwise.ui.screens.common.ScreenTitle
@@ -60,14 +60,11 @@ private val TAG = "ClothingScreen"
 fun ClothingScreen(
     onEdit: (Long) -> Unit,
     onNewClothing: () -> Unit,
-    clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)
+    onOutfits: (Long) -> Unit,
 ) {
-    LaunchedEffect(null){
-        clothingViewModel.collectCategories()
-    }
     Surface {
         Box(modifier = Modifier.fillMaxSize()){
-            GarmentList(onEdit)
+            GarmentList(onEdit, onOutfits)
             FloatingActionButton(
                 onClick = { onNewClothing() },
                 containerColor = colorResource(R.color.accent),
@@ -118,6 +115,7 @@ fun Header(
 @Composable
 fun GarmentList(
     onEdit: (Long) -> Unit,
+    onOutfits: (Long) -> Unit,
     clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)
 ){
     val garments: LazyPagingItems<Garment> = clothingViewModel.garments.collectAsLazyPagingItems()
@@ -132,7 +130,7 @@ fun GarmentList(
         }
         items(garments.itemCount) { index ->
             garments[index]?.let {
-                GarmentCard(it, onEdit)
+                GarmentCard(it, onEdit, onOutfits)
             }
         }
     }
@@ -140,10 +138,13 @@ fun GarmentList(
 
 @Composable
 fun GarmentCard(
-    garment: Garment, onEdit: (Long) -> Unit,
+    garment: Garment,
+    onEdit: (Long) -> Unit,
+    onOutfits: (Long) -> Unit,
     modifier: Modifier = Modifier,
     clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)
 ){
+    val thumbnail by clothingViewModel.getGarmentThumbnail(garment).collectAsState(initial = "")
     Row (
         modifier = modifier
             .background(
@@ -155,9 +156,8 @@ fun GarmentCard(
             .clickable { onEdit(garment.id) }
             .padding(10.dp)
     ) {
-
         AsyncImage(
-            model = ImageRequest.Builder(LocalContext.current).data(garment.image).build(),
+            model = ImageRequest.Builder(LocalContext.current).data(thumbnail).build(),
             contentDescription = "GarmentImage",
             contentScale = ContentScale.FillWidth,
             modifier = Modifier
@@ -165,7 +165,6 @@ fun GarmentCard(
                 .fillMaxSize()
                 .clip(RoundedCornerShape(10.dp))
         )
-
 
         Column (
             modifier = Modifier
@@ -208,7 +207,7 @@ fun GarmentCard(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Start
             ) {
-                val categories by clothingViewModel.categories.collectAsState()
+                val categories = Categories
                 val icon = categoryIcon(garment, categories)
                 Icon(
                     painter = painterResource(icon),
@@ -226,6 +225,9 @@ fun GarmentCard(
                         contentDescription = "Clothing Type",
                         modifier = Modifier
                             .sizeIn(maxHeight = dimensionResource(R.dimen.icon_max_height))
+                            .clickable {
+                                onOutfits(garment.id)
+                            }
                     )
                     Text(
                         "${garment.outfitsId.size}"

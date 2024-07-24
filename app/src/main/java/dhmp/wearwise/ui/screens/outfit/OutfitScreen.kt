@@ -51,6 +51,7 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import dhmp.wearwise.R
+import dhmp.wearwise.model.Categories
 import dhmp.wearwise.model.Outfit
 import dhmp.wearwise.ui.AppViewModelProvider
 import dhmp.wearwise.ui.screens.clothing.ClothingViewModel
@@ -145,13 +146,12 @@ fun OutfitCard(
     outfit: Outfit,
     onTakePicture: (Long) -> Unit,
     onEdit: (Long) -> Unit,
+    clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory),
     model: OutfitViewModel = viewModel(factory = AppViewModelProvider.OutFitFactory),
-    clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)
 ){
-    clothingViewModel.collectCategories()
-    val categories by remember { clothingViewModel.categories }.collectAsState()
+    val categories = Categories
     val garments by remember(outfit) { model.getGarments(outfit) }.collectAsState(initial = null)
-
+    val thumbnail by model.getOutfitThumbnail(outfit).collectAsState(initial = "")
     val row = garments ?: listOf()
     Card(
         modifier = Modifier
@@ -202,7 +202,7 @@ fun OutfitCard(
                     verticalArrangement = Arrangement.Center
                 ) {
                     AsyncImage(
-                        model = ImageRequest.Builder(LocalContext.current).data(outfit.image)
+                        model = ImageRequest.Builder(LocalContext.current).data(thumbnail)
                             .build(),
                         contentDescription = "2",
                         contentScale = ContentScale.FillHeight,
@@ -243,9 +243,10 @@ fun OutfitCard(
                                         .fillMaxHeight()
                                         .widthIn(min = 80.dp, max = 100.dp)
                                 ) {
+                                    val thumbnail by clothingViewModel.getGarmentThumbnail(item).collectAsState(initial = "")
                                     AsyncImage(
                                         model = ImageRequest.Builder(LocalContext.current)
-                                            .data(item.image).build(),
+                                            .data(thumbnail).build(),
                                         contentDescription = "2",
                                         contentScale = ContentScale.FillHeight,
                                         modifier = Modifier

@@ -3,6 +3,7 @@ package dhmp.wearwise.ui.screens.outfit
 import android.graphics.Bitmap
 import android.graphics.Matrix
 import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.Pager
@@ -28,6 +29,8 @@ import kotlinx.coroutines.withContext
 import java.io.File
 
 private const val ITEMS_PER_PAGE = 3
+
+private const val tag = "OutfitViewModel"
 
 class OutfitViewModel (
     private val garmentRepository: GarmentsRepository,
@@ -72,6 +75,18 @@ class OutfitViewModel (
     }.flowOn(Dispatchers.IO)
 
 
+    fun getOutfitThumbnail(outfit: Outfit): Flow<String> = flow {
+        val thumbnail = outfitsRepository.getOutfitThumbnail(outfit)
+        if (thumbnail.isNullOrEmpty() ){
+            outfit.image?.let {
+                emit(it)
+            }
+        } else{
+            emit(thumbnail)
+        }
+    }.flowOn(Dispatchers.IO)
+
+
     fun saveImage(appDir: File, image: Bitmap, rotation: Float, id: Long?): Job {
         outfitUri.value = Uri.EMPTY // Let UI continue to next screen while processing image
         val job = viewModelScope.launch(Dispatchers.IO) {
@@ -79,9 +94,18 @@ class OutfitViewModel (
 
                 // Let UI know image is processing
                 val outfit = outfitsRepository.getOutfitStream(id).first()
+
                 outfit?.let {
+                    val outfitImage = it.image
                     it.image = "PROCESSING"
                     outfitsRepository.updateOutfit(it)
+
+                    if(!outfitImage.isNullOrEmpty()){
+                        val imageUri = Uri.parse(outfitImage)
+                        imageUri.path?.let { path ->
+                            deleteFile(path)
+                        }
+                    }
                 }
 
                 val matrix = Matrix()
@@ -124,6 +148,12 @@ class OutfitViewModel (
                     garment?.let{ g ->
                         g.outfitsId = g.outfitsId.minus(it.id)
                         garmentRepository.updateGarment(g)
+                    }
+                }
+
+                it.image?.let { imageUri ->
+                    Uri.parse(imageUri).path?.let { path ->
+                        deleteFile(path)
                     }
                 }
 
@@ -233,5 +263,16 @@ class OutfitViewModel (
             savedOutfitFlag.update { true }
             id
         }
+    }
+
+    private fun deleteFile(uri: String){
+            Uri.parse(uri).path?.let { path ->
+                try{
+                    File(path).delete()
+                }catch (exception: SecurityException){
+                    Log.e(tag, "No permission to delete file")
+                    false
+                }
+            }
     }
 }

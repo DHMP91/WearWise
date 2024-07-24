@@ -13,8 +13,6 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import dhmp.wearwise.R
-import dhmp.wearwise.model.Category
-import dhmp.wearwise.model.CategoryDao
 import dhmp.wearwise.model.Garment
 import dhmp.wearwise.model.GarmentDao
 import dhmp.wearwise.model.MLLabel
@@ -24,21 +22,21 @@ import dhmp.wearwise.model.OutfitDao
 
 
 @Database(
-    entities = [Garment::class, Category::class, Outfit::class, MLMetaData::class, MLLabel::class],
-    version = 7,
+    entities = [Garment::class, Outfit::class, MLMetaData::class, MLLabel::class],
+    version = 9,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
         AutoMigration(from = 2, to = 3),
         AutoMigration(from = 4, to = 5),
-        AutoMigration(from = 6, to = 7)
+        AutoMigration(from = 6, to = 7),
+        AutoMigration(from = 8, to = 9),
     ]
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun garmentDao(): GarmentDao
-    abstract fun categoryDao(): CategoryDao
     abstract fun outfitDao(): OutfitDao
 
     companion object {
@@ -49,40 +47,15 @@ abstract class AppDatabase : RoomDatabase() {
             // if the Instance is not null, return it, otherwise create a new database instance.
             return Instance ?: synchronized(this) {
                 Room.databaseBuilder(context, AppDatabase::class.java, "${context.getString(R.string.app_name)}.db")
-                    .addCallback(object : RoomDatabase.Callback() {
-                        override fun onCreate(db: SupportSQLiteDatabase) {
-                            super.onCreate(db)
-                            PrePopulateDB(db).populateCategory()
-                        }
-                    })
                     .addMigrations(
                         MIGRATION_3_4,
-                        MIGRATION_5_6
+                        MIGRATION_5_6,
+                        MIGRATION_7_8
                     )
                     .build().also {
                         Instance = it
                     }
             }
-        }
-    }
-}
-
-
-class PrePopulateDB(private val db: SupportSQLiteDatabase){
-    fun populateCategory() {
-        val categories = listOf(
-            Category(name = "HATS"),
-            Category(name = "TOPS"),
-            Category(name = "BOTTOMS"),
-            Category(name = "ONEPIECE"),
-            Category(name = "OUTERWEAR"),
-            Category(name = "INTIMATES"),
-            Category(name = "FOOTWEAR"),
-            Category(name = "ACCESSORIES"),
-            Category(name = "OTHER"),
-        )
-        categories.forEach {
-            db.execSQL("INSERT INTO Categories (name) VALUES ('${it.name}')")
         }
     }
 }
@@ -129,5 +102,40 @@ val MIGRATION_5_6 = object : Migration(5, 6) {
     override fun migrate(db: SupportSQLiteDatabase) {
         // Create the new table if it doesn't exist
         db.execSQL("ALTER TABLE Garments ADD COLUMN color TEXT")
+    }
+}
+
+
+val MIGRATION_7_8 = object : Migration(7, 8) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        // Step 1: Create a new table without the foreign key constraint
+        db.execSQL("""
+            CREATE TABLE Garments_New (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                name TEXT,
+                categoryId INTEGER,
+                occasion TEXT,
+                image TEXT,
+                imageOfSubject TEXT,
+                color TEXT,
+                outfitsId TEXT NOT NULL DEFAULT '',
+                brand TEXT
+            )
+        """)
+
+        // Step 2: Copy the data from the old table to the new table
+        db.execSQL("""
+            INSERT INTO Garments_New (id, name, categoryId, occasion, image, imageOfSubject, color, outfitsId, brand)
+            SELECT id, name, categoryId, occasion, image, imageOfSubject, color, outfitsId, brand
+            FROM Garments
+        """)
+
+        // Step 3: Drop the old table
+        db.execSQL("DROP TABLE Garments")
+
+        // Step 4: Rename the new table to the old table's name
+        db.execSQL("ALTER TABLE Garments_New RENAME TO Garments")
+
+        db.execSQL("DROP TABLE IF EXISTS Categories")
     }
 }

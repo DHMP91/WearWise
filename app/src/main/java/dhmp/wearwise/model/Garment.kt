@@ -2,17 +2,11 @@ package dhmp.wearwise.model
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
-import androidx.room.ForeignKey
 import androidx.room.PrimaryKey
 
 @Entity(
     tableName = "Garments",
     foreignKeys = [
-        ForeignKey(
-            entity = Category::class,
-            parentColumns = arrayOf("id"),
-            childColumns = arrayOf("categoryId")
-        ),
 //        ForeignKey(
 //            entity = MLMetaData::class,
 //            parentColumns = arrayOf("id"),
@@ -24,7 +18,6 @@ data class Garment (
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
     var name: String? = null,
-    @ColumnInfo(index = true)
     var categoryId: Int? = null,
     var occasion: Occasion? = null,
     var image: String? = null,
@@ -58,14 +51,6 @@ class MLLabel(
     val confidence: Double = 0.00
 )
 
-@Entity(tableName = "SubCategories")
-class SubCategory(
-    val id: Long = 0,
-    val name: String,
-    val category: Category,
-)
-
-
 enum class Occasion {
     CASUAL,
     FORMAL,
@@ -73,7 +58,7 @@ enum class Occasion {
     SPORT,
     SEMIFORMAL,
     BUSINESS,
-    DRESSYCASUAL,
+    DRESSYCASUAL
 }
 
 
