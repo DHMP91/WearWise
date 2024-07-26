@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 10,
-    "identityHash": "eb1759123e8f903cacff10961d84f024",
+    "identityHash": "b116fd5fe38a0a39bdb86815651b674d",
     "entities": [
       {
         "tableName": "Garments",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT, `categoryId` INTEGER, `occasion` TEXT, `image` TEXT, `imageOfSubject` TEXT, `color` TEXT, `outfitsId` TEXT NOT NULL DEFAULT '', `brand` TEXT)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT, `categoryId` INTEGER, `occasion` TEXT, `image` TEXT, `imageOfSubject` TEXT, `color` TEXT, `outfitsId` TEXT NOT NULL DEFAULT '', `subCategoryId` INTEGER, `brand` TEXT)",
         "fields": [
           {
             "fieldPath": "id",
@@ -58,6 +58,12 @@
             "defaultValue": "''"
           },
           {
+            "fieldPath": "subCategoryId",
+            "columnName": "subCategoryId",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
             "fieldPath": "brand",
             "columnName": "brand",
             "affinity": "TEXT",
@@ -70,17 +76,7 @@
             "id"
           ]
         },
-        "indices": [
-          {
-            "name": "index_Garments_categoryId",
-            "unique": false,
-            "columnNames": [
-              "categoryId"
-            ],
-            "orders": [],
-            "createSql": "CREATE INDEX IF NOT EXISTS `index_Garments_categoryId` ON `${TABLE_NAME}` (`categoryId`)"
-          }
-        ],
+        "indices": [],
         "foreignKeys": []
       },
       {
@@ -190,7 +186,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'eb1759123e8f903cacff10961d84f024')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'b116fd5fe38a0a39bdb86815651b674d')"
     ]
   }
 }

@@ -5,6 +5,7 @@ import android.net.Uri
 import android.util.Log
 import androidx.core.net.toUri
 import androidx.paging.PagingSource
+import dhmp.wearwise.model.Category
 import dhmp.wearwise.model.Garment
 import dhmp.wearwise.model.GarmentDao
 import kotlinx.coroutines.Dispatchers
@@ -23,6 +24,12 @@ interface GarmentsRepository {
      * Paginated method to get all the items of type category.
      */
     fun getGarmentsByCategoryPaged(categoryId: Int?): PagingSource<Int, Garment>
+
+    /**
+     * Paginated method to get the items that isn't in the excluded filter.
+     */
+    fun getFilteredGarments(excludedCategories: List<Category> = listOf(), excludedColors: List<String> = listOf(), excludedBrands: List<String> = listOf()): PagingSource<Int, Garment>
+
     /**
      * Retrieve all the items from the the given data source.
      */
@@ -55,6 +62,8 @@ interface GarmentsRepository {
     suspend fun replaceImageInStorage(file: File, image: Bitmap)
 
     suspend fun getGarmentThumbnail(garment: Garment): String?
+
+    fun getGarmentsCount(excludedCategories: List<Category>, excludedColors: List<String>, excludedBrands: List<String>): Flow<Int>
 }
 
 class DefaultGarmentsRepository(private val itemDao: GarmentDao) : GarmentsRepository {
@@ -67,6 +76,11 @@ class DefaultGarmentsRepository(private val itemDao: GarmentDao) : GarmentsRepos
             itemDao.getGarmentsByCategoryPaged(categoryId)
         else
             itemDao.getUncategorizedGarmentsPaged()
+    }
+
+    override fun getFilteredGarments(excludedCategories: List<Category>, excludedColors: List<String>, excludedBrands: List<String>): PagingSource<Int, Garment>{
+        val excludedCategoryIds = excludedCategories.map { it.id }
+        return itemDao.getFilteredGarmentsPaged(excludedCategoryIds, excludedColors, excludedBrands)
     }
 
     override fun getAllGarmentsStream(): Flow<List<Garment>> = itemDao.getAllGarments()
@@ -117,5 +131,10 @@ class DefaultGarmentsRepository(private val itemDao: GarmentDao) : GarmentsRepos
             return getThumbnail(it)
         }
         return null
+    }
+
+    override fun getGarmentsCount(excludedCategories: List<Category>, excludedColors: List<String>, excludedBrands: List<String>): Flow<Int> {
+        val excludedCategoryIds = excludedCategories.map { it.id }
+        return itemDao.getGarmentsCount(excludedCategoryIds, excludedColors, excludedBrands)
     }
 }

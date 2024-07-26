@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
@@ -28,6 +29,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -48,7 +50,9 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import dhmp.wearwise.R
 import dhmp.wearwise.model.Categories
+import dhmp.wearwise.model.Category
 import dhmp.wearwise.model.Garment
+import dhmp.wearwise.model.GarmentColorNames
 import dhmp.wearwise.ui.AppViewModelProvider
 import dhmp.wearwise.ui.screens.common.ScreenTitle
 import dhmp.wearwise.ui.screens.common.categoryIcon
@@ -83,6 +87,13 @@ fun ClothingScreen(
 fun Header(
     clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)
 ){
+    val menuState by clothingViewModel.uiMenuState.collectAsState()
+    val garmentCount by clothingViewModel.getGarmentsCount(
+        menuState.filterExcludeCategories,
+        menuState.filterExcludeColors,
+        menuState.filterExcludeBrands
+    ).collectAsState(initial = 0)
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -94,7 +105,7 @@ fun Header(
             horizontalAlignment = Alignment.Start,
             verticalArrangement = Arrangement.Center
         ) {
-            ScreenTitle("Clothing")
+            ScreenTitle("Clothing ($garmentCount)")
         }
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -103,10 +114,12 @@ fun Header(
             Icon(
                 imageVector = Icons.Filled.Menu,
                 contentDescription = "Menu",
-                modifier = Modifier.clickable  { clothingViewModel.showMenu = !clothingViewModel.showMenu }
+                modifier = Modifier.clickable  { clothingViewModel.showMenu(!menuState.showMenu) }
             )
             ClothingMainMenu()
             ClothingBrandSelectionMenu()
+            ClothingCategorySelectionMenu()
+            ClothingColorSelectionMenu()
         }
     }
 
@@ -190,13 +203,13 @@ fun GarmentCard(
                     garment.brand?.lowercase()?.replaceFirstChar {
                         it.titlecase(Locale.getDefault())
                     } ?: "Set Brand",
-                    color = if(garment.brand != null)  MaterialTheme.colorScheme.onBackground else Color.DarkGray
+                    color = if(garment.brand != null)  MaterialTheme.colorScheme.onBackground else Color.Gray
                 )
                 Text(
                     garment.occasion?.name?.lowercase()?.replaceFirstChar {
                         it.titlecase(Locale.getDefault())
                     } ?: "Set Occasion",
-                    color = if(garment.occasion != null)  MaterialTheme.colorScheme.onBackground else Color.DarkGray
+                    color = if(garment.occasion != null)  MaterialTheme.colorScheme.onBackground else Color.Gray
                 )
             }
 
@@ -255,9 +268,10 @@ fun GarmentCard(
 
 @Composable
 fun ClothingMainMenu(clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)){
+    val menuState by clothingViewModel.uiMenuState.collectAsState()
     DropdownMenu(
-        expanded = clothingViewModel.showMenu,
-        onDismissRequest = { clothingViewModel.showMenu= false }
+        expanded = menuState.showMenu,
+        onDismissRequest = { clothingViewModel.showMenu(false) }
     ) {
         DropdownMenuItem(
             text = {
@@ -269,7 +283,7 @@ fun ClothingMainMenu(clothingViewModel: ClothingViewModel = viewModel(factory = 
                 }
             },
             onClick = {
-                clothingViewModel.showBrandFilterMenu = true
+                clothingViewModel.showBrandFilterMenu(true)
             }
         )
         DropdownMenuItem(
@@ -282,7 +296,20 @@ fun ClothingMainMenu(clothingViewModel: ClothingViewModel = viewModel(factory = 
                 }
             },
             onClick = {
-                // TODO
+                clothingViewModel.showCategoryFilterMenu(true)
+            }
+        )
+        DropdownMenuItem(
+            text = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(text = stringResource(R.string.filter_by_color))
+                }
+            },
+            onClick = {
+                clothingViewModel.showColorFilterMenu(true)
             }
         )
     }
@@ -291,28 +318,273 @@ fun ClothingMainMenu(clothingViewModel: ClothingViewModel = viewModel(factory = 
 
 @Composable
 fun ClothingBrandSelectionMenu(clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)){
+    LaunchedEffect(null) {
+        clothingViewModel.collectBrands()
+    }
+    val menuState by clothingViewModel.uiMenuState.collectAsState()
+    val brands by clothingViewModel.brands.collectAsState()
+
     DropdownMenu(
-        expanded = clothingViewModel.showMenu && clothingViewModel.showBrandFilterMenu,
+        expanded = menuState.showMenu && menuState.showBrandFilterMenu,
         onDismissRequest = {
-            clothingViewModel.showMenu= false
-            clothingViewModel.showBrandFilterMenu = false
+            clothingViewModel.showMenu(false)
+            clothingViewModel.showBrandFilterMenu(false)
         }
     ) {
+        DropdownMenuItem(
+            text = {
+                Icon(Icons.Filled.ArrowBack, "Exit Menu")
+            },
+            onClick = {
+                clothingViewModel.showBrandFilterMenu(false)
+            }
+        )
         DropdownMenuItem(
             text = {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Checkbox(
-                        checked = true,  //TODO check selection state
-                        onCheckedChange = null // The click on the item handles this
-                    )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = "This BRAND")
+                    Text(text = "Check All")
                 }
             },
-            onClick = { /* todo */ }
+            onClick = {
+                for(brand in brands){
+                    if(menuState.filterExcludeBrands.contains(brand)) {
+                        clothingViewModel.removeBrandFromFilter(brand)
+                    }
+                }
+            }
         )
+        DropdownMenuItem(
+            text = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = "Uncheck All")
+                }
+            },
+            onClick = {
+                for(brand in brands){
+                    if(!menuState.filterExcludeBrands.contains(brand)) {
+                        clothingViewModel.addBrandToFilter(brand)
+                    }
+                }
+            }
+        )
+        for(brand in brands) {
+            DropdownMenuItem(
+                text = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Checkbox(
+                            checked = !menuState.filterExcludeBrands.contains(brand),  //TODO check selection state
+                            onCheckedChange = {
+                                if(!menuState.filterExcludeBrands.contains(brand)){
+                                    clothingViewModel.addBrandToFilter(brand)
+                                }else{
+                                    clothingViewModel.removeBrandFromFilter(brand)
+                                }
+                            }
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(text = brand)
+                    }
+                },
+                onClick = {
+                    if(!menuState.filterExcludeBrands.contains(brand)){
+                        clothingViewModel.addBrandToFilter(brand)
+                    }else{
+                        clothingViewModel.removeBrandFromFilter(brand)
+                    }
+                }
+            )
+        }
+    }
+}
+
+
+@Composable
+fun ClothingColorSelectionMenu(clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)){
+    val menuState by clothingViewModel.uiMenuState.collectAsState()
+    val colorNames = GarmentColorNames.map { it.name }
+
+    DropdownMenu(
+        expanded = menuState.showMenu && menuState.showColorFilterMenu,
+        onDismissRequest = {
+            clothingViewModel.showMenu(false)
+            clothingViewModel.showColorFilterMenu(false)
+        }
+    ) {
+        DropdownMenuItem(
+            text = {
+                Icon(Icons.Filled.ArrowBack, "Exit Menu")
+            },
+            onClick = {
+                clothingViewModel.showColorFilterMenu(false)
+            }
+        )
+        DropdownMenuItem(
+            text = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = "Check All")
+                }
+            },
+            onClick = {
+                for(c in colorNames){
+                    if(menuState.filterExcludeColors.contains(c)) {
+                        clothingViewModel.removeColorFromFilter(c)
+                    }
+                }
+            }
+        )
+        DropdownMenuItem(
+            text = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = "Uncheck All")
+                }
+            },
+            onClick = {
+                for(c in colorNames){
+                    if(!menuState.filterExcludeColors.contains(c)) {
+                        clothingViewModel.addColorToFilter(c)
+                    }
+                }
+            }
+        )
+        for(color in colorNames) {
+            DropdownMenuItem(
+                text = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Checkbox(
+                            checked = !menuState.filterExcludeColors.contains(color),  //TODO check selection state
+                            onCheckedChange = {
+                                if(!menuState.filterExcludeColors.contains(color)){
+                                    clothingViewModel.addColorToFilter(color)
+                                }else{
+                                    clothingViewModel.removeColorFromFilter(color)
+                                }
+                            }
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(text = color)
+                    }
+                },
+                onClick = {
+                    if(!menuState.filterExcludeBrands.contains(color)){
+                        clothingViewModel.addColorToFilter(color)
+                    }else{
+                        clothingViewModel.removeColorFromFilter(color)
+                    }
+                }
+            )
+        }
+    }
+}
+
+
+
+@Composable
+fun ClothingCategorySelectionMenu(clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)){
+    val menuState by clothingViewModel.uiMenuState.collectAsState()
+    val categories = Category.categories()
+
+    DropdownMenu(
+        expanded = menuState.showMenu && menuState.showCategoryFilterMenu,
+        onDismissRequest = {
+            clothingViewModel.showMenu(false)
+            clothingViewModel.showCategoryFilterMenu(false)
+        }
+    ) {
+        DropdownMenuItem(
+            text = {
+                Icon(Icons.Filled.ArrowBack, "Exit Menu")
+            },
+            onClick = {
+                clothingViewModel.showCategoryFilterMenu(false)
+            }
+        )
+        DropdownMenuItem(
+            text = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = "Check All")
+                }
+            },
+            onClick = {
+                for(c in categories){
+                    if(menuState.filterExcludeCategories.contains(c)) {
+                        clothingViewModel.removeCategoryFromFilter(c)
+                    }
+                }
+            }
+        )
+        DropdownMenuItem(
+            text = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = "Uncheck All")
+                }
+            },
+            onClick = {
+                for(c in categories){
+                    if(!menuState.filterExcludeCategories.contains(c)) {
+                        clothingViewModel.addCategoryToFilter(c)
+                    }
+                }
+            }
+        )
+        for(c in categories) {
+            DropdownMenuItem(
+                text = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Checkbox(
+                            checked = !menuState.filterExcludeCategories.contains(c),  //TODO check selection state
+                            onCheckedChange = {
+                                if(!menuState.filterExcludeCategories.contains(c)){
+                                    clothingViewModel.addCategoryToFilter(c)
+                                }else{
+                                    clothingViewModel.removeCategoryFromFilter(c)
+                                }
+                            }
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(text = c.name)
+                    }
+                },
+                onClick = {
+                    if(!menuState.filterExcludeCategories.contains(c)){
+                        clothingViewModel.addCategoryToFilter(c)
+                    }else{
+                        clothingViewModel.removeCategoryFromFilter(c)
+                    }
+                }
+            )
+        }
     }
 }

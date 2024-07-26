@@ -40,4 +40,17 @@ interface GarmentDao {
 
     @Query("SELECT * FROM Garments WHERE Garments.categoryId IS NULL ORDER BY id DESC")
     fun getUncategorizedGarmentsPaged(): PagingSource<Int, Garment>
+
+
+    @Query("SELECT * FROM Garments " +
+            "WHERE (Garments.categoryId NOT IN (:excludedCategoryId) OR Garments.categoryId IS NULL) " +
+            "AND (Garments.color NOT IN (:excludedColor) OR Garments.color IS NULL)" +
+            "AND (Garments.brand NOT IN (:excludedBrand) OR Garments.brand IS NULL)")
+    fun getFilteredGarmentsPaged(excludedCategoryId: List<Int>, excludedColor: List<String>, excludedBrand: List<String>): PagingSource<Int, Garment>
+
+    @Query("SELECT COUNT(*) FROM Garments " +
+            "WHERE (Garments.categoryId NOT IN (:excludedCategoryId) OR Garments.categoryId IS NULL) " +
+            "AND (Garments.color NOT IN (:excludedColor) OR Garments.color IS NULL)" +
+            "AND (Garments.brand NOT IN (:excludedBrand) OR Garments.brand IS NULL)")
+    fun getGarmentsCount(excludedCategoryId: List<Int>, excludedColor: List<String>, excludedBrand: List<String>): Flow<Int>
 }

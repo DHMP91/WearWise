@@ -10,9 +10,6 @@ import android.graphics.Matrix
 import android.graphics.Paint
 import android.net.Uri
 import android.util.Log
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.Pager
@@ -24,15 +21,19 @@ import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.segmentation.subject.SubjectSegmentation
 import com.google.mlkit.vision.segmentation.subject.SubjectSegmenterOptions
 import dhmp.wearwise.data.GarmentsRepository
+import dhmp.wearwise.model.Category
 import dhmp.wearwise.model.Garment
 import dhmp.wearwise.model.nearestColorMatchList
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.flattenMerge
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.update
@@ -45,21 +46,38 @@ class ClothingViewModel(
     private val garmentRepository: GarmentsRepository,
 ): ViewModel() {
     private val tag: String = "ClothingViewModel"
+
     private val _uiState = MutableStateFlow(ClothingUIState())
     val uiState: StateFlow<ClothingUIState> = _uiState.asStateFlow()
 
-    val garments: Flow<PagingData<Garment>> =
-        Pager(
-            config = PagingConfig(pageSize = ITEMS_PER_PAGE, enablePlaceholders = false),
-            pagingSourceFactory = { garmentRepository.getAllGarmentsPaged() }
-        )
-            .flow
-            .cachedIn(viewModelScope)
-
-    private var currentGarmentCategoryFlows: MutableMap<Int, Flow<PagingData<Garment>>> = mutableMapOf()
-
     private val _uiEditState = MutableStateFlow(EditClothingUIState())
     val uiEditState: StateFlow<EditClothingUIState> = _uiEditState.asStateFlow()
+
+    private val _uiMenuState = MutableStateFlow(ClothingMenuUIState())
+    val uiMenuState: StateFlow<ClothingMenuUIState> = _uiMenuState.asStateFlow()
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val garments: Flow<PagingData<Garment>> = combine(
+        _uiMenuState
+    ) { menuState ->
+        val filterExcludeCategories = menuState.last().filterExcludeCategories
+        val filterExcludeBrands = menuState.last().filterExcludeBrands
+        val filterExcludeColors = menuState.last().filterExcludeColors
+        Pager(
+            config = PagingConfig(pageSize = ITEMS_PER_PAGE, enablePlaceholders = false),
+            pagingSourceFactory = {
+                garmentRepository.getFilteredGarments(
+                    excludedCategories = filterExcludeCategories,
+                    excludedColors = filterExcludeColors,
+                    excludedBrands = filterExcludeBrands,
+                )
+//                garmentRepository.getAllGarmentsPaged()
+            }
+        )
+            .flow
+    }.flattenMerge().cachedIn(viewModelScope)
+
+    private var currentGarmentCategoryFlows: MutableMap<Int, Flow<PagingData<Garment>>> = mutableMapOf()
 
     private val _brands = MutableStateFlow(listOf<String>())
     val brands: StateFlow<List<String>> = _brands.asStateFlow()
@@ -67,15 +85,99 @@ class ClothingViewModel(
     private val _isProcessingBackground = MutableStateFlow(false)
     val isProcessingBackground: StateFlow<Boolean> = _isProcessingBackground
 
-    var showMenu by mutableStateOf(false)
-    var showBrandFilterMenu by mutableStateOf(false)
-
     init {
         reset()
     }
 
-    fun reset() {
-        _uiState.value = ClothingUIState()
+    fun showMenu(bool: Boolean) {
+        _uiMenuState.update {
+                current ->
+            current.copy(
+                showMenu = bool
+            )
+        }
+    }
+
+    fun showBrandFilterMenu(bool: Boolean) {
+        _uiMenuState.update {
+                current ->
+            current.copy(
+                showBrandFilterMenu = bool
+            )
+        }
+    }
+
+    fun showColorFilterMenu(bool: Boolean) {
+        _uiMenuState.update {
+                current ->
+            current.copy(
+                showColorFilterMenu = bool
+            )
+        }
+    }
+
+    fun showCategoryFilterMenu(bool: Boolean) {
+        _uiMenuState.update {
+                current ->
+            current.copy(
+                showCategoryFilterMenu = bool
+            )
+        }
+    }
+
+    fun removeBrandFromFilter(brand: String){
+        _uiMenuState.update {
+                current ->
+            current.copy(
+                filterExcludeBrands = current.filterExcludeBrands.minus(brand)
+            )
+        }
+    }
+
+    fun addBrandToFilter(brand: String){
+        _uiMenuState.update {
+                current ->
+            current.copy(
+                filterExcludeBrands = current.filterExcludeBrands.plus(brand)
+            )
+        }
+    }
+
+
+    fun removeCategoryFromFilter(category: Category){
+        _uiMenuState.update {
+                current ->
+            current.copy(
+                filterExcludeCategories = current.filterExcludeCategories.minus(category)
+            )
+        }
+    }
+
+    fun addCategoryToFilter(category: Category){
+        _uiMenuState.update {
+                current ->
+            current.copy(
+                filterExcludeCategories = current.filterExcludeCategories.plus(category)
+            )
+        }
+    }
+
+    fun removeColorFromFilter(color: String){
+        _uiMenuState.update {
+                current ->
+            current.copy(
+                filterExcludeColors = current.filterExcludeColors.minus(color)
+            )
+        }
+    }
+
+    fun addColorToFilter(color: String){
+        _uiMenuState.update {
+                current ->
+            current.copy(
+                filterExcludeColors = current.filterExcludeColors.plus(color)
+            )
+        }
     }
 
     fun getGarmentById(id: Long) {
@@ -91,7 +193,6 @@ class ClothingViewModel(
             }
         }
     }
-
 
     fun getGarmentsByCategory(categoryId: Int?):  Flow<PagingData<Garment>> {
         val index = categoryId ?: -1
@@ -109,6 +210,16 @@ class ClothingViewModel(
         return pager
     }
 
+    fun getGarmentsCount(
+        excludedCategories: List<Category>,
+        excludedColors: List<String>,
+        excludedBrands: List<String>
+    ): Flow<Int> = garmentRepository.getGarmentsCount(
+        excludedCategories = excludedCategories,
+        excludedColors = excludedColors,
+        excludedBrands = excludedBrands
+    )
+
     fun storeChanges(garment: Garment?) {
         _uiEditState.update {
             current ->
@@ -117,7 +228,6 @@ class ClothingViewModel(
             )
         }
     }
-
 
     fun getGarmentThumbnail(garment: Garment): Flow<String> = flow {
         val thumbnail = garmentRepository.getGarmentThumbnail(garment)
@@ -156,7 +266,6 @@ class ClothingViewModel(
             storeChanges(null)
         }
     }
-
 
     fun analyzeGarment(id: Long){
         viewModelScope.launch {
@@ -308,5 +417,9 @@ class ClothingViewModel(
         )
     }
 
+    private fun reset() {
+        _uiState.value = ClothingUIState()
+        _uiMenuState.value = ClothingMenuUIState()
+    }
 
 }
