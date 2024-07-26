@@ -69,7 +69,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import dhmp.wearwise.R
-import dhmp.wearwise.model.Categories
+import dhmp.wearwise.model.Category
 import dhmp.wearwise.model.Garment
 import dhmp.wearwise.model.GarmentColorNames
 import dhmp.wearwise.model.Occasion
@@ -354,13 +354,15 @@ fun Save(clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ClothingInfo(garmentId: Long, clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)){
+fun ClothingInfo(
+    garmentId: Long,
+    clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)
+){
     LaunchedEffect (garmentId) {
         clothingViewModel.getGarmentById(garmentId)
         clothingViewModel.collectBrands()
     }
     val uiState by clothingViewModel.uiEditState.collectAsState()
-    val categories = Categories
     val brands by clothingViewModel.brands.collectAsState()
     val garment = uiState.changes ?: uiState.editGarment
 
@@ -371,14 +373,8 @@ fun ClothingInfo(garmentId: Long, clothingViewModel: ClothingViewModel = viewMod
             .verticalScroll(rememberScrollState())
             .padding(16.dp)
     ) {
-        val categoryNames = categories.map { it.name }
-        val categoryId = garment.categoryId
-        val category = categories.find { it.id == categoryId }
-        val updateCategory = { name: String ->
-            garment.categoryId = categories.find { it.name == name }?.id
-            clothingViewModel.storeChanges(garment)
-        }
-        GarmentDropdownMenu("Category", categoryNames, category?.name, updateCategory)
+
+        GarmentCategorySelection(garment, clothingViewModel)
 
         val colorNames = GarmentColorNames.map { it.name }
         val updateColor = { name: String ->
@@ -404,6 +400,61 @@ fun ClothingInfo(garmentId: Long, clothingViewModel: ClothingViewModel = viewMod
 //    DropUpMenu("A")
 //    DropUpMenu("C")
 //    DropUpMenu("K")
+    }
+}
+
+
+@Composable
+fun GarmentCategorySelection(
+    garment: Garment,
+    clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)
+){
+    val categories = Category.categories()
+    val categoryNames = categories.map { it.name }
+    var category: Category? = null
+    garment.categoryId?.let { categoryId ->
+        category = Category.getCategory(categoryId)
+    }
+    val updateCategory = { name: String ->
+        garment.categoryId = Category.getCategory(name)?.id
+        clothingViewModel.storeChanges(garment)
+    }
+
+    if(category == null){
+        GarmentDropdownMenu("Category", categoryNames, null, updateCategory)
+    }else {
+        Row {
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+            ) {
+                GarmentDropdownMenu("Category", categoryNames, category!!.name, updateCategory)
+            }
+
+            val subCategoryNames = category!!.subCategories?.map { it.name }
+
+            if (subCategoryNames != null) {
+                var subCategory: Category? = null
+                garment.subCategoryId?.let { subCategoryId ->
+                    subCategory = category!!.subCategories?.find { subCategory -> subCategory.id == subCategoryId }
+                }
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                ) {
+                    val updateSubCategory = { name: String ->
+                        garment.subCategoryId = Category.getCategory(name)?.id
+                        clothingViewModel.storeChanges(garment)
+                    }
+                    GarmentDropdownMenu(
+                        "SubCategory",
+                        subCategoryNames,
+                        subCategory?.name,
+                        updateSubCategory
+                    )
+                }
+            }
+        }
     }
 }
 

@@ -25,7 +25,7 @@ data class Garment (
     var color: String? = null,
     @ColumnInfo(defaultValue = "")
     var outfitsId: List<Long> = listOf(),
-//    val subCategoryId: int? = null,
+    var subCategoryId: Int? = null,
 //    @ColumnInfo(index = true)
 //    val mlMetaDataId: Int? = 0
 )

@@ -23,7 +23,7 @@ import dhmp.wearwise.model.OutfitDao
 
 @Database(
     entities = [Garment::class, Outfit::class, MLMetaData::class, MLLabel::class],
-    version = 9,
+    version = 10,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
@@ -50,7 +50,8 @@ abstract class AppDatabase : RoomDatabase() {
                     .addMigrations(
                         MIGRATION_3_4,
                         MIGRATION_5_6,
-                        MIGRATION_7_8
+                        MIGRATION_7_8,
+                        MIGRATION_9_10
                     )
                     .build().also {
                         Instance = it
@@ -137,5 +138,13 @@ val MIGRATION_7_8 = object : Migration(7, 8) {
         db.execSQL("ALTER TABLE Garments_New RENAME TO Garments")
 
         db.execSQL("DROP TABLE IF EXISTS Categories")
+    }
+}
+
+
+val MIGRATION_9_10 = object : Migration(9, 10) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        // Create the new table if it doesn't exist
+        db.execSQL("ALTER TABLE Garments ADD COLUMN subCategoryId INTEGER")
     }
 }
