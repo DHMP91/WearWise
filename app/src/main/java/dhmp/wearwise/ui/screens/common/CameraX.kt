@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -15,13 +16,20 @@ import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.ImageProxy
 import androidx.camera.view.LifecycleCameraController
 import androidx.camera.view.PreviewView
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBox
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -39,11 +47,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import dhmp.wearwise.R
 import kotlinx.coroutines.Job
+import okhttp3.internal.closeQuietly
 import java.io.File
 import java.util.concurrent.Executor
 
@@ -52,7 +63,130 @@ private val TAG = "CameraX Screen"
 
 
 @Composable
-fun CameraScreen(saveImage: (File, Bitmap, Float, Long?) -> Job, id: Long = 0) {
+fun ImageScreen(saveImage: (File, Bitmap, Float, Long?) -> Job, id: Long = 0) {
+    var imageMethod by remember { mutableStateOf("") }
+    when(imageMethod){
+        "camera" -> { Camera(saveImage = saveImage, id = id)}
+        "imagePicker" -> { ExternalPhotoSelector(saveImage = saveImage, id = id) }
+        else -> {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .weight(0.5f)
+                        .padding(dimensionResource(id = R.dimen.screen_title_padding)),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Start
+                ) {
+                    ScreenTitle(
+                        "Choose Source"
+                    )
+                }
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .weight(1f)
+                ) {
+                    Card(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxSize()
+                            .padding(10.dp)
+                            .clickable { imageMethod = "camera" },
+                        elevation = CardDefaults.cardElevation(defaultElevation = 5.dp),
+                        colors = CardDefaults.cardColors(MaterialTheme.colorScheme.background)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.baseline_camera_24),
+                                contentDescription = "",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier
+                                    .heightIn(max = 120.dp)
+                            )
+                            Text(
+                                "Use Camera To Take Photo",
+                                overflow = TextOverflow.Visible,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+
+                    Card(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxSize()
+                            .padding(10.dp)
+                            .clickable { imageMethod = "imagePicker" },
+                        elevation = CardDefaults.cardElevation(defaultElevation = 5.dp),
+                        colors = CardDefaults.cardColors(MaterialTheme.colorScheme.background)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.AccountBox,
+                                contentDescription = "",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier
+                                    .heightIn(max = 120.dp)
+                            )
+                            Text(
+                                "Import Photo from External App",
+                                overflow = TextOverflow.Visible,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                }
+
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .weight(0.5f),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {}
+            }
+        }
+    }
+}
+
+
+
+@Composable
+fun ExternalPhotoSelector(saveImage: (File, Bitmap, Float, Long?) -> Job, id: Long = 0){
+    val context = LocalContext.current
+    val galleryLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.GetContent(),
+            onResult = {
+                it?.let { uri ->
+                    val inputStream = context.contentResolver.openInputStream(uri)
+                    val imageBitMap = BitmapFactory.decodeStream(inputStream)
+                    saveImage(context.filesDir, imageBitMap, 0f, id)
+                    inputStream?.closeQuietly()
+                }
+            },
+        )
+    LaunchedEffect(null) {
+        galleryLauncher.launch("image/*")
+    }
+}
+@Composable
+fun Camera(saveImage: (File, Bitmap, Float, Long?) -> Job, id: Long = 0){
     val context = LocalContext.current
     val permission = Manifest.permission.CAMERA
     var hasPermission by remember { mutableStateOf(false) }
@@ -78,7 +212,7 @@ fun CameraScreen(saveImage: (File, Bitmap, Float, Long?) -> Job, id: Long = 0) {
     }
 
     if (hasPermission) {
-        Camera(saveImage, id)
+        CameraView(saveImage, id)
     }else{
         Column (
             modifier = Modifier
@@ -93,7 +227,7 @@ fun CameraScreen(saveImage: (File, Bitmap, Float, Long?) -> Job, id: Long = 0) {
 }
 
 @Composable
-fun Camera(saveImage: (File, Bitmap, Float, Long?) -> Job, id: Long = 0) {
+fun CameraView(saveImage: (File, Bitmap, Float, Long?) -> Job, id: Long = 0) {
     val context = LocalContext.current
     val previewView: PreviewView = remember { PreviewView(context) }
     val cameraController = remember { LifecycleCameraController(context) }
