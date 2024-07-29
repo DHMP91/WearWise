@@ -1,9 +1,11 @@
 package dhmp.wearwise
 
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -19,6 +21,7 @@ import dhmp.wearwise.ui.screens.common.WearWiseBottomAppBar
 import dhmp.wearwise.ui.theme.WearWiseTheme
 
 class MainActivity : ComponentActivity() {
+    @RequiresApi(Build.VERSION_CODES.P)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -33,6 +36,7 @@ class MainActivity : ComponentActivity() {
 
 
 
+@RequiresApi(Build.VERSION_CODES.P)
 @Composable
 fun App(navController: NavHostController = rememberNavController()) {
     // Get the current back stack entry
