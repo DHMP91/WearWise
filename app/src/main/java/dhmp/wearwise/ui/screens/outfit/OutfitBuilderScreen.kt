@@ -79,6 +79,7 @@ fun EditOutfitScreen(
     id: Long,
     onTakePicture: (Long) -> Unit,
     onClickPicture: (String) -> Unit,
+    onCrop: (String) -> Unit,
     onFinish: () -> Unit,
     clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory),
     outfitViewModel: OutfitViewModel = viewModel(factory = AppViewModelProvider.OutFitFactory),
@@ -87,7 +88,7 @@ fun EditOutfitScreen(
     LaunchedEffect(id) {
         outfitViewModel.getOutfit(id)
     }
-    BuilderColumn(onFinish, onTakePicture, onClickPicture, clothingViewModel, outfitViewModel)
+    BuilderColumn(onFinish, onTakePicture, onClickPicture, onCrop, clothingViewModel, outfitViewModel)
 
     var backPressHandled by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
@@ -112,7 +113,7 @@ fun NewOutfitScreen(
     LaunchedEffect(null) {
         outfitViewModel.newOutfit()
     }
-    BuilderColumn(onFinish, onTakePicture, onClickPicture, clothingViewModel, outfitViewModel)
+    BuilderColumn(onFinish, onTakePicture, onClickPicture, {}, clothingViewModel, outfitViewModel)
 
 }
 
@@ -192,10 +193,10 @@ fun BuilderColumn(
     onFinish: () -> Unit,
     onTakePicture: (Long) -> Unit,
     onClickPicture: (String) -> Unit,
+    onCrop: (String) -> Unit,
     clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory),
     outfitViewModel: OutfitViewModel = viewModel(factory = AppViewModelProvider.OutFitFactory)
 ){
-    val outfit by outfitViewModel.outfit.collectAsState()
     Column {
 
         OutfitBuilderHeader(onFinish, outfitViewModel)
@@ -205,13 +206,13 @@ fun BuilderColumn(
             .weight(3f)
             .padding(bottom = 10.dp)
         ) {
-            OutfitImage(onTakePicture, onClickPicture, outfitViewModel)
+            OutfitImage(onTakePicture, onClickPicture, onCrop, outfitViewModel)
         }
 
         Row(modifier = Modifier
             .weight(1f)
         ) {
-            SelectedGarments(clothingViewModel, outfitViewModel)
+            SelectedGarments(outfitViewModel)
         }
 
         Row {
@@ -287,6 +288,7 @@ fun SaveOutfit(
 fun OutfitImage(
     onTakePicture: (Long) -> Unit,
     onClickPicture: (String) -> Unit,
+    onCrop: (String) -> Unit,
     outfitViewModel: OutfitViewModel = viewModel(factory = AppViewModelProvider.OutFitFactory)
 ){
     val outfit by outfitViewModel.outfit.collectAsState()
@@ -378,6 +380,21 @@ fun OutfitImage(
                         verticalArrangement = Arrangement.Bottom,
                         horizontalAlignment = Alignment.End
                     ) {
+
+                        it.image?.let {image ->
+                            Icon(
+                                painter = painterResource(R.drawable.crop_icon),
+                                "Crop Image",
+                                modifier = Modifier
+                                    .clickable {
+                                        onCrop(image)
+                                    }
+                                    .padding(
+                                        bottom = dimensionResource(id = R.dimen.screen_title_padding)
+                                    )
+                            )
+                        }
+
                         Icon(
                             painter = painterResource(R.drawable.camera_retake),
                             "Retake Image",
@@ -391,6 +408,7 @@ fun OutfitImage(
                                     }
                                 }
                         )
+
                     }
                 }
             }
@@ -400,7 +418,6 @@ fun OutfitImage(
 
 @Composable
 fun SelectedGarments(
-    clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory),
     outfitViewModel: OutfitViewModel = viewModel(factory = AppViewModelProvider.OutFitFactory)
 ){
 

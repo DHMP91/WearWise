@@ -84,6 +84,7 @@ fun EditClothingScreen(
     onFinish: () -> Unit,
     onOutfits: (Long) -> Unit,
     onClickPicture: (String) -> Unit,
+    onCrop: (String) -> Unit,
     onBack: () -> Unit,
     garmentId: Long,
     modifier: Modifier = Modifier,
@@ -113,7 +114,11 @@ fun EditClothingScreen(
         Row(modifier = Modifier
             .fillMaxWidth()
             .wrapContentHeight()
-            .padding(start = pad, top = dimensionResource(id = R.dimen.screen_title_padding), end = pad)
+            .padding(
+                start = pad,
+                top = dimensionResource(id = R.dimen.screen_title_padding),
+                end = pad
+            )
         ) {
             Title(garmentId)
             DeleteGarment(onFinish, garmentId)
@@ -123,7 +128,7 @@ fun EditClothingScreen(
             .fillMaxWidth()
             .weight(4f)
         ) {
-            GarmentImage(uiState.editGarment, onOutfits, onClickPicture)
+            GarmentImage(uiState.editGarment, onOutfits, onClickPicture, onCrop)
         }
 
         Row(
@@ -194,6 +199,7 @@ fun GarmentImage(
     garment: Garment,
     onOutfits: (Long) -> Unit,
     onClickPicture: (String) -> Unit,
+    onCrop: (String) -> Unit,
     context: Context = LocalContext.current,
 ){
     Row(modifier = Modifier
@@ -222,9 +228,10 @@ fun GarmentImage(
                     contentScale = ContentScale.Fit,
                     modifier = Modifier
                         .clip(RoundedCornerShape(10.dp))
-                        .heightIn(max=300.dp)
+                        .heightIn(max = 300.dp)
+                        .fillMaxSize()
                         .clickable {
-                            garment.image?.let{
+                            garment.image?.let {
                                 onClickPicture(it)
                             }
                         }
@@ -240,10 +247,29 @@ fun GarmentImage(
         Column(
             modifier = Modifier
                 .weight(0.25f)
-                .fillMaxHeight(),
+                .fillMaxHeight()
+                .padding(start= 5.dp),
             verticalArrangement = Arrangement.Bottom,
             horizontalAlignment = Alignment.Start,
         ){
+            garment.image?.let {
+                Row(
+                    verticalAlignment = Alignment.Bottom,
+                    horizontalArrangement = Arrangement.Start,
+                    modifier = Modifier
+                        .clickable { onCrop(it) }
+                        .padding(
+                            bottom = dimensionResource(id = R.dimen.screen_title_padding)
+                        )
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.crop_icon),
+                        contentDescription = "crop_image",
+                        modifier = Modifier
+                            .sizeIn(maxHeight = dimensionResource(R.dimen.icon_max_height))
+                    )
+                }
+            }
             Row(
                 verticalAlignment = Alignment.Bottom,
                 horizontalArrangement = Arrangement.Start,

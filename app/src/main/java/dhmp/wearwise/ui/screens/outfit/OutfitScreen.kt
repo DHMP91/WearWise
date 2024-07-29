@@ -243,10 +243,10 @@ fun OutfitCard(
                                         .fillMaxHeight()
                                         .widthIn(min = 80.dp, max = 100.dp)
                                 ) {
-                                    val thumbnail by clothingViewModel.getGarmentThumbnail(item).collectAsState(initial = "")
+                                    val garmentThumbnail by clothingViewModel.getGarmentThumbnail(item).collectAsState(initial = "")
                                     AsyncImage(
                                         model = ImageRequest.Builder(LocalContext.current)
-                                            .data(thumbnail).build(),
+                                            .data(garmentThumbnail).build(),
                                         contentDescription = "2",
                                         contentScale = ContentScale.FillHeight,
                                         modifier = Modifier

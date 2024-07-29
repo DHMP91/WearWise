@@ -35,8 +35,10 @@ class Category(
 
         private val topsSubCategory = setOf(
             Category( id = 2001, name = "TShirt"),
-            Category( id = 2002, name = "LongShirt"),
+            Category( id = 2002, name = "Long Sleeve"),
             Category( id = 2003, name = "Beater"),
+            Category( id = 2004, name = "Button Up"),
+            Category( id = 2005, name = "Dress Shirt"),
         )
         private val topsCategory = Category(
             id = 2,
@@ -74,6 +76,7 @@ class Category(
             Category( id = 5003, name = "Rain Coat"),
             Category( id = 5004, name = "Hoodie"),
             Category( id = 5005, name = "Blazer"),
+            Category( id = 5006, name = "Sweater"),
         )
         private val outerWearCategory = Category(
             id = 5,
