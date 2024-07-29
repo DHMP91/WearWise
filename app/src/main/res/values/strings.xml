@@ -1,3 +1,17 @@
 <resources>
     <string name="app_name">WearWise</string>
+    <string name="inventory">Inventory</string>
+    <string name="new_garment">New Clothing</string>
+    <string name="edit_garment">Edit Clothing</string>
+    <string name="process_image">Processing Image</string>
+    <string name="outfit">Outfit</string>
+    <string name="outfitPicture">Outfit Picture</string>
+    <string name="edit_outfit">Edit Outfit</string>
+    <string name="new_outfit">New Outfit</string>
+    <string name="shop">Shop</string>
+    <string name="filter_by_brand">Filter By Brand</string>
+    <string name="filter_by_category">Filter By Category</string>
+    <string name="filter_by_color">Filter By Color</string>
+    <string name="view_image">View Image</string>
+    <string name="crop_image">Crop Image</string>
 </resources>
