@@ -1,5 +1,7 @@
 package dhmp.wearwise.ui.screens.common
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -32,9 +34,11 @@ enum class AppScreens(@StringRes val title: Int) {
     EditOutfit(title = R.string.edit_outfit),
     NewOutfit(title = R.string.new_outfit),
     Shop(title = R.string.shop),
-    ViewImage(title = R.string.view_image)
+    ViewImage(title = R.string.view_image),
+    CropImage(title = R.string.crop_image)
 }
 
+@RequiresApi(Build.VERSION_CODES.P)
 @Composable
 fun AppNav(modifier: Modifier = Modifier, navController: NavHostController = rememberNavController()){
     NavHost(
@@ -61,6 +65,11 @@ fun AppNav(modifier: Modifier = Modifier, navController: NavHostController = rem
         val onViewImage = { image: String ->
             val imageEncoded = URLEncoder.encode(image, UTF_8.toString())
             navController.navigate("${AppScreens.ViewImage.name}/$imageEncoded")
+        }
+
+        val onCropImage = { image: String ->
+            val imageEncoded = URLEncoder.encode(image, UTF_8.toString())
+            navController.navigate("${AppScreens.CropImage.name}/$imageEncoded")
         }
 
         val onViewGarmentsOutfits = { id: Long ->
@@ -95,6 +104,7 @@ fun AppNav(modifier: Modifier = Modifier, navController: NavHostController = rem
                     },
                     onOutfits = onViewGarmentsOutfits,
                     onClickPicture = onViewImage,
+                    onCrop = onCropImage,
                     onBack = navClothings,
                     garmentId = garmentId
                 )
@@ -195,6 +205,7 @@ fun AppNav(modifier: Modifier = Modifier, navController: NavHostController = rem
                     id = outfitId,
                     onTakePicture = { id: Long -> navController.navigate("${AppScreens.OutfitPicture.name}/$id") },
                     onClickPicture = onViewImage,
+                    onCrop = onCropImage,
                     onFinish = navToOutfit,
                     onBack = navToOutfit
                 )
@@ -229,6 +240,27 @@ fun AppNav(modifier: Modifier = Modifier, navController: NavHostController = rem
             }
             else {
                 ViewImage(URLDecoder.decode(image, UTF_8.toString()))
+            }
+        }
+        composable(
+            route = "${AppScreens.CropImage}/{image}",
+            arguments = listOf(navArgument("image") {
+                type = NavType.StringType
+                defaultValue = ""  // Default value to handle the case when outfitId is not provided
+            })
+        ) { backStackEntry ->
+            val image = backStackEntry.arguments?.getString("image")
+
+            if(image.isNullOrEmpty()) {
+                navController.navigate(navController.graph.findStartDestination().id)
+            }
+            else {
+                CropImage(
+                    URLDecoder.decode(image, UTF_8.toString()),
+                    onBack = {
+                        navController.popBackStack()
+                    }
+                )
             }
         }
     }

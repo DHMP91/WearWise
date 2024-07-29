@@ -13,4 +13,5 @@
     <string name="filter_by_category">Filter By Category</string>
     <string name="filter_by_color">Filter By Color</string>
     <string name="view_image">View Image</string>
+    <string name="crop_image">Crop Image</string>
 </resources>
