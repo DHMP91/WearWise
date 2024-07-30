@@ -36,7 +36,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -128,7 +127,6 @@ fun OutfitPictureScreen(
     LaunchedEffect(outfitId){
         model.getOutfit(outfitId)
     }
-    val outfit by model.outfit.collectAsState()
     val outfitUri by model.outfitUri.collectAsState()
     if (outfitUri != null){
         onFinish(outfitId)
@@ -139,18 +137,7 @@ fun OutfitPictureScreen(
                 .fillMaxWidth()
                 .wrapContentHeight()
         ) {
-            ImageScreen(model::saveImage, outfitId)
-        }
-    }
-
-    DisposableEffect(outfitId) {
-        onDispose {
-            outfit?.let{
-                if(it.image == null && it.garmentsId.isEmpty()){
-                    model.deleteOutfit()
-                    navOutfit()
-                }
-            }
+            ImageScreen(model::saveImage, outfitId, onBack = { onFinish(outfitId) })
         }
     }
 }

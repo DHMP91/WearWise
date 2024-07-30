@@ -16,6 +16,7 @@ private val TAG = "NewClothingScreen"
 @Composable
 fun NewClothingScreen(
     onFinish: (Long) -> Unit,
+    onBack: () -> Unit,
     clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory),
 ) {
     val uiState by clothingViewModel.uiState.collectAsState()
@@ -28,7 +29,7 @@ fun NewClothingScreen(
                 .fillMaxWidth()
                 .wrapContentHeight()
         ){
-            ImageScreen(clothingViewModel::saveImage)
+            ImageScreen(clothingViewModel::saveImage, onBack = onBack)
         }
     }
 }

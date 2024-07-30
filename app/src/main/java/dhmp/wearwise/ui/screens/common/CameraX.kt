@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Log
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.OptIn
@@ -40,6 +41,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -54,6 +56,8 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import dhmp.wearwise.R
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.android.awaitFrame
+import kotlinx.coroutines.launch
 import okhttp3.internal.closeQuietly
 import java.io.File
 import java.util.concurrent.Executor
@@ -63,11 +67,23 @@ private val TAG = "CameraX Screen"
 
 
 @Composable
-fun ImageScreen(saveImage: (File, Bitmap, Float, Long?) -> Job, id: Long = 0) {
+fun ImageScreen(saveImage: (File, Bitmap, Float, Long?) -> Job, id: Long = 0, onBack: () -> Unit) {
     var imageMethod by remember { mutableStateOf("") }
+    var backPressHandled by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
+    BackHandler(enabled = !backPressHandled) {
+        println("back pressed")
+        backPressHandled = true
+        coroutineScope.launch {
+            awaitFrame()
+            onBack()
+            backPressHandled = false
+        }
+    }
+
     when(imageMethod){
         "camera" -> { Camera(saveImage = saveImage, id = id)}
-        "imagePicker" -> { ExternalPhotoSelector(saveImage = saveImage, id = id) }
+        "imagePicker" -> { ExternalPhotoSelector(saveImage = saveImage, id = id, onBack = onBack)}
         else -> {
             Column(
                 modifier = Modifier.fillMaxSize(),
@@ -167,19 +183,21 @@ fun ImageScreen(saveImage: (File, Bitmap, Float, Long?) -> Job, id: Long = 0) {
 
 
 @Composable
-fun ExternalPhotoSelector(saveImage: (File, Bitmap, Float, Long?) -> Job, id: Long = 0){
+fun ExternalPhotoSelector(saveImage: (File, Bitmap, Float, Long?) -> Job, id: Long = 0, onBack: () -> Unit){
     val context = LocalContext.current
     val galleryLauncher =
         rememberLauncherForActivityResult(
             contract = ActivityResultContracts.GetContent(),
-            onResult = {
-                it?.let { uri ->
+            onResult = { uri ->
+                if(uri != null) {
                     val inputStream = context.contentResolver.openInputStream(uri)
                     val imageBitMap = BitmapFactory.decodeStream(inputStream)
                     saveImage(context.filesDir, imageBitMap, 0f, id)
                     inputStream?.closeQuietly()
+                }else {
+                    onBack()
                 }
-            },
+            }
         )
     LaunchedEffect(null) {
         galleryLauncher.launch("image/*")
