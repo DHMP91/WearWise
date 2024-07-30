@@ -3,6 +3,7 @@ package dhmp.wearwise.ui.screens.clothing
 import android.content.Context
 import android.net.Uri
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -210,9 +211,19 @@ fun GarmentImage(
             modifier = Modifier
                 .weight(0.25f)
                 .fillMaxHeight(),
-            verticalArrangement = Arrangement.Top,
-            horizontalAlignment = Alignment.Start,
+            verticalArrangement = Arrangement.Bottom,
+            horizontalAlignment = Alignment.End,
         ){
+            garment.color?.let {garmentColor ->
+                val color = GarmentColorNames.find { it.name == garmentColor }
+                color?.let {
+                    Box(
+                        modifier = Modifier
+                            .size(dimensionResource(R.dimen.icon_max_height))  // Adjust the size as needed
+                            .background(Color(color.color))
+                    )
+                }
+            }
         }
         Column(
             modifier = Modifier
@@ -453,6 +464,7 @@ fun GarmentCategorySelection(
             Column(
                 modifier = Modifier
                     .weight(1f)
+                    .padding(end = 5.dp)
             ) {
                 GarmentDropdownMenu("Category", categoryNames, category!!.name, updateCategory)
             }

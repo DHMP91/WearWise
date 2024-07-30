@@ -1,5 +1,6 @@
 package dhmp.wearwise.ui.screens.clothing
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -184,20 +186,17 @@ fun GarmentCard(
                 .weight(3f)
                 .fillMaxSize()
                 .padding(10.dp),
+            verticalArrangement = Arrangement.Top,
         ){
+
             Column(
                 modifier = Modifier
+                    .weight(2f)
                     .fillMaxWidth(),
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.Start
             ) {
 //            Text(text="${garment.id}")
-                Text(
-                    "#${garment.id}",
-                    fontSize = MaterialTheme.typography.labelSmall.fontSize,
-                    modifier = Modifier
-                        .padding(bottom = 5.dp)
-                )
 
                 Text(
                     garment.brand?.lowercase()?.replaceFirstChar {
@@ -206,20 +205,39 @@ fun GarmentCard(
                     color = if(garment.brand != null)  MaterialTheme.colorScheme.onBackground else Color.Gray
                 )
                 Text(
+                    "#${garment.id}",
+                    fontSize = MaterialTheme.typography.labelSmall.fontSize,
+                    modifier = Modifier
+                        .padding(top = 5.dp, bottom = 5.dp)
+                )
+                Text(
                     garment.occasion?.name?.lowercase()?.replaceFirstChar {
                         it.titlecase(Locale.getDefault())
                     } ?: "Set Occasion",
+                    fontSize = MaterialTheme.typography.labelMedium.fontSize,
                     color = if(garment.occasion != null)  MaterialTheme.colorScheme.onBackground else Color.Gray
                 )
             }
 
+
             Row(
                 modifier = Modifier
+                    .weight(0.75f)
                     .fillMaxWidth()
-                    .padding(start = 10.dp, top = 5.dp),
+                    .padding(top = 5.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Start
+                horizontalArrangement = Arrangement.End
             ) {
+                val color = GarmentColorNames.find { it.name == garment.color}
+                color?.let {
+                    Box(
+                        modifier = Modifier
+                            .size(20.dp)  // Adjust the size as needed
+                            .background(Color(color.color))
+                            .border(width = 1.dp, color = MaterialTheme.colorScheme.onBackground)
+                    )
+                }
+
                 val categories = Categories
                 val icon = categoryIcon(garment, categories)
                 Icon(
@@ -227,15 +245,16 @@ fun GarmentCard(
                     contentDescription = "Clothing Type",
                     modifier = Modifier
                         .sizeIn(maxHeight = dimensionResource(R.dimen.icon_max_height))
-                        .padding(end = 5.dp)
+                        .padding(start = 5.dp, end = 5.dp)
                 )
+
                 Row(
                     verticalAlignment = Alignment.Bottom,
                     horizontalArrangement = Arrangement.Start
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.outfit),
-                        contentDescription = "Clothing Type",
+                        contentDescription = "Outfit Count",
                         modifier = Modifier
                             .sizeIn(maxHeight = dimensionResource(R.dimen.icon_max_height))
                             .clickable {
@@ -248,7 +267,6 @@ fun GarmentCard(
 
                 }
             }
-
         }
 
 //        Column(

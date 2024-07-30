@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -35,7 +36,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -66,8 +66,8 @@ import dhmp.wearwise.model.Category
 import dhmp.wearwise.model.Garment
 import dhmp.wearwise.ui.AppViewModelProvider
 import dhmp.wearwise.ui.screens.clothing.ClothingViewModel
-import dhmp.wearwise.ui.screens.common.CameraScreen
 import dhmp.wearwise.ui.screens.common.Collapsible
+import dhmp.wearwise.ui.screens.common.ImageScreen
 import dhmp.wearwise.ui.screens.common.ScreenTitle
 import dhmp.wearwise.ui.screens.common.categoryIcon
 import kotlinx.coroutines.android.awaitFrame
@@ -127,7 +127,6 @@ fun OutfitPictureScreen(
     LaunchedEffect(outfitId){
         model.getOutfit(outfitId)
     }
-    val outfit by model.outfit.collectAsState()
     val outfitUri by model.outfitUri.collectAsState()
     if (outfitUri != null){
         onFinish(outfitId)
@@ -138,18 +137,7 @@ fun OutfitPictureScreen(
                 .fillMaxWidth()
                 .wrapContentHeight()
         ) {
-            CameraScreen(model::saveImage, outfitId)
-        }
-    }
-
-    DisposableEffect(outfitId) {
-        onDispose {
-            outfit?.let{
-                if(it.image == null && it.garmentsId.isEmpty()){
-                    model.deleteOutfit()
-                    navOutfit()
-                }
-            }
+            ImageScreen(model::saveImage, outfitId, onBack = { onFinish(outfitId) })
         }
     }
 }
@@ -392,6 +380,7 @@ fun OutfitImage(
                                     .padding(
                                         bottom = dimensionResource(id = R.dimen.screen_title_padding)
                                     )
+                                    .sizeIn(maxHeight = dimensionResource(R.dimen.icon_max_height))
                             )
                         }
 

@@ -84,9 +84,18 @@ fun AppNav(modifier: Modifier = Modifier, navController: NavHostController = rem
             )
         }
         composable(route = AppScreens.NewClothing.name) {
-            NewClothingScreen(onFinish = { id: Long ->
-                navController.navigate("${AppScreens.EditClothing.name}/$id")
-            })
+            NewClothingScreen(
+                onFinish = { id: Long ->
+                    navController.navigate("${AppScreens.EditClothing.name}/$id")
+                },
+                onBack = {
+                    navController.navigate(AppScreens.Clothing.name){
+                        popUpTo(navController.graph.findStartDestination().id) {
+                            inclusive = true
+                        }
+                    }
+                }
+            )
         }
         composable(
             route = "${AppScreens.EditClothing.name}/{garmentId}",

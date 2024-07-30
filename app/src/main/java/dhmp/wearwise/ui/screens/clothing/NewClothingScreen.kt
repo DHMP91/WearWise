@@ -10,12 +10,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dhmp.wearwise.ui.AppViewModelProvider
-import dhmp.wearwise.ui.screens.common.CameraScreen
+import dhmp.wearwise.ui.screens.common.ImageScreen
 
 private val TAG = "NewClothingScreen"
 @Composable
 fun NewClothingScreen(
     onFinish: (Long) -> Unit,
+    onBack: () -> Unit,
     clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory),
 ) {
     val uiState by clothingViewModel.uiState.collectAsState()
@@ -28,7 +29,7 @@ fun NewClothingScreen(
                 .fillMaxWidth()
                 .wrapContentHeight()
         ){
-            CameraScreen(clothingViewModel::saveImage)
+            ImageScreen(clothingViewModel::saveImage, onBack = onBack)
         }
     }
 }

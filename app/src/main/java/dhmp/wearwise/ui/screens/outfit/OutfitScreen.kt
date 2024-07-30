@@ -108,7 +108,8 @@ fun OutfitList(
     onEdit: (Long) -> Unit,
     onTakePicture: (Long) -> Unit,
     onNewOutfit: () -> Unit,
-    title: String = "All Outfits"
+    title: String = "Outfits",
+    model: OutfitViewModel = viewModel(factory = AppViewModelProvider.OutFitFactory),
 ){
 
     Surface {
@@ -125,7 +126,11 @@ fun OutfitList(
                 }
                 items(outfits.itemCount) { index ->
                     outfits[index]?.let {
-                        OutfitCard(it, onTakePicture, onEdit)
+                        if(it.image == null && it.garmentsId.isEmpty()) {
+                            model.deleteOutfit(it.id)
+                        } else {
+                            OutfitCard(it, onTakePicture, onEdit)
+                        }
                     }
                 }
             }

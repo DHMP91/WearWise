@@ -140,31 +140,24 @@ class OutfitViewModel (
     fun deleteOutfit(){
         viewModelScope.launch(Dispatchers.IO) {
             _outfit.value?.let {
-                outfitsRepository.deleteOutfit(it)
-
-                //insert outfit id into each garment
-                it.garmentsId.forEach { garmentId ->
-                    val garment = garmentRepository.getGarmentStream(garmentId).first()
-                    garment?.let{ g ->
-                        g.outfitsId = g.outfitsId.minus(it.id)
-                        garmentRepository.updateGarment(g)
-                    }
-                }
-
-                it.image?.let { imageUri ->
-                    Uri.parse(imageUri).path?.let { path ->
-                        deleteFile(path)
-                    }
-                }
-
+                deleteOutfit(it)
                 _outfit.update {
                     null
                 }
-
-
             }
         }
     }
+
+    fun deleteOutfit(id: Long){
+        viewModelScope.launch(Dispatchers.IO) {
+            outfitsRepository.getOutfitStream(id).flowOn(Dispatchers.IO).collect { outfit ->
+                outfit?.let {
+                    deleteOutfit(it)
+                }
+            }
+        }
+    }
+
 
     fun getOutfit(id: Long) {
         viewModelScope.launch(Dispatchers.IO) {
@@ -274,5 +267,21 @@ class OutfitViewModel (
                     false
                 }
             }
+    }
+
+    private suspend fun deleteOutfit(outfit: Outfit){
+        outfitsRepository.deleteOutfit(outfit)
+        outfit.garmentsId.forEach { garmentId ->
+            val garment = garmentRepository.getGarmentStream(garmentId).first()
+            garment?.let{ g ->
+                g.outfitsId = g.outfitsId.minus(outfit.id)
+                garmentRepository.updateGarment(g)
+            }
+        }
+        outfit.image?.let { imageUri ->
+            Uri.parse(imageUri).path?.let { path ->
+                deleteFile(path)
+            }
+        }
     }
 }
