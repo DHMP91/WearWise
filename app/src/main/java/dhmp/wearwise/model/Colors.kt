@@ -11,8 +11,8 @@ val nearestColorMatchList = listOf(
     ColorName("Black", 0xFF000000.toInt()),
     ColorName("White", 0xFFFFFFFF.toInt()),
     ColorName("Yellow", 0xFFFFFF00.toInt()),
-    ColorName("Blue", 0xFF0000FF.toInt()),
-    ColorName("Green", 0xFF00FF00.toInt()),
+    ColorName("Blue", 0xFF21319E.toInt()),
+    ColorName("Green", 0xFF23BC54 .toInt()),
     ColorName("Red", 0xFFFF0000.toInt()),
 
 )
@@ -29,7 +29,7 @@ val GarmentColorNames = listOf(
 //    ColorName("LightYellow", 0xFFFFFFE0.toInt()),
 //    ColorName("DarkYellow", 0xFF9B870C.toInt()),
 
-    ColorName("Blue", 0xFF0000FF.toInt()),
+    ColorName("Blue", 0xFF21319E.toInt()),
 //    ColorName("LightBlue", 0xFFADD8E6.toInt()),
 //    ColorName("DarkBlue", 0xFF00008B.toInt()),
 
@@ -37,7 +37,7 @@ val GarmentColorNames = listOf(
 //    ColorName("LightBrown", 0xFFCD853F.toInt()),
 //    ColorName("DarkBrown", 0xFF5C4033.toInt()),
 
-    ColorName("Green", 0xFF00FF00.toInt()),
+    ColorName("Green", 0xFF23BC54.toInt()),
 //    ColorName("LightGreen", 0xFF90EE90.toInt()),
 //    ColorName("DarkGreen", 0xFF006400.toInt()),
 

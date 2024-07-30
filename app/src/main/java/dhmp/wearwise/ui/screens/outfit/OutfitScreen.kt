@@ -108,7 +108,7 @@ fun OutfitList(
     onEdit: (Long) -> Unit,
     onTakePicture: (Long) -> Unit,
     onNewOutfit: () -> Unit,
-    title: String = "All Outfits",
+    title: String = "Outfits",
     model: OutfitViewModel = viewModel(factory = AppViewModelProvider.OutFitFactory),
 ){
 
