@@ -91,8 +91,8 @@ fun NavIcon(isCurrentRoute: Boolean, IconResource: Int){
                     strokeWidth = strokeWidth
                 )
             }
-            .padding(bottom = 10.dp)
-    val noBorder = Modifier.padding(bottom = 10.dp)
+            .padding(bottom = 5.dp)
+    val noBorder = Modifier.padding(6.dp)
     if(isCurrentRoute) {
         return Icon(
             painterResource(IconResource),
