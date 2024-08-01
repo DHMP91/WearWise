@@ -57,6 +57,7 @@ androidx-paging-runtime = { group = "androidx.paging", name = "paging-runtime", 
 androidx-paging-rx-java2 = { group = "androidx.paging", name = "paging-rxjava2", version.ref = "pagingVersion" }
 androidx-paging-rx-java3 = { group = "androidx.paging", name = "paging-rxjava3", version.ref = "pagingVersion" }
 androidx-paging-compose = { group = "androidx.paging", name = "paging-compose", version.ref = "pagingVersion" }
+androidx-paging-testing = { group = "androidx.paging", name = "paging-testing", version.ref = "pagingVersion" }
 image-cropper = {group = "com.vanniktech", name = "android-image-cropper", version.ref ="imageCropperVersion"}
 
 [plugins]

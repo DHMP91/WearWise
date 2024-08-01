@@ -91,6 +91,7 @@ dependencies {
     implementation(libs.androidx.paging.rx.java2)
     implementation(libs.androidx.paging.rx.java3)
     implementation(libs.androidx.paging.compose)
+    implementation(libs.androidx.paging.testing)
 
     implementation(libs.image.cropper)
 
