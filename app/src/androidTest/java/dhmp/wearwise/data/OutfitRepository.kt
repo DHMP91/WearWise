@@ -17,7 +17,7 @@ import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 
-class GarmentsRepositoryTest {
+class OutfitRepositoryTest {
     private lateinit var database: AppDatabase
     private lateinit var context: Context
     private lateinit var appContainer: DefaultAppContainer
@@ -36,7 +36,7 @@ class GarmentsRepositoryTest {
     }
 
     @Test
-    fun getAllGarmentsPaged() = runTest {
+    fun getAllOutfitsPaged() = runTest {
         //Scenario: test paging libary implementation with android room database
         val initial = 1
         val pageSize = 3
