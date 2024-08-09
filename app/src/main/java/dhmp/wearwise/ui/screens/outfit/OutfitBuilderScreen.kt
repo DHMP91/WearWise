@@ -121,7 +121,6 @@ fun NewOutfitScreen(
 fun OutfitPictureScreen(
     outfitId: Long,
     onFinish: (Long) -> Unit,
-    navOutfit: () -> Unit,
     model: OutfitViewModel = viewModel(factory = AppViewModelProvider.OutFitFactory),
 ) {
     LaunchedEffect(outfitId){

@@ -2,10 +2,6 @@ package dhmp.wearwise.ui.screens.clothing
 
 import dhmp.wearwise.model.Category
 
-data class ClothingUIState (
-    val newItemId: Long = 0L
-)
-
 data class ClothingMenuUIState (
     val filterExcludeCategories: List<Category> = listOf(),
     val filterExcludeBrands: List<String> = listOf(),

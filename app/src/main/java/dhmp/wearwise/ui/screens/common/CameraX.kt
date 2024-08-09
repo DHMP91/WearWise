@@ -67,6 +67,14 @@ private val TAG = "CameraX Screen"
 
 
 @Composable
+fun ImageScreen(saveImage: (File, Bitmap, Float) -> Job, onBack: () -> Unit) {
+    val func = { file: File, bitmap: Bitmap, float: Float, _: Long? ->
+        saveImage(file, bitmap, float)
+    }
+    ImageScreen(func, id = 0, onBack)
+}
+
+@Composable
 fun ImageScreen(saveImage: (File, Bitmap, Float, Long?) -> Job, id: Long = 0, onBack: () -> Unit) {
     var imageMethod by remember { mutableStateOf("") }
     var backPressHandled by remember { mutableStateOf(false) }

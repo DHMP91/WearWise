@@ -47,8 +47,8 @@ class ClothingViewModel(
 ): ViewModel() {
     private val tag: String = "ClothingViewModel"
 
-    private val _uiState = MutableStateFlow(ClothingUIState())
-    val uiState: StateFlow<ClothingUIState> = _uiState.asStateFlow()
+    private val _newItemId = MutableStateFlow(0L)
+    val newItemId: StateFlow<Long> = _newItemId.asStateFlow()
 
     private val _uiEditState = MutableStateFlow(EditClothingUIState())
     val uiEditState: StateFlow<EditClothingUIState> = _uiEditState.asStateFlow()
@@ -240,14 +240,10 @@ class ClothingViewModel(
         }
     }.flowOn(Dispatchers.IO)
 
-    fun saveImage(appDir: File, image:Bitmap, rotation: Float, id: Long?): Job {
+    fun saveImage(appDir: File, image:Bitmap, rotation: Float): Job {
         val job = viewModelScope.launch(Dispatchers.IO) {
             val garmentId = garmentRepository.insertGarment(Garment())
-            _uiState.update { currentState ->
-                currentState.copy(
-                    newItemId = garmentId
-                )
-            }
+            _newItemId.emit(garmentId)
 
             val matrix = Matrix()
             matrix.postRotate(rotation)
@@ -418,7 +414,6 @@ class ClothingViewModel(
     }
 
     private fun reset() {
-        _uiState.value = ClothingUIState()
         _uiMenuState.value = ClothingMenuUIState()
     }
 
