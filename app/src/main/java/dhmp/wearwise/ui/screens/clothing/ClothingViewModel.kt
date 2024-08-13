@@ -24,6 +24,7 @@ import dhmp.wearwise.data.GarmentsRepository
 import dhmp.wearwise.model.Category
 import dhmp.wearwise.model.Garment
 import dhmp.wearwise.model.nearestColorMatchList
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
@@ -40,10 +41,14 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import okhttp3.internal.closeQuietly
 import java.io.File
+import kotlin.math.abs
+import kotlin.math.min
+import kotlin.math.sqrt
 
 private const val ITEMS_PER_PAGE = 10
 class ClothingViewModel(
     private val garmentRepository: GarmentsRepository,
+    private val dispatcherIO: CoroutineDispatcher = Dispatchers.IO
 ): ViewModel() {
     private val tag: String = "ClothingViewModel"
 
@@ -182,7 +187,7 @@ class ClothingViewModel(
 
     fun getGarmentById(id: Long) {
         viewModelScope.launch {
-            garmentRepository.getGarmentStream(id).flowOn(Dispatchers.IO).collect { c ->
+            garmentRepository.getGarmentStream(id).flowOn(dispatcherIO).collect { c ->
                 c?.let {
                     _uiEditState.update { currentState ->
                         currentState.copy(
@@ -238,10 +243,10 @@ class ClothingViewModel(
         } else{
             emit(thumbnail)
         }
-    }.flowOn(Dispatchers.IO)
+    }.flowOn(dispatcherIO)
 
     fun saveImage(appDir: File, image:Bitmap, rotation: Float): Job {
-        val job = viewModelScope.launch(Dispatchers.IO) {
+        val job = viewModelScope.launch(dispatcherIO) {
             val garmentId = garmentRepository.insertGarment(Garment())
             _newItemId.emit(garmentId)
 
@@ -257,7 +262,7 @@ class ClothingViewModel(
     }
 
     fun saveChanges(garment: Garment){
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(dispatcherIO) {
             garmentRepository.updateGarment(garment)
             storeChanges(null)
         }
@@ -265,7 +270,7 @@ class ClothingViewModel(
 
     fun analyzeGarment(id: Long){
         viewModelScope.launch {
-            val garment = garmentRepository.getGarmentStream(id).flowOn(Dispatchers.IO).firstOrNull()
+            val garment = garmentRepository.getGarmentStream(id).flowOn(dispatcherIO).firstOrNull()
             garment?.let {
                 val image = it.imageOfSubject ?: it.image
                 val bitmap = BitmapFactory.decodeFile(Uri.parse(image).path!!)
@@ -291,7 +296,7 @@ class ClothingViewModel(
     }
 
     fun removeBackGround(id: Long, path: String) {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(dispatcherIO) {
             _isProcessingBackground.value = true
             val file = File(path)
             val image = BitmapFactory.decodeFile(path)
@@ -331,7 +336,7 @@ class ClothingViewModel(
                             val uri =
                                 garmentRepository.saveImageToStorage(file.parentFile!!.parentFile!!, finalImage)
                             it.recycle()
-                            val garment = garmentRepository.getGarmentStream(id).flowOn(Dispatchers.IO).firstOrNull()
+                            val garment = garmentRepository.getGarmentStream(id).flowOn(dispatcherIO).firstOrNull()
                             garment?.let { c ->
                                 c.image = uri.toString()
                                 c.imageOfSubject = subjectUri.toString()
@@ -351,32 +356,39 @@ class ClothingViewModel(
     }
 
     fun deleteGarment(id: Long) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val garment = garmentRepository.getGarmentStream(id).flowOn(Dispatchers.IO).firstOrNull()
+        viewModelScope.launch(dispatcherIO) {
+            val garment = garmentRepository.getGarmentStream(id).flowOn(dispatcherIO).firstOrNull()
             garment?.let {
-                it.image?.let { uri ->
-                    val deleted = Uri.parse(uri).path?.let { path ->
+                val deleteUri = { uri: String ->
+                    Uri.parse(uri).path?.let { path ->
                         try{
-                            File(path).delete()
+                            val deleted = File(path).delete()
+                            if (deleted) {
+                            } else {
+                                Log.e(tag, "Failed to delete the file $path")
+                            }
                         }catch (exception: SecurityException){
                             Log.e(tag, "No permission to delete file")
-                            false
                         }
                     }
-                    when(deleted){
-                        true ->  garmentRepository.deleteGarment(it)
-                        else -> Log.e(tag, "Could not delete the file image")
-                    }
                 }
+                it.image?.let { uri ->
+                    deleteUri(uri)
+                }
+
+                it.imageOfSubject?.let { uri ->
+                    deleteUri(uri)
+                }
+                garmentRepository.deleteGarment(it)
             }
         }
     }
 
     fun collectBrands(){
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(dispatcherIO) {
              garmentRepository
                  .getBrands()
-                 .flowOn(Dispatchers.IO)
+                 .flowOn(dispatcherIO)
                  .collect{
                      _brands.emit(it)
                  }
@@ -398,19 +410,22 @@ class ClothingViewModel(
     }
 
     private fun colorDistance(color1: Int, color2: Int): Double {
-        val r1 = Color.red(color1)
-        val g1 = Color.green(color1)
-        val b1 = Color.blue(color1)
+        val c1 = FloatArray(3)
+        val c2 = FloatArray(3)
 
-        val r2 = Color.red(color2)
-        val g2 = Color.green(color2)
-        val b2 = Color.blue(color2)
+        Color.colorToHSV(color1, c1)
+        Color.colorToHSV(color2, c2)
 
-        return Math.sqrt(
-            ((r1 - r2) * (r1 - r2) +
-                    (g1 - g2) * (g1 - g2) +
-                    (b1 - b2) * (b1 - b2)).toDouble()
-        )
+        val dh = min(abs(c1[0] - c2[0]), 360 - abs(c1[0] - c2[0])) / 180.0 // normalize hue to [0, 2]
+        val ds = abs(c1[1] - c2[1]) // saturation difference
+        val dv = abs(c1[2] - c2[2]) // value (brightness) difference
+
+        // Applying weights
+        val hueWeight = 6.0 // Significantly increase hue weight
+        val saturationWeight = 2.0
+        val valueWeight = 0.5 // Further reduce value weight
+
+        return sqrt(hueWeight * dh * dh + saturationWeight * ds * ds + valueWeight * dv * dv)
     }
 
     private fun reset() {

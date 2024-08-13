@@ -2,7 +2,11 @@ package dhmp.wearwise.ui.screens
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Paint
 import android.net.Uri
+import android.util.Log
+import androidx.core.net.toUri
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import androidx.paging.testing.asSnapshot
@@ -10,11 +14,17 @@ import androidx.test.platform.app.InstrumentationRegistry
 import dhmp.wearwise.data.GarmentsRepository
 import dhmp.wearwise.model.Category
 import dhmp.wearwise.model.Garment
+import dhmp.wearwise.model.GarmentColorNames
 import dhmp.wearwise.ui.screens.clothing.ClothingViewModel
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withTimeoutOrNull
 import org.junit.Assert
@@ -27,6 +37,9 @@ import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
+import java.io.File
+import java.io.FileOutputStream
+import kotlin.time.Duration.Companion.minutes
 
 
 class ClothingViewModelTest {
@@ -35,12 +48,17 @@ class ClothingViewModelTest {
     lateinit var model: ClothingViewModel
     @Captor
     private lateinit var updateGarmentCaptor: ArgumentCaptor<Garment>
+    private lateinit var testDispatcher: CoroutineDispatcher
+
     private val garmentAmount = 20
+    private val defaultTimeout = 5000L //millisecond
+
 
     @Before
     fun setup() {
         context = InstrumentationRegistry.getInstrumentation().targetContext
         mockedGarmentRepo = Mockito.mock(GarmentsRepository::class.java)
+        testDispatcher = StandardTestDispatcher()
         model = ClothingViewModel(mockedGarmentRepo)
     }
 
@@ -55,7 +73,7 @@ class ClothingViewModelTest {
         )
         model.getGarmentById(3L)
 
-        val modelGarment = withTimeoutOrNull(15000) {
+        val modelGarment = withTimeoutOrNull(defaultTimeout) {
             model.uiEditState
                 .map { it.editGarment }
                 .first { it == fakeGarment }
@@ -230,31 +248,144 @@ class ClothingViewModelTest {
         }
     }
 
-//    @Test
-//    fun saveChanges(){
-//        throw NotImplementedError()
-//    }
-//
-//    @Test
-//    fun analyzeGarment(){
-//        throw NotImplementedError()
-//    }
-//
-//    @Test
-//    fun removeBackGround(){
-//        throw NotImplementedError()
-//    }
-//
-//
-//    @Test
-//    fun deleteGarment(){
-//        throw NotImplementedError()
-//    }
-//
-//    @Test
-//    fun collectBrands(){
-//        throw NotImplementedError()
-//    }
+    @Test
+    fun saveChanges() = runBlocking {
+        val garment = Garment(id = 123, image = "imageUri")
+        model.storeChanges(garment)
+
+        withTimeoutOrNull(defaultTimeout) {
+            while (model.uiEditState.first().changes == null){
+                Log.d("saveChangesTest", "waiting for change state to not be null")
+            }
+        }
+        assert(model.uiEditState.first().changes != null)
+        `when`(mockedGarmentRepo.updateGarment(garment)).thenAnswer {}
+        model.saveChanges(garment)
+
+        withTimeoutOrNull(defaultTimeout) {
+            while (model.uiEditState.first().changes != null){
+                Log.d("saveChangesTest", "waiting for change state to be null")
+            }
+        }
+        assert(model.uiEditState.first().changes == null)
+    }
+
+    @Test
+    fun analyzeGarment() = runTest(timeout = 9.minutes){
+        val tests = mapOf(
+            GarmentColorNames.find { it.name == "Crimson" }!!.color to "Red",
+            GarmentColorNames.find { it.name == "Silver" }!!.color to "White",
+            GarmentColorNames.find { it.name == "Lime" }!!.color to "Green",
+            GarmentColorNames.find { it.name == "Navy" }!!.color to "Blue",
+            GarmentColorNames.find { it.name == "Gold" }!!.color to "Yellow",
+        )
+        for(test in tests) {
+            val colorCode = test.key
+            val expectedColorMatch = test.value
+            val fileName = "test_analyzeGarment_${colorCode}.png"
+            val bitmap = Bitmap.createBitmap(700, 700, Bitmap.Config.ARGB_8888)
+            val canvas = Canvas(bitmap)
+            val paint = Paint().apply {
+                color = colorCode
+                style = Paint.Style.FILL
+            }
+            canvas.drawRect(0f, 0f, 700.toFloat(), 700.toFloat(), paint)
+
+            val file = File(context.filesDir, fileName)
+            if (file.exists()) {
+                file.delete()
+            }
+            FileOutputStream(file).use { outputStream ->
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+            }
+
+            val fakeGarment = Garment(id = 9090, imageOfSubject = file.toURI().toString())
+            `when`(mockedGarmentRepo.getGarmentStream(any())).thenAnswer {
+                flow {
+                    emit(fakeGarment)
+                }
+            }
+
+            model.analyzeGarment(fakeGarment.id)
+
+            while (model.uiEditState.first().changes == null) {
+                runBlocking {
+                    delay(500)
+                    Log.d("analyzeGarment", "waiting for change state to not be null")
+                }
+            }
+
+            val detectedColor = model.uiEditState.first().changes?.color
+            val matches = detectedColor == expectedColorMatch
+            Assert.assertTrue(matches)
+
+            model.storeChanges(null)
+            while (model.uiEditState.first().changes != null){
+                runBlocking {
+                    delay(500)
+                    Log.d("saveChangesTest", "waiting for change state to be null")
+                }
+            }
+
+        }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun deleteGarment() {
+        val bitmap = Bitmap.createBitmap(700, 700, Bitmap.Config.ARGB_8888)
+        val fakedFiles = mutableListOf<File>()
+        val model = ClothingViewModel(mockedGarmentRepo, testDispatcher)
+        repeat(5) {
+            val fileName = "test_analyzeGarment_deleteGarment_${it}.png"
+            val file = File(context.filesDir, fileName)
+            fakedFiles.add(file)
+            FileOutputStream(file).use { outputStream ->
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+            }
+        }
+
+        val tests = listOf(
+            Garment(id = 9091, image = fakedFiles[0].toURI().toString(), imageOfSubject = fakedFiles[1].toUri().toString()),
+            Garment(id = 9092, image = null, imageOfSubject = fakedFiles[2].toUri().toString()),
+            Garment(id = 9093, image = null, imageOfSubject = null),
+            Garment(id = 9094, image = fakedFiles[3].toURI().toString(), imageOfSubject = null),
+            Garment(id = 9095, image = "${fakedFiles[4].toURI()}_doesNotExists", imageOfSubject = fakedFiles[4].toUri().toString())
+        )
+
+        for(fakeGarment in tests) {
+            runTest(testDispatcher){
+                `when`(mockedGarmentRepo.getGarmentStream(any())).thenAnswer {
+                    flow {
+                        emit(fakeGarment)
+                    }
+                }
+                `when`(mockedGarmentRepo.deleteGarment(fakeGarment)).thenAnswer {}
+
+                model.deleteGarment(fakeGarment.id)
+                advanceUntilIdle()
+                verify(mockedGarmentRepo, times(1)).deleteGarment(fakeGarment)
+            }
+        }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun collectBrands(){
+        val model = ClothingViewModel(mockedGarmentRepo, testDispatcher)
+        val brands = listOf("Brand1", "Brand2", "Brand3")
+        runTest(testDispatcher) {
+            `when`(mockedGarmentRepo.getBrands()).thenAnswer {
+                flow {
+                    emit(brands)
+                }
+            }
+
+            model.collectBrands()
+            advanceUntilIdle()
+            Assert.assertTrue(model.brands.first().containsAll(brands))
+        }
+    }
 }
 
 private class FakePagingSource(

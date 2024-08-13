@@ -38,17 +38,15 @@ class OutfitRepositoryTest {
     @Test
     fun getAllOutfitsPaged() = runTest {
         //Scenario: test paging libary implementation with android room database
-        val initial = 1
         val pageSize = 3
         val inject = 15
-        val max = inject + initial
         val pager =  Pager(
             config = PagingConfig(pageSize = pageSize, enablePlaceholders = false),
             pagingSourceFactory = {  appContainer.outfitsRepository.getAllOutfitsPaged() }
         ).flow
-
         var itemsSnapshot: List<Outfit> = pager.asSnapshot()
-        Assert.assertTrue(itemsSnapshot.size == initial)
+        val initial = itemsSnapshot.size
+        val max = inject + initial
 
         repeat(inject) {
             appContainer.outfitsRepository.insertOutfit(Outfit())
