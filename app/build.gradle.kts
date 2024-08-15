@@ -69,7 +69,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.navigation)
-    
+
 
     //Room DAO for SQLite
     implementation(libs.androidx.room.runtime)
@@ -115,4 +115,5 @@ dependencies {
     androidTestImplementation(libs.mockito.android)
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.kotlin)
+
 }

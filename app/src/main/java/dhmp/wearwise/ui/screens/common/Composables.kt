@@ -36,6 +36,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
@@ -110,6 +111,7 @@ fun ScreenTitle(text: String){
 //                )
 //            }
             .padding(bottom = 10.dp)
+            .testTag(TestTag.SCREEN_TITLE)
 
     Text(
         text = text,

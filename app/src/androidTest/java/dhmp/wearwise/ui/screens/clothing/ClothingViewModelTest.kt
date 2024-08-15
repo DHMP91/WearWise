@@ -1,4 +1,4 @@
-package dhmp.wearwise.ui.screens
+package dhmp.wearwise.ui.screens.clothing
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -15,7 +15,6 @@ import dhmp.wearwise.data.GarmentsRepository
 import dhmp.wearwise.model.Category
 import dhmp.wearwise.model.Garment
 import dhmp.wearwise.model.GarmentColorNames
-import dhmp.wearwise.ui.screens.clothing.ClothingViewModel
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
@@ -43,11 +42,11 @@ import kotlin.time.Duration.Companion.minutes
 
 
 class ClothingViewModelTest {
-    private lateinit var mockedGarmentRepo: GarmentsRepository
-    private lateinit var context: Context
-    lateinit var model: ClothingViewModel
     @Captor
     private lateinit var updateGarmentCaptor: ArgumentCaptor<Garment>
+    private lateinit var mockedGarmentRepo: GarmentsRepository
+    private lateinit var context: Context
+    private lateinit var model: ClothingViewModel
     private lateinit var testDispatcher: CoroutineDispatcher
 
     private val garmentAmount = 20
@@ -112,10 +111,6 @@ class ClothingViewModelTest {
     @Test
     fun storeChanges() = runBlocking {
         val expectedGarmentStored = Garment(id = 77, image = Uri.EMPTY.toString())
-        val fakeGarment = Garment(
-            id = 10L,
-            color = "SomeColor"
-        )
         model.storeChanges(expectedGarmentStored)
         Assert.assertTrue(model.uiEditState.value.changes!! == expectedGarmentStored)
         Assert.assertTrue(model.uiEditState.value.editGarment == Garment())

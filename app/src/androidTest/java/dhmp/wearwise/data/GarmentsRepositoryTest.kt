@@ -430,7 +430,7 @@ class GarmentsRepositoryTest {
         val width = 1000
         val height = 1000
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-        val replaceBitMap = Bitmap.createBitmap(width/2, height/2, Bitmap.Config.ARGB_8888)
+//        val replaceBitMap = Bitmap.createBitmap(width/2, height/2, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
         context = InstrumentationRegistry.getInstrumentation().targetContext
         canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), paint)
