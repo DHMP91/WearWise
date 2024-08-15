@@ -40,6 +40,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
@@ -57,6 +58,7 @@ import dhmp.wearwise.model.Garment
 import dhmp.wearwise.model.GarmentColorNames
 import dhmp.wearwise.ui.AppViewModelProvider
 import dhmp.wearwise.ui.screens.common.ScreenTitle
+import dhmp.wearwise.ui.screens.common.TestTag
 import dhmp.wearwise.ui.screens.common.categoryIcon
 import java.util.Locale
 
@@ -78,6 +80,7 @@ fun ClothingScreen(
                 modifier = Modifier
                     .align(Alignment.BottomEnd) // Align to bottom end of the Box
                     .padding(16.dp)
+                    .testTag(TestTag.NEW_CLOTHING_BUTTON)
             ) {
                 Icon(Icons.Filled.Add, "Add Garment")
             }

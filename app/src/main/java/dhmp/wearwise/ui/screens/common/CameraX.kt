@@ -47,6 +47,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
@@ -119,7 +120,8 @@ fun ImageScreen(saveImage: (File, Bitmap, Float, Long?) -> Job, id: Long = 0, on
                             .weight(1f)
                             .fillMaxSize()
                             .padding(10.dp)
-                            .clickable { imageMethod = "camera" },
+                            .clickable { imageMethod = "camera" }
+                            .testTag(TestTag.USE_CAMERA_SELECTION),
                         elevation = CardDefaults.cardElevation(defaultElevation = 5.dp),
                         colors = CardDefaults.cardColors(MaterialTheme.colorScheme.background)
                     ) {
@@ -149,7 +151,8 @@ fun ImageScreen(saveImage: (File, Bitmap, Float, Long?) -> Job, id: Long = 0, on
                             .weight(1f)
                             .fillMaxSize()
                             .padding(10.dp)
-                            .clickable { imageMethod = "imagePicker" },
+                            .clickable { imageMethod = "imagePicker" }
+                            .testTag(TestTag.USE_GALLERY_SELECTION),
                         elevation = CardDefaults.cardElevation(defaultElevation = 5.dp),
                         colors = CardDefaults.cardColors(MaterialTheme.colorScheme.background)
                     ) {
@@ -284,7 +287,9 @@ fun CameraView(saveImage: (File, Bitmap, Float, Long?) -> Job, id: Long = 0) {
                     painter = painterResource(id = R.drawable.baseline_camera_24),
                     contentDescription = "",
                     tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(54.dp)
+                    modifier = Modifier
+                        .size(54.dp)
+                        .testTag(TestTag.CAMERA_TAKE_ICON)
                 )
             } else {
                 CircularProgressIndicator(
