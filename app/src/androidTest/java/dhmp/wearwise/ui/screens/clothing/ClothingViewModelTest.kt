@@ -7,14 +7,14 @@ import android.graphics.Paint
 import android.net.Uri
 import android.util.Log
 import androidx.core.net.toUri
-import androidx.paging.PagingSource
-import androidx.paging.PagingState
 import androidx.paging.testing.asSnapshot
 import androidx.test.platform.app.InstrumentationRegistry
 import dhmp.wearwise.data.GarmentsRepository
 import dhmp.wearwise.model.Category
 import dhmp.wearwise.model.Garment
 import dhmp.wearwise.model.GarmentColorNames
+import dhmp.wearwise.ui.screens.FakePagingSource
+import dhmp.wearwise.ui.screens.capture
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
@@ -180,9 +180,9 @@ class ClothingViewModelTest {
     @Test
     fun getGarmentsByCategory() = runBlocking {
         val params = listOf(99, 0, 999999, null)
-        var fakeGarments = mutableListOf<Garment>()
+        val fakeGarments = mutableListOf<Garment>()
         repeat(garmentAmount){
-            fakeGarments = fakeGarments.plus(Garment(id = it.toLong(), categoryId = 99)).toMutableList()
+            fakeGarments.add(Garment(id = it.toLong(), categoryId = 99))
         }
         for(param in params) {
             `when`(mockedGarmentRepo.getGarmentsByCategoryPaged(param)).thenAnswer{
@@ -383,20 +383,4 @@ class ClothingViewModelTest {
     }
 }
 
-private class FakePagingSource(
-    private val garments: List<Garment>
-) : PagingSource<Int, Garment>() {
 
-    override suspend fun load(params: LoadParams<Int>): LoadResult<Int, Garment> {
-        return LoadResult.Page(
-            data = garments,
-            prevKey = null,
-            nextKey = null
-        )
-    }
-
-    override fun getRefreshKey(state: PagingState<Int, Garment>) = null
-}
-
-
-private fun <T> capture(argumentCaptor: ArgumentCaptor<T>): T = argumentCaptor.capture()

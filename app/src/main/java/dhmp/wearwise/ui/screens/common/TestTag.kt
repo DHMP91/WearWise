@@ -15,6 +15,12 @@ object TestTag {
 
     //Clothing TestTags
     val NEW_CLOTHING_BUTTON = randomUUIDStr()
+    val CLOTHING_ITEM = randomUUIDStr()
+    val CLOTHING_LIST = randomUUIDStr()
+    const val CLOTHING_LIST_CATEGORY_PREFIX = "CLOTHING_CATEGORY_ICON_"
+    val OUTFIT_COUNT = randomUUIDStr()
+    val CLOTHING_BRAND_CARD_FIELD = randomUUIDStr()
+
 
 
     //Camera TestTags

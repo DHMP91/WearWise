@@ -1,5 +1,6 @@
 package dhmp.wearwise.ui
 
+import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsNodeInteraction
@@ -19,8 +20,10 @@ open class UITest {
 
 
     fun getText(node: SemanticsNodeInteraction): String? {
-        return node.fetchSemanticsNode()
-            .config
-            .getOrNull(SemanticsProperties.Text)?.joinToString()
+        return getText(node.fetchSemanticsNode())
+    }
+
+    fun getText(node: SemanticsNode): String? {
+        return node.config.getOrNull(SemanticsProperties.Text)?.joinToString()
     }
 }

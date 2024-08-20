@@ -69,10 +69,11 @@ fun ClothingScreen(
     onEdit: (Long) -> Unit,
     onNewClothing: () -> Unit,
     onOutfits: (Long) -> Unit,
+    clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)
 ) {
     Surface {
         Box(modifier = Modifier.fillMaxSize()){
-            GarmentList(onEdit, onOutfits)
+            GarmentList(onEdit, onOutfits, clothingViewModel = clothingViewModel)
             FloatingActionButton(
                 onClick = { onNewClothing() },
                 containerColor = colorResource(R.color.accent),
@@ -121,10 +122,10 @@ fun Header(
                 contentDescription = "Menu",
                 modifier = Modifier.clickable  { clothingViewModel.showMenu(!menuState.showMenu) }
             )
-            ClothingMainMenu()
-            ClothingBrandSelectionMenu()
-            ClothingCategorySelectionMenu()
-            ClothingColorSelectionMenu()
+            ClothingMainMenu(clothingViewModel = clothingViewModel)
+            ClothingBrandSelectionMenu(clothingViewModel = clothingViewModel)
+            ClothingCategorySelectionMenu(clothingViewModel = clothingViewModel)
+            ClothingColorSelectionMenu(clothingViewModel = clothingViewModel)
         }
     }
 
@@ -141,14 +142,19 @@ fun GarmentList(
         modifier = Modifier
             .fillMaxWidth()
             .wrapContentHeight()
-            .background(MaterialTheme.colorScheme.background),
+            .background(MaterialTheme.colorScheme.background)
+            .testTag(TestTag.CLOTHING_LIST),
     ) {
         item{
-            Header()
+            Header(clothingViewModel = clothingViewModel)
         }
         items(garments.itemCount) { index ->
             garments[index]?.let {
-                GarmentCard(it, onEdit, onOutfits)
+                GarmentCard(
+                    it,
+                    onEdit,
+                    onOutfits,
+                    clothingViewModel = clothingViewModel)
             }
         }
     }
@@ -173,6 +179,7 @@ fun GarmentCard(
             .fillMaxWidth()
             .clickable { onEdit(garment.id) }
             .padding(10.dp)
+            .testTag(TestTag.CLOTHING_ITEM)
     ) {
         AsyncImage(
             model = ImageRequest.Builder(LocalContext.current).data(thumbnail).build(),
@@ -205,7 +212,8 @@ fun GarmentCard(
                     garment.brand?.lowercase()?.replaceFirstChar {
                         it.titlecase(Locale.getDefault())
                     } ?: "Set Brand",
-                    color = if(garment.brand != null)  MaterialTheme.colorScheme.onBackground else Color.Gray
+                    color = if(garment.brand != null)  MaterialTheme.colorScheme.onBackground else Color.Gray,
+                    modifier = Modifier.testTag(TestTag.CLOTHING_BRAND_CARD_FIELD)
                 )
                 Text(
                     "#${garment.id}",
@@ -249,11 +257,13 @@ fun GarmentCard(
                     modifier = Modifier
                         .sizeIn(maxHeight = dimensionResource(R.dimen.icon_max_height))
                         .padding(start = 5.dp, end = 5.dp)
+                        .testTag("${TestTag.CLOTHING_LIST_CATEGORY_PREFIX}${icon}")
                 )
 
                 Row(
                     verticalAlignment = Alignment.Bottom,
-                    horizontalArrangement = Arrangement.Start
+                    horizontalArrangement = Arrangement.Start,
+                    modifier = Modifier.testTag(TestTag.OUTFIT_COUNT)
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.outfit),
