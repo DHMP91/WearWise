@@ -261,14 +261,23 @@ fun CameraView(saveImage: (File, Bitmap, Float, Long?) -> Job, id: Long = 0) {
     val previewView: PreviewView = remember { PreviewView(context) }
     val cameraController = remember { LifecycleCameraController(context) }
     val lifecycleOwner = LocalLifecycleOwner.current
-    cameraController.cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
-    cameraController.imageCaptureMode = ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY
-    cameraController.setZoomRatio(0f)
-    cameraController.bindToLifecycle(lifecycleOwner)
-    previewView.controller = cameraController
-    previewView.implementationMode = PreviewView.ImplementationMode.PERFORMANCE
-    previewView.scaleType = PreviewView.ScaleType.FIT_CENTER
+
+    var isCameraInitialized by remember { mutableStateOf(false) }
     var loading by remember { mutableStateOf(false) }
+
+    LaunchedEffect(cameraController, lifecycleOwner) {
+        cameraController.cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+        cameraController.imageCaptureMode = ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY
+        cameraController.setZoomRatio(0f)
+        cameraController.bindToLifecycle(lifecycleOwner)
+        previewView.controller = cameraController
+        previewView.implementationMode = PreviewView.ImplementationMode.PERFORMANCE
+        previewView.scaleType = PreviewView.ScaleType.FIT_CENTER
+
+        previewView.previewStreamState.observe(lifecycleOwner) { streamState ->
+            isCameraInitialized = streamState == PreviewView.StreamState.STREAMING
+        }
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         AndroidView(factory = { previewView }, modifier = Modifier.fillMaxSize())
@@ -282,7 +291,7 @@ fun CameraView(saveImage: (File, Bitmap, Float, Long?) -> Job, id: Long = 0) {
                 }
             }
         ) {
-            if (!loading) {
+            if (!loading && isCameraInitialized) {
                 Icon(
                     painter = painterResource(id = R.drawable.baseline_camera_24),
                     contentDescription = "",
@@ -300,6 +309,7 @@ fun CameraView(saveImage: (File, Bitmap, Float, Long?) -> Job, id: Long = 0) {
             }
         }
     }
+
 }
 
 

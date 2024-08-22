@@ -80,7 +80,7 @@ class ClothingViewModel(
             }
         )
             .flow
-    }.flattenMerge().cachedIn(viewModelScope)
+    }.flattenMerge()
 
     private var currentGarmentCategoryFlows: MutableMap<Int, Flow<PagingData<Garment>>> = mutableMapOf()
 
@@ -139,11 +139,29 @@ class ClothingViewModel(
         }
     }
 
+    fun removeBrandFromFilter(brands: List<String>){
+        _uiMenuState.update {
+                current ->
+            current.copy(
+                filterExcludeBrands = current.filterExcludeBrands.toSet().minus(brands).toList()
+            )
+        }
+    }
+
     fun addBrandToFilter(brand: String){
         _uiMenuState.update {
                 current ->
             current.copy(
                 filterExcludeBrands = current.filterExcludeBrands.plus(brand)
+            )
+        }
+    }
+
+    fun addBrandToFilter(brands: List<String>){
+        _uiMenuState.update {
+                current ->
+            current.copy(
+                filterExcludeBrands = current.filterExcludeBrands.toSet().plus(brands).toList()
             )
         }
     }
@@ -158,11 +176,29 @@ class ClothingViewModel(
         }
     }
 
+    fun removeCategoryFromFilter(categories: List<Category>){
+        _uiMenuState.update {
+                current ->
+            current.copy(
+                filterExcludeCategories = current.filterExcludeCategories.toSet().minus(categories).toList()
+            )
+        }
+    }
+
     fun addCategoryToFilter(category: Category){
         _uiMenuState.update {
                 current ->
             current.copy(
                 filterExcludeCategories = current.filterExcludeCategories.plus(category)
+            )
+        }
+    }
+
+    fun addCategoryToFilter(categories: List<Category>){
+        _uiMenuState.update {
+                current ->
+            current.copy(
+                filterExcludeCategories = current.filterExcludeCategories.toSet().plus(categories).toList()
             )
         }
     }
@@ -176,11 +212,29 @@ class ClothingViewModel(
         }
     }
 
+    fun removeColorFromFilter(colors: List<String>){
+        _uiMenuState.update {
+                current ->
+            current.copy(
+                filterExcludeColors = current.filterExcludeColors.toSet().minus(colors).toList()
+            )
+        }
+    }
+
     fun addColorToFilter(color: String){
         _uiMenuState.update {
                 current ->
             current.copy(
                 filterExcludeColors = current.filterExcludeColors.plus(color)
+            )
+        }
+    }
+
+    fun addColorToFilter(colors: List<String>){
+        _uiMenuState.update {
+                current ->
+            current.copy(
+                filterExcludeColors = current.filterExcludeColors.toSet().plus(colors).toList()
             )
         }
     }

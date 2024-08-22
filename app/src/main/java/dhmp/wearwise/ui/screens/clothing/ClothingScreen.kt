@@ -120,7 +120,9 @@ fun Header(
             Icon(
                 imageVector = Icons.Filled.Menu,
                 contentDescription = "Menu",
-                modifier = Modifier.clickable  { clothingViewModel.showMenu(!menuState.showMenu) }
+                modifier = Modifier
+                    .clickable  { clothingViewModel.showMenu(!menuState.showMenu) }
+                    .testTag(TestTag.MAIN_MENU)
             )
             ClothingMainMenu(clothingViewModel = clothingViewModel)
             ClothingBrandSelectionMenu(clothingViewModel = clothingViewModel)
@@ -381,11 +383,7 @@ fun ClothingBrandSelectionMenu(clothingViewModel: ClothingViewModel = viewModel(
                 }
             },
             onClick = {
-                for(brand in brands){
-                    if(menuState.filterExcludeBrands.contains(brand)) {
-                        clothingViewModel.removeBrandFromFilter(brand)
-                    }
-                }
+                clothingViewModel.removeBrandFromFilter(brands)
             }
         )
         DropdownMenuItem(
@@ -399,11 +397,7 @@ fun ClothingBrandSelectionMenu(clothingViewModel: ClothingViewModel = viewModel(
                 }
             },
             onClick = {
-                for(brand in brands){
-                    if(!menuState.filterExcludeBrands.contains(brand)) {
-                        clothingViewModel.addBrandToFilter(brand)
-                    }
-                }
+                clothingViewModel.addBrandToFilter(brands)
             }
         )
         for(brand in brands) {
@@ -471,11 +465,7 @@ fun ClothingColorSelectionMenu(clothingViewModel: ClothingViewModel = viewModel(
                 }
             },
             onClick = {
-                for(c in colorNames){
-                    if(menuState.filterExcludeColors.contains(c)) {
-                        clothingViewModel.removeColorFromFilter(c)
-                    }
-                }
+                clothingViewModel.removeColorFromFilter(colorNames)
             }
         )
         DropdownMenuItem(
@@ -489,11 +479,7 @@ fun ClothingColorSelectionMenu(clothingViewModel: ClothingViewModel = viewModel(
                 }
             },
             onClick = {
-                for(c in colorNames){
-                    if(!menuState.filterExcludeColors.contains(c)) {
-                        clothingViewModel.addColorToFilter(c)
-                    }
-                }
+                clothingViewModel.addColorToFilter(colorNames)
             }
         )
         for(color in colorNames) {
@@ -562,11 +548,7 @@ fun ClothingCategorySelectionMenu(clothingViewModel: ClothingViewModel = viewMod
                 }
             },
             onClick = {
-                for(c in categories){
-                    if(menuState.filterExcludeCategories.contains(c)) {
-                        clothingViewModel.removeCategoryFromFilter(c)
-                    }
-                }
+                clothingViewModel.removeCategoryFromFilter(categories)
             }
         )
         DropdownMenuItem(
@@ -580,11 +562,7 @@ fun ClothingCategorySelectionMenu(clothingViewModel: ClothingViewModel = viewMod
                 }
             },
             onClick = {
-                for(c in categories){
-                    if(!menuState.filterExcludeCategories.contains(c)) {
-                        clothingViewModel.addCategoryToFilter(c)
-                    }
-                }
+                clothingViewModel.addCategoryToFilter(categories)
             }
         )
         for(c in categories) {

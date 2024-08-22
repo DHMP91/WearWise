@@ -17,7 +17,9 @@ import androidx.test.platform.app.InstrumentationRegistry
 import dhmp.wearwise.App
 import dhmp.wearwise.R
 import dhmp.wearwise.data.GarmentsRepository
+import dhmp.wearwise.model.Category
 import dhmp.wearwise.model.Garment
+import dhmp.wearwise.model.GarmentColorNames
 import dhmp.wearwise.ui.UITest
 import dhmp.wearwise.ui.screens.FakePagingSource
 import dhmp.wearwise.ui.screens.common.TestTag
@@ -25,7 +27,9 @@ import dhmp.wearwise.ui.screens.common.WearWiseBottomAppBar
 import dhmp.wearwise.ui.theme.WearWiseTheme
 import dhmp.wearwise.ui.verifyScreenTitle
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert
@@ -37,12 +41,12 @@ import kotlin.time.Duration.Companion.minutes
 
 
 class ClothingScreenUITest: UITest() {
-    private val clothingRegexTitle = Regex("Clothing \\(\\d+\\)")
     private lateinit var mockedGarmentRepo: GarmentsRepository
     private lateinit var context: Context
     private lateinit var model: ClothingViewModel
     private lateinit var testDispatcher: CoroutineDispatcher
-
+    private val clothingRegexTitle = Regex("Clothing \\(\\d+\\)")
+    private val brands = listOf("Brand1", "Brand2", "Brand3")
 
     @Before
     fun setup() {
@@ -65,9 +69,317 @@ class ClothingScreenUITest: UITest() {
 
 
     @Test
+    fun clothingFilterByCategory_toggleCategoryAll() = runTest(timeout = 5.minutes) {
+        baseMock()
+        Mockito.`when`(mockedGarmentRepo.getFilteredGarments(
+            excludedCategories = Category.categories(),
+            excludedColors = listOf(),
+            excludedBrands = listOf()
+        )
+        ).thenAnswer {
+            FakePagingSource(listOf<Garment>(
+                Garment(
+                    id = 87L,
+                    categoryId = 99,
+                ),
+                Garment(
+                    id = 89L,
+                    categoryId = 99,
+                ),
+                Garment(
+                    id = 99L,
+                    categoryId = 99,
+                )
+            ))
+        }
+
+        launchClothingScreen()
+
+        //Verify: Uncheck all category
+        composeTestRule.onNode(hasTestTag(TestTag.MAIN_MENU)).performClick()
+        composeTestRule.onNode(hasText(context.getString(R.string.filter_by_category))).performClick()
+        composeTestRule.onNode(hasText("Uncheck All")).performClick()
+        composeTestRule.waitForIdle()
+        Assert.assertTrue(itemCount() == 3)
+
+        composeTestRule.onNode(hasText("Check All")).performClick()
+        composeTestRule.onNode(hasTestTag(TestTag.MAIN_MENU)).performClick()
+        Assert.assertTrue(itemCount() != 3 && itemCount() > 0)
+        composeTestRule.waitForIdle()
+
+    }
+
+
+    @Test
+    fun clothingFilterByCategory_OneCategoryChecked() = runTest(timeout = 5.minutes) {
+        baseMock()
+        val categories = Category.categories()
+        val checkCategory = categories[categories.size/2]
+
+        Mockito.`when`(mockedGarmentRepo.getFilteredGarments(
+            excludedCategories = categories,
+            excludedColors = listOf(),
+            excludedBrands = listOf()
+        )
+        ).thenAnswer {
+            FakePagingSource(listOf<Garment>(
+                Garment(
+                    id = 87L,
+                    categoryId = 99,
+                )
+            ))
+        }
+
+        Mockito.`when`(mockedGarmentRepo.getFilteredGarments(
+            excludedCategories = categories.minus(checkCategory),
+            excludedColors = listOf(),
+            excludedBrands = listOf()
+        )
+        ).thenAnswer {
+            FakePagingSource(listOf<Garment>(
+                Garment(
+                    id = 87L,
+                    categoryId = 99,
+                ),
+                Garment(
+                    id = 89L,
+                    categoryId = 99,
+                )
+            ))
+        }
+        launchClothingScreen()
+
+        //Verify: Check one category
+        composeTestRule.onNode(hasTestTag(TestTag.MAIN_MENU)).performClick()
+        composeTestRule.onNode(hasText(context.getString(R.string.filter_by_category))).performClick()
+        composeTestRule.onNode(hasText("Uncheck All")).performClick()
+        composeTestRule.onNode(hasText(checkCategory.name)).performClick()
+        composeTestRule.onNode(hasTestTag(TestTag.MAIN_MENU)).performClick()
+        composeTestRule.waitForIdle()
+        Assert.assertTrue(itemCount() == 2)
+    }
+
+    @Test
+    fun clothingFilterByCategory_OneCategoryUnchecked() = runTest(timeout = 5.minutes) {
+        baseMock()
+        val categories = Category.categories()
+        val unCheckCategory = categories[categories.size/2]
+        val listOfGarments = mutableListOf<Garment>()
+        repeat(5) {
+            val garment = Garment(
+                id = it.toLong(),
+                categoryId = it + 1,
+            )
+            listOfGarments.add(garment)
+        }
+
+        Mockito.`when`(mockedGarmentRepo.getFilteredGarments(
+            excludedCategories = listOf(unCheckCategory),
+            excludedColors = listOf(),
+            excludedBrands = listOf()
+        )
+        ).thenAnswer { FakePagingSource(listOfGarments) }
+
+        launchClothingScreen()
+
+        //Verify: Check one category
+        composeTestRule.onNode(hasTestTag(TestTag.MAIN_MENU)).performClick()
+        composeTestRule.onNode(hasText(context.getString(R.string.filter_by_category))).performClick()
+        composeTestRule.onNode(hasText(unCheckCategory.name)).performClick()
+        composeTestRule.onNode(hasTestTag(TestTag.MAIN_MENU)).performClick()
+        composeTestRule.waitForIdle()
+        Assert.assertTrue(itemCount() == 5)
+    }
+
+
+    @Test
+    fun clothingFilterByCategory_toggleAllColor() = runTest(timeout = 5.minutes) {
+        baseMock()
+        val listOfGarments = mutableListOf<Garment>()
+        repeat(4) {
+            val garment = Garment(
+                id = it.toLong(),
+                categoryId = it + 1,
+            )
+            listOfGarments.add(garment)
+        }
+
+        Mockito.`when`(mockedGarmentRepo.getFilteredGarments(
+            excludedCategories = listOf(),
+            excludedColors = GarmentColorNames.map { it.name },
+            excludedBrands = listOf()
+        )
+        ).thenAnswer {
+            FakePagingSource(listOfGarments)
+        }
+
+        launchClothingScreen()
+
+        //Verify: Check all color
+        composeTestRule.onNode(hasTestTag(TestTag.MAIN_MENU)).performClick()
+        composeTestRule.onNode(hasText(context.getString(R.string.filter_by_color))).performClick()
+        composeTestRule.onNode(hasText("Uncheck All")).performClick()
+        composeTestRule.onNode(hasText("Check All")).performClick()
+        composeTestRule.onNode(hasTestTag(TestTag.MAIN_MENU)).performClick()
+        composeTestRule.waitForIdle()
+        Assert.assertTrue(itemCount() != 4)
+    }
+
+    @Test
+    fun clothingFilterByCategory_UncheckOneColor() = runTest(timeout = 5.minutes) {
+        baseMock()
+        Mockito.`when`(mockedGarmentRepo.getFilteredGarments(
+            excludedCategories = listOf(),
+            excludedColors = listOf("Blue"),
+            excludedBrands = listOf()
+        )
+        ).thenAnswer {
+            FakePagingSource(
+                listOf(
+                    Garment(
+                        id = 87L,
+                        categoryId = 99,
+                    )
+                )
+            )
+        }
+        launchClothingScreen()
+
+        //Verify: Uncheck one color
+        composeTestRule.onNode(hasTestTag(TestTag.MAIN_MENU)).performClick()
+        composeTestRule.onNode(hasText(context.getString(R.string.filter_by_color))).performClick()
+        composeTestRule.onNode(hasText("Blue")).performClick()
+        composeTestRule.onNode(hasTestTag(TestTag.MAIN_MENU)).performClick()
+        composeTestRule.waitForIdle()
+        Assert.assertTrue(itemCount() == 1)
+    }
+
+
+    @Test
+    fun clothingFilterByCategory_toggleBrandAll() = runTest(timeout = 5.minutes) {
+        baseMock()
+        Mockito.`when`(mockedGarmentRepo.getFilteredGarments(
+            excludedCategories = listOf(),
+            excludedColors = listOf(),
+            excludedBrands = brands
+        )
+        ).thenAnswer {
+            FakePagingSource(listOf<Garment>(
+                Garment(
+                    id = 87L,
+                    categoryId = 99,
+                ),
+                Garment(
+                    id = 89L,
+                    categoryId = 99,
+                ),
+                Garment(
+                    id = 99L,
+                    categoryId = 99,
+                )
+            ))
+        }
+
+        launchClothingScreen()
+
+        //Verify: Uncheck all category
+        composeTestRule.onNode(hasTestTag(TestTag.MAIN_MENU)).performClick()
+        composeTestRule.onNode(hasText(context.getString(R.string.filter_by_brand))).performClick()
+        composeTestRule.onNode(hasText("Uncheck All")).performClick()
+        composeTestRule.waitForIdle()
+        Assert.assertTrue(itemCount() == 3)
+
+        composeTestRule.onNode(hasText("Check All")).performClick()
+        composeTestRule.onNode(hasTestTag(TestTag.MAIN_MENU)).performClick()
+        Assert.assertTrue(itemCount() != 3 && itemCount() > 0)
+        composeTestRule.waitForIdle()
+
+    }
+
+
+    @Test
+    fun clothingFilterByCategory_OneBrandChecked() = runTest(timeout = 5.minutes) {
+        baseMock()
+        val checkedBrand = brands.last()
+        Mockito.`when`(mockedGarmentRepo.getFilteredGarments(
+            excludedCategories = listOf(),
+            excludedColors = listOf(),
+            excludedBrands = brands
+        )
+        ).thenAnswer {
+            FakePagingSource(listOf<Garment>(
+                Garment(
+                    id = 87L,
+                    categoryId = 99,
+                )
+            ))
+        }
+
+
+        Mockito.`when`(mockedGarmentRepo.getFilteredGarments(
+            excludedCategories = listOf(),
+            excludedColors = listOf(),
+            excludedBrands = brands.minus(checkedBrand)
+        )
+        ).thenAnswer {
+            FakePagingSource(listOf<Garment>(
+                Garment(
+                    id = 87L,
+                    categoryId = 99,
+                ),
+                Garment(
+                    id = 89L,
+                    categoryId = 99,
+                )
+            ))
+        }
+        launchClothingScreen()
+
+        //Verify: Check one category
+        composeTestRule.onNode(hasTestTag(TestTag.MAIN_MENU)).performClick()
+        composeTestRule.onNode(hasText(context.getString(R.string.filter_by_brand))).performClick()
+        composeTestRule.onNode(hasText("Uncheck All")).performClick()
+        composeTestRule.onNode(hasText(checkedBrand)).performClick()
+        composeTestRule.onNode(hasTestTag(TestTag.MAIN_MENU)).performClick()
+        composeTestRule.waitForIdle()
+        Assert.assertTrue(itemCount() == 2)
+    }
+
+    @Test
+    fun clothingFilterByCategory_OneBrandUnchecked() = runTest(timeout = 5.minutes) {
+        baseMock()
+        val uncheckBrand = brands.first()
+        val listOfGarments = mutableListOf<Garment>()
+        repeat(5) {
+            val garment = Garment(
+                id = it.toLong(),
+                categoryId = it + 1,
+            )
+            listOfGarments.add(garment)
+        }
+
+        Mockito.`when`(mockedGarmentRepo.getFilteredGarments(
+            excludedCategories = listOf(),
+            excludedColors = listOf(),
+            excludedBrands = listOf(uncheckBrand)
+        )
+        ).thenAnswer { FakePagingSource(listOfGarments) }
+
+        launchClothingScreen()
+
+        //Verify: Check one category
+        composeTestRule.onNode(hasTestTag(TestTag.MAIN_MENU)).performClick()
+        composeTestRule.onNode(hasText(context.getString(R.string.filter_by_brand))).performClick()
+        composeTestRule.onNode(hasText(uncheckBrand)).performClick()
+        composeTestRule.onNode(hasTestTag(TestTag.MAIN_MENU)).performClick()
+        composeTestRule.waitForIdle()
+        Assert.assertTrue(itemCount() == 5)
+    }
+
+
+    @Test
     fun clothingList() = runTest(timeout = 5.minutes) {
         val fakeGarments = mutableListOf<Garment>()
-        val fakeClothingCounter = 7
         val garmentCreationCount = 9
         val categoryIcons = listOf(
             R.drawable.accessory,
@@ -84,63 +396,22 @@ class ClothingScreenUITest: UITest() {
         repeat(garmentCreationCount){
             val garment = Garment(
                 id = it.toLong(),
-                categoryId = it+1,
+                categoryId = it + 1,
                 outfitsId = outfitIds,
             )
             garment.brand = brand
             fakeGarments.add(garment)
         }
 
-        Mockito.`when`(mockedGarmentRepo.getFilteredGarments(any(), any(), any())).thenAnswer{
-            FakePagingSource(fakeGarments.reversed())
-        }
+        baseMock(garments = fakeGarments)
 
-        Mockito.`when`(mockedGarmentRepo.getGarmentsCount(any(), any(), any())).thenAnswer{
-            flow { emit(fakeClothingCounter)}
-        }
-
-        Mockito.`when`(mockedGarmentRepo.getGarmentThumbnail(any())).thenAnswer{
-             ""
-        }
-
-
-        val brands = listOf("Brand1", "Brand2", "Brand3")
-        Mockito.`when`(mockedGarmentRepo.getBrands()).thenAnswer {
-            flow {
-                emit(brands)
-            }
-        }
-
-        composeTestRule.setContent {
-            WearWiseTheme {
-                Scaffold(
-                  bottomBar = {
-                      WearWiseBottomAppBar(
-                          navOutfit = {},
-                          navClothing = {},
-                          navNewClothing = {},
-                          navShop = {},
-                          null
-                      )
-                  }
-                ) { innerPadding ->
-                    Box(modifier =  Modifier.padding(innerPadding)) {
-                        ClothingScreen(
-                            onEdit = {},
-                            onNewClothing = {},
-                            onOutfits = {},
-                            clothingViewModel = model
-                        )
-                    }
-                }
-            }
-        }
+        launchClothingScreen()
 
         // Verify: title clothing count
         val clothingTitle = getText(composeTestRule.onNode(hasTestTag(TestTag.SCREEN_TITLE)))
         val number = clothingTitle?.let {  extractNumber(it) }
         Assert.assertNotNull(number)
-        Assert.assertTrue(number!!.toInt() == fakeClothingCounter)
+        Assert.assertTrue(number!!.toInt() == 999)
 
         // Verify lazy loading list initial amount
         var clothingCards =  composeTestRule.onAllNodes(hasTestTag(TestTag.CLOTHING_ITEM)).fetchSemanticsNodes()
@@ -218,6 +489,15 @@ class ClothingScreenUITest: UITest() {
         composeTestRule.waitUntilDoesNotExist(hasTestTag(TestTag.USE_CAMERA_SELECTION))
         composeTestRule.waitForIdle()
 
+
+        while(
+            composeTestRule.onAllNodes(hasTestTag(TestTag.CAMERA_TAKE_ICON), useUnmergedTree = true)
+                .fetchSemanticsNodes().isEmpty()
+        ){
+            runBlocking {
+                delay(1000)
+            }
+        }
         composeTestRule.onNode(hasTestTag(TestTag.CAMERA_TAKE_ICON), useUnmergedTree = true).performClick()
         composeTestRule.waitForIdle()
 
@@ -240,6 +520,80 @@ class ClothingScreenUITest: UITest() {
         val regex = "\\((\\d+)\\)".toRegex()
         val matchResult = regex.find(input)
         return matchResult?.groupValues?.get(1)?.toInt()
+    }
+
+
+    private fun itemCount(): Int {
+        val clothingCards = composeTestRule.onAllNodes(hasTestTag(TestTag.CLOTHING_ITEM)).fetchSemanticsNodes()
+        val displayedClothingItemCount = clothingCards.size
+        return displayedClothingItemCount
+    }
+
+    private fun launchClothingScreen(){
+        composeTestRule.setContent {
+            WearWiseTheme {
+                Scaffold(
+                    bottomBar = {
+                        WearWiseBottomAppBar(
+                            navOutfit = {},
+                            navClothing = {},
+                            navNewClothing = {},
+                            navShop = {},
+                            null
+                        )
+                    }
+                ) { innerPadding ->
+                    Box(modifier = Modifier.padding(innerPadding)) {
+                        ClothingScreen(
+                            onEdit = {},
+                            onNewClothing = {},
+                            onOutfits = {},
+                            clothingViewModel = model
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    private suspend fun baseMock(garments: List<Garment>? = null){
+        var fakeGarments = garments
+        if(fakeGarments == null){
+            fakeGarments = mutableListOf()
+            repeat(9) {
+                val garment = Garment(
+                    id = it.toLong(),
+                    categoryId = it + 1,
+                )
+                fakeGarments.add(garment)
+            }
+        }
+
+
+        Mockito.`when`(
+            mockedGarmentRepo.getFilteredGarments(
+                listOf(),
+                listOf(),
+                listOf()
+            )
+        ).thenAnswer {
+            FakePagingSource(fakeGarments.reversed())
+        }
+
+        Mockito.`when`(mockedGarmentRepo.getGarmentsCount(any(), any(), any())).thenAnswer {
+            flow { emit(999) }
+        }
+
+        Mockito.`when`(mockedGarmentRepo.getGarmentThumbnail(any())).thenAnswer {
+            ""
+        }
+
+
+        Mockito.`when`(mockedGarmentRepo.getBrands()).thenAnswer {
+            flow {
+                emit(brands)
+            }
+        }
     }
 
 }
