@@ -214,6 +214,7 @@ fun ExternalPhotoSelector(saveImage: (File, Bitmap, Float, Long?) -> Job, id: Lo
         galleryLauncher.launch("image/*")
     }
 }
+
 @Composable
 fun Camera(saveImage: (File, Bitmap, Float, Long?) -> Job, id: Long = 0){
     val context = LocalContext.current

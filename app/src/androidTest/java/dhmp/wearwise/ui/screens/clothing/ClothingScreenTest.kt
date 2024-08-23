@@ -11,6 +11,7 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isDisplayed
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.test.platform.app.InstrumentationRegistry
@@ -513,6 +514,12 @@ class ClothingScreenUITest: UITest() {
         val numberAfter = clothingTitleAfter?.let {  extractNumber(it) }
         Assert.assertNotNull(numberAfter)
         Assert.assertTrue(numberAfter!!.toInt() == number!!.toInt() + 1)
+
+
+        composeTestRule.onAllNodes(hasTestTag(TestTag.CLOTHING_ITEM)).onFirst().performClick()
+        val editClothingTitle = getText(composeTestRule.onNode(hasTestTag(TestTag.SCREEN_TITLE)))
+        Assert.assertNotNull(editClothingTitle)
+        Assert.assertTrue(editClothingTitle!!.contains("Clothing Item #"))
     }
 
 
