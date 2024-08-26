@@ -20,9 +20,11 @@ object TestTag {
     const val CLOTHING_LIST_CATEGORY_PREFIX = "CLOTHING_CATEGORY_ICON_"
     val OUTFIT_COUNT = randomUUIDStr()
     val CLOTHING_BRAND_CARD_FIELD = randomUUIDStr()
-
-    //Clothing
     val MAIN_MENU = randomUUIDStr()
+
+
+    //EditClothing
+    val EDIT_CLOTHING_DROPDOWN_PREFIX = "EDIT_CLOTHING_DROPDOWN_"
 
 
     //Camera

@@ -58,6 +58,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
@@ -76,6 +77,7 @@ import dhmp.wearwise.model.GarmentColorNames
 import dhmp.wearwise.model.Occasion
 import dhmp.wearwise.ui.AppViewModelProvider
 import dhmp.wearwise.ui.screens.common.ScreenTitle
+import dhmp.wearwise.ui.screens.common.TestTag
 import kotlinx.coroutines.android.awaitFrame
 import kotlinx.coroutines.launch
 
@@ -122,7 +124,7 @@ fun EditClothingScreen(
             )
         ) {
             Title(garmentId)
-            DeleteGarment(onFinish, garmentId)
+            DeleteGarment(onFinish, garmentId, clothingViewModel)
         }
 
         Row(modifier = Modifier
@@ -143,9 +145,9 @@ fun EditClothingScreen(
             Row (
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                RemoveBackground(garmentId, uiState.editGarment.image)
-                AnalyzeGarment(garmentId)
-                Save()
+                RemoveBackground(garmentId, uiState.editGarment.image, clothingViewModel)
+                AnalyzeGarment(garmentId, clothingViewModel)
+                Save(clothingViewModel)
             }
         }
 
@@ -153,7 +155,7 @@ fun EditClothingScreen(
             .fillMaxWidth()
             .weight(4f)
         ) {
-            ClothingInfo(garmentId)
+            ClothingInfo(garmentId, clothingViewModel)
         }
     }
 }
@@ -235,7 +237,7 @@ fun GarmentImage(
             if (garment.image != null) {
                 AsyncImage(
                     model = ImageRequest.Builder(context).data(garment.image).build(),
-                    contentDescription = "icon",
+                    contentDescription = "GarmentImage",
                     contentScale = ContentScale.Fit,
                     modifier = Modifier
                         .clip(RoundedCornerShape(10.dp))
@@ -287,6 +289,7 @@ fun GarmentImage(
                 modifier = Modifier
                     .clickable { onOutfits(garment.id) }
                     .padding(bottom = 5.dp)
+                    .testTag(TestTag.OUTFIT_COUNT)
             ) {
                 Icon(
                     painter = painterResource(R.drawable.outfit),
@@ -536,7 +539,8 @@ fun GarmentDropdownMenu(label: String, options: List<String>, fieldValue: String
                         expanded = true
                         expandedByFocus = true
                     }
-                },
+                }
+                .testTag("${TestTag.EDIT_CLOTHING_DROPDOWN_PREFIX}$label"),
             label = { Text(label) },
             trailingIcon = {
                 Icon(
@@ -632,7 +636,8 @@ fun GarmentDropdownMenuCustom(label: String, options: List<String>, fieldValue: 
                         expanded = false
                         expandedByFocus = true
                     }
-                },
+                }
+                .testTag("${TestTag.EDIT_CLOTHING_DROPDOWN_PREFIX}$label"),
             label = { Text(label) },
             trailingIcon = {
                 Icon(
