@@ -14,6 +14,7 @@ import dhmp.wearwise.data.GarmentsRepository
 import dhmp.wearwise.data.OutfitsRepository
 import dhmp.wearwise.model.Garment
 import dhmp.wearwise.model.Outfit
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
@@ -35,6 +36,7 @@ private const val tag = "OutfitViewModel"
 class OutfitViewModel (
     private val garmentRepository: GarmentsRepository,
     private val outfitsRepository: OutfitsRepository,
+    private val dispatcherIO: CoroutineDispatcher = Dispatchers.IO
 ): ViewModel() {
     val outfitUri: MutableStateFlow<Uri?> = MutableStateFlow(null)
 
@@ -65,14 +67,14 @@ class OutfitViewModel (
         val garments = mutableListOf<Garment>()
         outfit.garmentsId.forEach { id ->
             val garment = garmentRepository.getGarmentStream(id)
-                .flowOn(Dispatchers.IO)
+                .flowOn(dispatcherIO)
                 .first()
             garment?.let {
                 garments.add(it) // Emit a new copy of the list each time an item is added
             }
         }
         emit(garments)
-    }.flowOn(Dispatchers.IO)
+    }.flowOn(dispatcherIO)
 
 
     fun getOutfitThumbnail(outfit: Outfit): Flow<String> = flow {
@@ -84,12 +86,12 @@ class OutfitViewModel (
         } else{
             emit(thumbnail)
         }
-    }.flowOn(Dispatchers.IO)
+    }.flowOn(dispatcherIO)
 
 
     fun saveImage(appDir: File, image: Bitmap, rotation: Float, id: Long?): Job {
         outfitUri.value = Uri.EMPTY // Let UI continue to next screen while processing image
-        val job = viewModelScope.launch(Dispatchers.IO) {
+        val job = viewModelScope.launch(dispatcherIO) {
             if(!(id == null || id == 0L)) {
 
                 // Let UI know image is processing
@@ -138,7 +140,7 @@ class OutfitViewModel (
     }
 
     fun deleteOutfit(){
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(dispatcherIO) {
             _outfit.value?.let {
                 deleteOutfit(it)
                 _outfit.update {
@@ -149,8 +151,8 @@ class OutfitViewModel (
     }
 
     fun deleteOutfit(id: Long){
-        viewModelScope.launch(Dispatchers.IO) {
-            outfitsRepository.getOutfitStream(id).flowOn(Dispatchers.IO).collect { outfit ->
+        viewModelScope.launch(dispatcherIO) {
+            outfitsRepository.getOutfitStream(id).flowOn(dispatcherIO).collect { outfit ->
                 outfit?.let {
                     deleteOutfit(it)
                 }
@@ -160,8 +162,8 @@ class OutfitViewModel (
 
 
     fun getOutfit(id: Long) {
-        viewModelScope.launch(Dispatchers.IO) {
-            outfitsRepository.getOutfitStream(id).flowOn(Dispatchers.IO).collect { outfit ->
+        viewModelScope.launch(dispatcherIO) {
+            outfitsRepository.getOutfitStream(id).flowOn(dispatcherIO).collect { outfit ->
                 outfit?.let {
                     _outfit.update {
                         outfit.copy()
@@ -172,7 +174,7 @@ class OutfitViewModel (
     }
 
     fun addToOutfit(garment: Garment){
-        viewModelScope.launch {
+        viewModelScope.launch(dispatcherIO) {
             _outfit.value?.let { outfit ->
                 if(!outfit.garmentsId.contains(garment.id)) {
                     _outfit.update {
@@ -189,7 +191,7 @@ class OutfitViewModel (
     }
 
     fun removeFromOutfit(garment: Garment){
-        viewModelScope.launch {
+        viewModelScope.launch(dispatcherIO) {
             _outfit.value?.let { outfit ->
                 if(outfit.garmentsId.contains(garment.id)) {
                     _outfit.update {
@@ -206,18 +208,8 @@ class OutfitViewModel (
     }
 
 
-    private fun saveImageToOutfit(outfitId: Long) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val outfit = outfitsRepository.getOutfitStream(outfitId).first()
-            outfit?.let {
-                it.image = outfitUri.value.toString()
-                outfitsRepository.updateOutfit(it)
-            }
-        }
-    }
-
     suspend fun saveOutfit(outfit: Outfit): Long {
-        return withContext(Dispatchers.IO) {
+        return withContext(dispatcherIO) {
             val id = if (outfit.id == 0L) {
                 val newId = outfitsRepository.insertOutfit(outfit)
 
@@ -258,15 +250,26 @@ class OutfitViewModel (
         }
     }
 
-    private fun deleteFile(uri: String){
-            Uri.parse(uri).path?.let { path ->
-                try{
-                    File(path).delete()
-                }catch (exception: SecurityException){
-                    Log.e(tag, "No permission to delete file")
-                    false
-                }
+
+    private fun saveImageToOutfit(outfitId: Long) {
+        viewModelScope.launch(dispatcherIO) {
+            val outfit = outfitsRepository.getOutfitStream(outfitId).first()
+            outfit?.let {
+                it.image = outfitUri.value.toString()
+                outfitsRepository.updateOutfit(it)
             }
+        }
+    }
+
+    private fun deleteFile(uri: String){
+        Uri.parse(uri).path?.let { path ->
+            try{
+                File(path).delete()
+            }catch (exception: SecurityException){
+                Log.e(tag, "No permission to delete file")
+                false
+            }
+        }
     }
 
     private suspend fun deleteOutfit(outfit: Outfit){

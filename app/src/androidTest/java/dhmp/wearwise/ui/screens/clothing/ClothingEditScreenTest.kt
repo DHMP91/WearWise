@@ -26,10 +26,8 @@ import dhmp.wearwise.model.Occasion
 import dhmp.wearwise.ui.UITest
 import dhmp.wearwise.ui.screens.common.TestTag
 import dhmp.wearwise.ui.theme.WearWiseTheme
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert
 import org.junit.Before
@@ -43,7 +41,6 @@ class ClothingEditScreenTest : UITest()  {
     private lateinit var mockedGarmentRepo: GarmentsRepository
     private lateinit var context: Context
     private lateinit var model: ClothingViewModel
-    private lateinit var testDispatcher: CoroutineDispatcher
     private lateinit var appContainer: DefaultAppContainer
     private lateinit var testImagePath: Uri
     private val garmentId: Long = 8080
@@ -53,7 +50,6 @@ class ClothingEditScreenTest : UITest()  {
     fun setup() = runBlocking{
         context = InstrumentationRegistry.getInstrumentation().targetContext
         mockedGarmentRepo = Mockito.mock(GarmentsRepository::class.java)
-        testDispatcher = StandardTestDispatcher()
         model = ClothingViewModel(mockedGarmentRepo)
         appContainer = DefaultAppContainer(context)
 

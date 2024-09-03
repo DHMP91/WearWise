@@ -27,11 +27,9 @@ import dhmp.wearwise.ui.screens.common.TestTag
 import dhmp.wearwise.ui.screens.common.WearWiseBottomAppBar
 import dhmp.wearwise.ui.theme.WearWiseTheme
 import dhmp.wearwise.ui.verifyScreenTitle
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert
 import org.junit.Before
@@ -45,7 +43,6 @@ class ClothingScreenUITest: UITest() {
     private lateinit var mockedGarmentRepo: GarmentsRepository
     private lateinit var context: Context
     private lateinit var model: ClothingViewModel
-    private lateinit var testDispatcher: CoroutineDispatcher
     private val clothingRegexTitle = Regex("Clothing \\(\\d+\\)")
     private val brands = listOf("Brand1", "Brand2", "Brand3")
 
@@ -53,7 +50,6 @@ class ClothingScreenUITest: UITest() {
     fun setup() {
         context = InstrumentationRegistry.getInstrumentation().targetContext
         mockedGarmentRepo = Mockito.mock(GarmentsRepository::class.java)
-        testDispatcher = StandardTestDispatcher()
         model = ClothingViewModel(mockedGarmentRepo)
     }
 
