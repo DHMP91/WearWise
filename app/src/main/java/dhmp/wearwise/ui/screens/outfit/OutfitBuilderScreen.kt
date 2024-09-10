@@ -50,6 +50,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
@@ -69,7 +70,9 @@ import dhmp.wearwise.ui.screens.clothing.ClothingViewModel
 import dhmp.wearwise.ui.screens.common.Collapsible
 import dhmp.wearwise.ui.screens.common.ImageScreen
 import dhmp.wearwise.ui.screens.common.ScreenTitle
+import dhmp.wearwise.ui.screens.common.TestTag
 import dhmp.wearwise.ui.screens.common.categoryIcon
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.android.awaitFrame
 import kotlinx.coroutines.launch
 
@@ -81,9 +84,9 @@ fun EditOutfitScreen(
     onClickPicture: (String) -> Unit,
     onCrop: (String) -> Unit,
     onFinish: () -> Unit,
+    onBack: () -> Unit,
     clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory),
     outfitViewModel: OutfitViewModel = viewModel(factory = AppViewModelProvider.OutFitFactory),
-    onBack: () -> Unit,
 ) {
     LaunchedEffect(id) {
         outfitViewModel.getOutfit(id)
@@ -94,7 +97,7 @@ fun EditOutfitScreen(
     val coroutineScope = rememberCoroutineScope()
     BackHandler(enabled = !backPressHandled) {
         backPressHandled = true
-        coroutineScope.launch {
+        coroutineScope.launch(Dispatchers.Main) {
             awaitFrame()
             onBack()
             backPressHandled = false
@@ -231,7 +234,7 @@ fun DeleteOutfit(
     ) {
         Icon(
             imageVector = Icons.Outlined.Delete,
-            "Delete",
+            "Delete Outfit",
             modifier = Modifier
                 .clickable {
                     outfitViewModel.deleteOutfit()
@@ -254,7 +257,7 @@ fun SaveOutfit(
     val coroutineScope = rememberCoroutineScope()
     Button(
         onClick = {
-            coroutineScope.launch {
+            coroutineScope.launch(Dispatchers.Main) {
                 outfitViewModel.saveOutfit()
                 onFinish()
             }
@@ -288,7 +291,7 @@ fun OutfitImage(
                         .fillMaxSize()
                         .padding(10.dp)
                         .clickable {
-                            coroutineScope.launch {
+                            coroutineScope.launch(Dispatchers.Main) {
                                 val id = outfitViewModel.saveOutfit() //Save current changes it any
                                 id?.let {
                                     onTakePicture(id)
@@ -388,7 +391,7 @@ fun OutfitImage(
                             "Retake Image",
                             modifier = Modifier
                                 .clickable {
-                                    coroutineScope.launch {
+                                    coroutineScope.launch(Dispatchers.Main) {
                                         val id = outfitViewModel.saveOutfit() //Save current changes it any
                                         id?.let {
                                             onTakePicture(id)
@@ -450,6 +453,7 @@ fun SelectedGarments(
                             modifier = Modifier
                                 .fillMaxHeight()
                                 .widthIn(min = 80.dp, max = 100.dp)
+                                .testTag(TestTag.SELECTED_GARMENT)
                         ) {
                             Box(
                                 modifier = Modifier
@@ -542,8 +546,10 @@ fun ClothBuilderRow(
     val configuration = LocalConfiguration.current
     val screenWidthDp = configuration.screenWidthDp.dp
     val startPadding = max((screenWidthDp - itemWidthDp) / 4, 0.dp)
-
-    val garments = clothingViewModel.getGarmentsByCategory(category?.id).collectAsLazyPagingItems()
+    val garmentsFlow = remember(category?.id) {
+        clothingViewModel.getGarmentsByCategory(category?.id)
+    }
+    val garments = garmentsFlow.collectAsLazyPagingItems()
     var headerText = "Unidentified"
     val onClick = { garment: Garment ->
         outfitViewModel.addToOutfit(garment)
@@ -592,7 +598,8 @@ fun ClothBuilderItem(
             .fillMaxWidth()
             .clickable {
                 onClick(garment)
-            },
+            }
+            .testTag("${TestTag.CATEGORIZED_GARMENT_PREFIX}${garment.categoryId}"),
         elevation = CardDefaults.cardElevation(defaultElevation = 5.dp),
         colors = CardDefaults.cardColors(MaterialTheme.colorScheme.background)
     ) {

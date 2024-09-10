@@ -240,7 +240,7 @@ class ClothingViewModel(
     }
 
     fun getGarmentById(id: Long) {
-        viewModelScope.launch {
+        viewModelScope.launch(dispatcherIO) {
             garmentRepository.getGarmentStream(id).flowOn(dispatcherIO).collect { c ->
                 c?.let {
                     _uiEditState.update { currentState ->
@@ -323,7 +323,7 @@ class ClothingViewModel(
     }
 
     fun analyzeGarment(id: Long){
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.Default) {
             val garment = garmentRepository.getGarmentStream(id).flowOn(dispatcherIO).firstOrNull()
             garment?.let {
                 val image = it.imageOfSubject ?: it.image
@@ -378,7 +378,7 @@ class ClothingViewModel(
             segmenter.process(inputImage)
                 .addOnSuccessListener { result ->
                     val resultBitmap = result.foregroundBitmap //subject of interest
-                    viewModelScope.launch {
+                    viewModelScope.launch(Dispatchers.Default) {
                         resultBitmap?.let {
                             val subjectUri = garmentRepository.saveImageToStorage(
                                 file.parentFile!!.parentFile!!,

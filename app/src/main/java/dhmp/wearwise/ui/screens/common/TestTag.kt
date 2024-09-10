@@ -27,6 +27,16 @@ object TestTag {
     val EDIT_CLOTHING_DROPDOWN_PREFIX = "EDIT_CLOTHING_DROPDOWN_"
 
 
+    //Outfit
+    val NEW_OUTFIT_BUTTON = randomUUIDStr()
+    val OUTFIT_CARD = randomUUIDStr()
+    val OUTFIT_THUMBNAIL = randomUUIDStr()
+    val OUTFIT_GARMENT_THUMBNAIL = randomUUIDStr()
+
+    //OutfitBuilder
+    val SELECTED_GARMENT = randomUUIDStr()
+    val CATEGORIZED_GARMENT_PREFIX = "CATEGORIZED_GARMENT_PREFIX_"
+
     //Camera
     val CAMERA_TAKE_ICON = randomUUIDStr()
     val USE_CAMERA_SELECTION = randomUUIDStr()

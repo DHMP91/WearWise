@@ -78,6 +78,7 @@ import dhmp.wearwise.model.Occasion
 import dhmp.wearwise.ui.AppViewModelProvider
 import dhmp.wearwise.ui.screens.common.ScreenTitle
 import dhmp.wearwise.ui.screens.common.TestTag
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.android.awaitFrame
 import kotlinx.coroutines.launch
 
@@ -98,7 +99,7 @@ fun EditClothingScreen(
     BackHandler(enabled = !backPressHandled) {
         println("back pressed")
         backPressHandled = true
-        coroutineScope.launch {
+        coroutineScope.launch(Dispatchers.Main) {
             awaitFrame()
             onBack()
             backPressHandled = false

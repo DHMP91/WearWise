@@ -14,6 +14,7 @@ import dhmp.wearwise.model.Category
 import dhmp.wearwise.model.Garment
 import dhmp.wearwise.model.GarmentColorNames
 import dhmp.wearwise.model.Occasion
+import dhmp.wearwise.ui.screens.fakeImage
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
@@ -423,28 +424,8 @@ class GarmentsRepositoryTest {
 
     @Test
     fun getThumbnail_hasImage() = runTest {
-        val paint = Paint().apply {
-            color = Color.RED
-            style = Paint.Style.FILL
-        }
-        val width = 1000
-        val height = 1000
-        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-//        val replaceBitMap = Bitmap.createBitmap(width/2, height/2, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(bitmap)
-        context = InstrumentationRegistry.getInstrumentation().targetContext
-        canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), paint)
-
-        val file = File(context.filesDir, "replaceImageInStorage.png")
-        if(file.exists()){
-            file.delete()
-        }
-        FileOutputStream(file).use { outputStream ->
-            bitmap.compress(Bitmap.CompressFormat.PNG, 20, outputStream)
-        }
-
+        val file = fakeImage(context, "replaceImageInStorage.png")
         val g = Garment(image = file.toURI().toString())
-
         val thumbnail = appContainer.garmentsRespository.getGarmentThumbnail(g)
 
         Assert.assertTrue(

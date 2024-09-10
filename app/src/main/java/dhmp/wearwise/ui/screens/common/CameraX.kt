@@ -56,6 +56,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import dhmp.wearwise.R
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.android.awaitFrame
 import kotlinx.coroutines.launch
@@ -83,7 +84,7 @@ fun ImageScreen(saveImage: (File, Bitmap, Float, Long?) -> Job, id: Long = 0, on
     BackHandler(enabled = !backPressHandled) {
         println("back pressed")
         backPressHandled = true
-        coroutineScope.launch {
+        coroutineScope.launch(Dispatchers.Main) {
             awaitFrame()
             onBack()
             backPressHandled = false

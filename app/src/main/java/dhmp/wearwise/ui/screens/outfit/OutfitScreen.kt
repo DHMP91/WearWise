@@ -39,6 +39,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
@@ -56,6 +57,7 @@ import dhmp.wearwise.model.Outfit
 import dhmp.wearwise.ui.AppViewModelProvider
 import dhmp.wearwise.ui.screens.clothing.ClothingViewModel
 import dhmp.wearwise.ui.screens.common.ScreenTitle
+import dhmp.wearwise.ui.screens.common.TestTag
 import dhmp.wearwise.ui.screens.common.categoryIcon
 
 @Composable
@@ -63,10 +65,11 @@ fun OutfitScreen(
     onEdit: (Long) -> Unit,
     onTakePicture: (Long) -> Unit,
     onNewOutfit: () -> Unit,
-    model: OutfitViewModel = viewModel(factory = AppViewModelProvider.OutFitFactory)
+    model: OutfitViewModel = viewModel(factory = AppViewModelProvider.OutFitFactory),
+    clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)
 ) {
     val outfits = model.outfits.collectAsLazyPagingItems()
-    OutfitList(outfits, onEdit, onTakePicture, onNewOutfit)
+    OutfitList(outfits, onEdit, onTakePicture, onNewOutfit, model = model, clothingViewModel = clothingViewModel)
 }
 
 
@@ -95,7 +98,7 @@ fun NewOutfit(onNewOutfit: () -> Unit){
         },
         containerColor = colorResource(R.color.accent),
         elevation = FloatingActionButtonDefaults.bottomAppBarFabElevation(),
-
+        modifier = Modifier.testTag(TestTag.NEW_OUTFIT_BUTTON)
     ) {
         Icon(Icons.Filled.Add, "Add Garment")
     }
@@ -110,6 +113,7 @@ fun OutfitList(
     onNewOutfit: () -> Unit,
     title: String = "Outfits",
     model: OutfitViewModel = viewModel(factory = AppViewModelProvider.OutFitFactory),
+    clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)
 ){
 
     Surface {
@@ -129,7 +133,7 @@ fun OutfitList(
                         if(it.image == null && it.garmentsId.isEmpty()) {
                             model.deleteOutfit(it.id)
                         } else {
-                            OutfitCard(it, onTakePicture, onEdit)
+                            OutfitCard(it, onTakePicture, onEdit, model = model, clothingViewModel = clothingViewModel)
                         }
                     }
                 }
@@ -163,7 +167,8 @@ fun OutfitCard(
             .heightIn(max = 250.dp)
             .fillMaxWidth()
             .padding(10.dp)
-            .clickable { onEdit(outfit.id) },
+            .clickable { onEdit(outfit.id) }
+            .testTag(TestTag.OUTFIT_CARD),
         elevation = CardDefaults.cardElevation(defaultElevation = 5.dp),
         colors = CardDefaults.cardColors(MaterialTheme.colorScheme.background)
     ) {
@@ -197,7 +202,6 @@ fun OutfitCard(
                     )
                 }
 
-
             } else {
                 Column(
                     modifier = Modifier
@@ -214,6 +218,7 @@ fun OutfitCard(
                         modifier = Modifier
                             .fillMaxSize()
                             .clip(RoundedCornerShape(10.dp))
+                            .testTag(TestTag.OUTFIT_THUMBNAIL)
                     )
                 }
 
@@ -260,21 +265,20 @@ fun OutfitCard(
                                             .padding(10.dp)
                                             .clip(RoundedCornerShape(10.dp))
                                             .widthIn(max = 60.dp)
+                                            .testTag(TestTag.OUTFIT_GARMENT_THUMBNAIL)
                                     )
 
+                                    val icon =  categoryIcon(item, categories)
                                     Box(
                                         modifier = Modifier
                                             .weight(0.5f)
                                             .sizeIn(maxHeight = dimensionResource(R.dimen.icon_max_height))
                                             .align(Alignment.CenterHorizontally)
+                                            .testTag("${TestTag.CLOTHING_LIST_CATEGORY_PREFIX}${icon}")
                                     ) {
+
                                         Icon(
-                                            painter = painterResource(
-                                                categoryIcon(
-                                                    item,
-                                                    categories
-                                                )
-                                            ),
+                                            painter = painterResource(icon),
                                             contentDescription = "Clothing Type",
                                         )
                                     }

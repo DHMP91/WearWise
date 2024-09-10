@@ -2,8 +2,6 @@ package dhmp.wearwise.ui.screens.clothing
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.Canvas
-import android.graphics.Paint
 import android.net.Uri
 import android.util.Log
 import androidx.core.net.toUri
@@ -15,6 +13,7 @@ import dhmp.wearwise.model.Garment
 import dhmp.wearwise.model.GarmentColorNames
 import dhmp.wearwise.ui.screens.FakePagingSource
 import dhmp.wearwise.ui.screens.capture
+import dhmp.wearwise.ui.screens.fakeImage
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
@@ -37,7 +36,6 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import java.io.File
-import java.io.FileOutputStream
 import kotlin.time.Duration.Companion.minutes
 
 
@@ -278,21 +276,7 @@ class ClothingViewModelTest {
             val colorCode = test.key
             val expectedColorMatch = test.value
             val fileName = "test_analyzeGarment_${colorCode}.png"
-            val bitmap = Bitmap.createBitmap(700, 700, Bitmap.Config.ARGB_8888)
-            val canvas = Canvas(bitmap)
-            val paint = Paint().apply {
-                color = colorCode
-                style = Paint.Style.FILL
-            }
-            canvas.drawRect(0f, 0f, 700.toFloat(), 700.toFloat(), paint)
-
-            val file = File(context.filesDir, fileName)
-            if (file.exists()) {
-                file.delete()
-            }
-            FileOutputStream(file).use { outputStream ->
-                bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
-            }
+            val file = fakeImage(context, fileName, fillColor = colorCode)
 
             val fakeGarment = Garment(id = 9090, imageOfSubject = file.toURI().toString())
             `when`(mockedGarmentRepo.getGarmentStream(any())).thenAnswer {
@@ -328,16 +312,12 @@ class ClothingViewModelTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun deleteGarment() {
-        val bitmap = Bitmap.createBitmap(700, 700, Bitmap.Config.ARGB_8888)
         val fakedFiles = mutableListOf<File>()
         val model = ClothingViewModel(mockedGarmentRepo, testDispatcher)
         repeat(5) {
             val fileName = "test_analyzeGarment_deleteGarment_${it}.png"
-            val file = File(context.filesDir, fileName)
+            val file = fakeImage(context, fileName)
             fakedFiles.add(file)
-            FileOutputStream(file).use { outputStream ->
-                bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
-            }
         }
 
         val tests = listOf(

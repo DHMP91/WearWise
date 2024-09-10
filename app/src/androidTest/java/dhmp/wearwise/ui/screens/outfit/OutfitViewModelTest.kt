@@ -12,6 +12,7 @@ import dhmp.wearwise.model.Garment
 import dhmp.wearwise.model.Outfit
 import dhmp.wearwise.model.Season
 import dhmp.wearwise.ui.screens.FakePagingSource
+import dhmp.wearwise.ui.screens.fakeImage
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
@@ -372,20 +373,7 @@ class OutfitViewModelTest {
             outfitsId = listOf(newId)
         )
 
-        val width = 1000
-        val height = 1000
-        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-        val appDir = context.filesDir
-        val file = File(appDir, "test_deleteOutfit")
-        if (file.exists()) {
-            file.delete()
-        }
-        FileOutputStream(file).use { outputStream ->
-            bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
-        }
-        Assert.assertTrue(file.exists())
-
-
+        val file = fakeImage(context, "test_deleteOutfit")
         val model =  OutfitViewModel(mockedGarmentRepo, mockedOutfitRepo, testDispatcher)
         runTest(testDispatcher, timeout = 1.minutes) {
             Mockito.`when`(mockedGarmentRepo.getGarmentStream(garmentOne.id)).thenAnswer {

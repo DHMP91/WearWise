@@ -25,6 +25,7 @@ import dhmp.wearwise.model.GarmentColorNames
 import dhmp.wearwise.model.Occasion
 import dhmp.wearwise.ui.UITest
 import dhmp.wearwise.ui.screens.common.TestTag
+import dhmp.wearwise.ui.screens.fakeImage
 import dhmp.wearwise.ui.theme.WearWiseTheme
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.runBlocking
@@ -53,29 +54,8 @@ class ClothingEditScreenTest : UITest()  {
         model = ClothingViewModel(mockedGarmentRepo)
         appContainer = DefaultAppContainer(context)
 
-        val paint = Paint().apply {
-            color = Color.RED
-            style = Paint.Style.FILL
-        }
-        val width = 1000
-        val height = 1000
-        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(bitmap)
-        context = InstrumentationRegistry.getInstrumentation().targetContext
-        canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), paint)
-        val appDir = File("${context.filesDir}")
-        val testImage = File(appDir, "testImage.png")
+        val testImage = fakeImage(context, "testImage.png")
         testImagePath = testImage.toUri()
-
-        if (!testImage.exists()) {
-            appDir.mkdirs()
-            testImage.createNewFile()
-
-            val outputStream = ByteArrayOutputStream()
-            bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
-            testImage.writeBytes(outputStream.toByteArray())
-            outputStream.close()
-        }
     }
 
 
