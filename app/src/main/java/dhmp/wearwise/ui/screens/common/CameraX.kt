@@ -47,6 +47,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
@@ -55,6 +56,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import dhmp.wearwise.R
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.android.awaitFrame
 import kotlinx.coroutines.launch
@@ -67,6 +69,14 @@ private val TAG = "CameraX Screen"
 
 
 @Composable
+fun ImageScreen(saveImage: (File, Bitmap, Float) -> Job, onBack: () -> Unit) {
+    val func = { file: File, bitmap: Bitmap, float: Float, _: Long? ->
+        saveImage(file, bitmap, float)
+    }
+    ImageScreen(func, id = 0, onBack)
+}
+
+@Composable
 fun ImageScreen(saveImage: (File, Bitmap, Float, Long?) -> Job, id: Long = 0, onBack: () -> Unit) {
     var imageMethod by remember { mutableStateOf("") }
     var backPressHandled by remember { mutableStateOf(false) }
@@ -74,7 +84,7 @@ fun ImageScreen(saveImage: (File, Bitmap, Float, Long?) -> Job, id: Long = 0, on
     BackHandler(enabled = !backPressHandled) {
         println("back pressed")
         backPressHandled = true
-        coroutineScope.launch {
+        coroutineScope.launch(Dispatchers.Main) {
             awaitFrame()
             onBack()
             backPressHandled = false
@@ -111,7 +121,8 @@ fun ImageScreen(saveImage: (File, Bitmap, Float, Long?) -> Job, id: Long = 0, on
                             .weight(1f)
                             .fillMaxSize()
                             .padding(10.dp)
-                            .clickable { imageMethod = "camera" },
+                            .clickable { imageMethod = "camera" }
+                            .testTag(TestTag.USE_CAMERA_SELECTION),
                         elevation = CardDefaults.cardElevation(defaultElevation = 5.dp),
                         colors = CardDefaults.cardColors(MaterialTheme.colorScheme.background)
                     ) {
@@ -141,7 +152,8 @@ fun ImageScreen(saveImage: (File, Bitmap, Float, Long?) -> Job, id: Long = 0, on
                             .weight(1f)
                             .fillMaxSize()
                             .padding(10.dp)
-                            .clickable { imageMethod = "imagePicker" },
+                            .clickable { imageMethod = "imagePicker" }
+                            .testTag(TestTag.USE_GALLERY_SELECTION),
                         elevation = CardDefaults.cardElevation(defaultElevation = 5.dp),
                         colors = CardDefaults.cardColors(MaterialTheme.colorScheme.background)
                     ) {
@@ -203,6 +215,7 @@ fun ExternalPhotoSelector(saveImage: (File, Bitmap, Float, Long?) -> Job, id: Lo
         galleryLauncher.launch("image/*")
     }
 }
+
 @Composable
 fun Camera(saveImage: (File, Bitmap, Float, Long?) -> Job, id: Long = 0){
     val context = LocalContext.current
@@ -250,14 +263,23 @@ fun CameraView(saveImage: (File, Bitmap, Float, Long?) -> Job, id: Long = 0) {
     val previewView: PreviewView = remember { PreviewView(context) }
     val cameraController = remember { LifecycleCameraController(context) }
     val lifecycleOwner = LocalLifecycleOwner.current
-    cameraController.cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
-    cameraController.imageCaptureMode = ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY
-    cameraController.setZoomRatio(0f)
-    cameraController.bindToLifecycle(lifecycleOwner)
-    previewView.controller = cameraController
-    previewView.implementationMode = PreviewView.ImplementationMode.PERFORMANCE
-    previewView.scaleType = PreviewView.ScaleType.FIT_CENTER
+
+    var isCameraInitialized by remember { mutableStateOf(false) }
     var loading by remember { mutableStateOf(false) }
+
+    LaunchedEffect(cameraController, lifecycleOwner) {
+        cameraController.cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+        cameraController.imageCaptureMode = ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY
+        cameraController.setZoomRatio(0f)
+        cameraController.bindToLifecycle(lifecycleOwner)
+        previewView.controller = cameraController
+        previewView.implementationMode = PreviewView.ImplementationMode.PERFORMANCE
+        previewView.scaleType = PreviewView.ScaleType.FIT_CENTER
+
+        previewView.previewStreamState.observe(lifecycleOwner) { streamState ->
+            isCameraInitialized = streamState == PreviewView.StreamState.STREAMING
+        }
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         AndroidView(factory = { previewView }, modifier = Modifier.fillMaxSize())
@@ -271,12 +293,14 @@ fun CameraView(saveImage: (File, Bitmap, Float, Long?) -> Job, id: Long = 0) {
                 }
             }
         ) {
-            if (!loading) {
+            if (!loading && isCameraInitialized) {
                 Icon(
                     painter = painterResource(id = R.drawable.baseline_camera_24),
                     contentDescription = "",
                     tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(54.dp)
+                    modifier = Modifier
+                        .size(54.dp)
+                        .testTag(TestTag.CAMERA_TAKE_ICON)
                 )
             } else {
                 CircularProgressIndicator(
@@ -287,6 +311,7 @@ fun CameraView(saveImage: (File, Bitmap, Float, Long?) -> Job, id: Long = 0) {
             }
         }
     }
+
 }
 
 

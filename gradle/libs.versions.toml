@@ -19,6 +19,9 @@ mlKitSubjectSegmentationVersion = "16.0.0-beta1"
 paletteKtx = "1.0.0"
 pagingVersion = "3.3.0"
 imageCropperVersion = "4.5.0"
+mockitoVersion = "5.12.0"
+mockitoKotlinVersion = "5.4.0"
+testRules = "1.4.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -33,6 +36,7 @@ androidx-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
 androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
 androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
+androidx-rules = { group = "androidx.test", name = "rules", version.ref = "testRules" }
 androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
 androidx-runtime-livedata = { group = "androidx.compose.runtime", name = "runtime-livedata", version = "1.6.7" }
 androidx-lifecycle-viewmodel-compose = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "lifecycleVersion" }
@@ -57,7 +61,12 @@ androidx-paging-runtime = { group = "androidx.paging", name = "paging-runtime", 
 androidx-paging-rx-java2 = { group = "androidx.paging", name = "paging-rxjava2", version.ref = "pagingVersion" }
 androidx-paging-rx-java3 = { group = "androidx.paging", name = "paging-rxjava3", version.ref = "pagingVersion" }
 androidx-paging-compose = { group = "androidx.paging", name = "paging-compose", version.ref = "pagingVersion" }
+androidx-paging-testing = { group = "androidx.paging", name = "paging-testing", version.ref = "pagingVersion" }
 image-cropper = {group = "com.vanniktech", name = "android-image-cropper", version.ref ="imageCropperVersion"}
+mockito-core = {group = "org.mockito", name = "mockito-core", version.ref ="mockitoVersion"}
+mockito-kotlin = {group = "org.mockito.kotlin", name = "mockito-kotlin", version.ref ="mockitoKotlinVersion"}
+mockito-android = {group = "org.mockito", name = "mockito-android", version.ref ="mockitoVersion"}
+
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

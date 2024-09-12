@@ -188,13 +188,6 @@ fun AppNav(modifier: Modifier = Modifier, navController: NavHostController = rem
                         onFinish = { id: Long ->
                             navController.navigate("${AppScreens.EditOutfit.name}/$id")
                             //Don't pop up to outfit otherwise job will be cancelled
-                        },
-                        navOutfit = {
-                            navController.navigate(AppScreens.Outfit.name){
-                                popUpTo(AppScreens.Outfit.name) {
-                                    inclusive = false
-                                }
-                            }
                         }
                     )
             }
@@ -207,7 +200,6 @@ fun AppNav(modifier: Modifier = Modifier, navController: NavHostController = rem
             })
         ) { backStackEntry ->
             val outfitId = backStackEntry.arguments?.getLong("outfitId")
-
             when(outfitId){
                 null -> navController.navigate(navController.graph.findStartDestination().id)
                 else -> EditOutfitScreen(

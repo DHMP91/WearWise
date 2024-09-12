@@ -35,11 +35,11 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
     }
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = "11"
     }
     buildFeatures {
         compose = true
@@ -52,9 +52,11 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+
 }
 
 dependencies {
+    //Jetpack compose + Android essentials
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
@@ -66,12 +68,17 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.androidx.navigation)
+
+
+    //Room DAO for SQLite
     implementation(libs.androidx.room.runtime)
-    implementation(libs.androidx.palette.ktx)
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.room.ktx)
     implementation(libs.androidx.room.paging)
-    implementation(libs.androidx.navigation)
+
+    //Others
+    implementation(libs.androidx.palette.ktx)
     implementation(libs.io.coil.compose)
     implementation(libs.google.gson)
 
@@ -91,7 +98,9 @@ dependencies {
     implementation(libs.androidx.paging.rx.java2)
     implementation(libs.androidx.paging.rx.java3)
     implementation(libs.androidx.paging.compose)
+    implementation(libs.androidx.paging.testing)
 
+    //3rd Party Image Cropping
     implementation(libs.image.cropper)
 
     testImplementation(libs.junit)
@@ -99,6 +108,14 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
+    testImplementation(libs.androidx.rules)
+    androidTestImplementation(libs.androidx.rules)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+    androidTestImplementation(libs.mockito.core)
+    androidTestImplementation(libs.mockito.kotlin)
+    androidTestImplementation(libs.mockito.android)
+    testImplementation(libs.mockito.core)
+    testImplementation(libs.mockito.kotlin)
+
 }

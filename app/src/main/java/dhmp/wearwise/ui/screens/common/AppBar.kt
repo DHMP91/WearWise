@@ -12,9 +12,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import dhmp.wearwise.R
+
 
 @Composable
 fun WearWiseBottomAppBar(
@@ -41,6 +43,7 @@ fun WearWiseBottomAppBar(
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
+                        .testTag(TestTag.BOTTOMBAR_CLOTHING)
                 ) {
                     NavIcon(isCurrentRoute("clothing", route), R.drawable.hangar)
                 }
@@ -49,6 +52,8 @@ fun WearWiseBottomAppBar(
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
+                        .testTag(TestTag.BOTTOMBAR_OUTFIT)
+                    ,
                 ) {
                     NavIcon(isCurrentRoute("outfit", route), R.drawable.outfit)
                 }
@@ -91,8 +96,8 @@ fun NavIcon(isCurrentRoute: Boolean, IconResource: Int){
                     strokeWidth = strokeWidth
                 )
             }
-            .padding(bottom = 10.dp)
-    val noBorder = Modifier.padding(bottom = 10.dp)
+            .padding(bottom = 5.dp)
+    val noBorder = Modifier.padding(6.dp)
     if(isCurrentRoute) {
         return Icon(
             painterResource(IconResource),

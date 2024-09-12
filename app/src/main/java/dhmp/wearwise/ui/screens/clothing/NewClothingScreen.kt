@@ -19,9 +19,9 @@ fun NewClothingScreen(
     onBack: () -> Unit,
     clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory),
 ) {
-    val uiState by clothingViewModel.uiState.collectAsState()
-    if (uiState.newItemId != 0L ){
-        onFinish(uiState.newItemId)
+    val uiState by clothingViewModel.newItemId.collectAsState()
+    if (uiState != 0L ){
+        onFinish(uiState)
     }
     Surface {
         Box(

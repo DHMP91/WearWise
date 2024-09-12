@@ -10,7 +10,7 @@ fun categoryIcon(garment: Garment, categories: List<Category>, ): Int {
         val name = categories.find { c -> c.id == it }?.name?.lowercase()
         when (name) {
 //          b66"OTHER",
-            "accessories" -> R.drawable.accessory
+            "accessory" -> R.drawable.accessory
             "intimates" -> R.drawable.intimates
             "outerwear" -> R.drawable.outer_wear
             "footwear" -> R.drawable.shoe_icon

@@ -21,5 +21,5 @@ data class Outfit(
     var image: String? = null,
     var garmentsId: List<Long> = listOf(),
     @ColumnInfo(defaultValue = "")
-    val season: Season = Season.ANY
+    var season: Season = Season.ANY
 )

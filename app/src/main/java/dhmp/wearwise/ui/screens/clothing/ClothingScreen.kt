@@ -40,6 +40,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
@@ -57,6 +58,7 @@ import dhmp.wearwise.model.Garment
 import dhmp.wearwise.model.GarmentColorNames
 import dhmp.wearwise.ui.AppViewModelProvider
 import dhmp.wearwise.ui.screens.common.ScreenTitle
+import dhmp.wearwise.ui.screens.common.TestTag
 import dhmp.wearwise.ui.screens.common.categoryIcon
 import java.util.Locale
 
@@ -67,10 +69,11 @@ fun ClothingScreen(
     onEdit: (Long) -> Unit,
     onNewClothing: () -> Unit,
     onOutfits: (Long) -> Unit,
+    clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)
 ) {
     Surface {
         Box(modifier = Modifier.fillMaxSize()){
-            GarmentList(onEdit, onOutfits)
+            GarmentList(onEdit, onOutfits, clothingViewModel = clothingViewModel)
             FloatingActionButton(
                 onClick = { onNewClothing() },
                 containerColor = colorResource(R.color.accent),
@@ -78,6 +81,7 @@ fun ClothingScreen(
                 modifier = Modifier
                     .align(Alignment.BottomEnd) // Align to bottom end of the Box
                     .padding(16.dp)
+                    .testTag(TestTag.NEW_CLOTHING_BUTTON)
             ) {
                 Icon(Icons.Filled.Add, "Add Garment")
             }
@@ -116,12 +120,14 @@ fun Header(
             Icon(
                 imageVector = Icons.Filled.Menu,
                 contentDescription = "Menu",
-                modifier = Modifier.clickable  { clothingViewModel.showMenu(!menuState.showMenu) }
+                modifier = Modifier
+                    .clickable  { clothingViewModel.showMenu(!menuState.showMenu) }
+                    .testTag(TestTag.MAIN_MENU)
             )
-            ClothingMainMenu()
-            ClothingBrandSelectionMenu()
-            ClothingCategorySelectionMenu()
-            ClothingColorSelectionMenu()
+            ClothingMainMenu(clothingViewModel = clothingViewModel)
+            ClothingBrandSelectionMenu(clothingViewModel = clothingViewModel)
+            ClothingCategorySelectionMenu(clothingViewModel = clothingViewModel)
+            ClothingColorSelectionMenu(clothingViewModel = clothingViewModel)
         }
     }
 
@@ -138,14 +144,19 @@ fun GarmentList(
         modifier = Modifier
             .fillMaxWidth()
             .wrapContentHeight()
-            .background(MaterialTheme.colorScheme.background),
+            .background(MaterialTheme.colorScheme.background)
+            .testTag(TestTag.CLOTHING_LIST),
     ) {
         item{
-            Header()
+            Header(clothingViewModel = clothingViewModel)
         }
         items(garments.itemCount) { index ->
             garments[index]?.let {
-                GarmentCard(it, onEdit, onOutfits)
+                GarmentCard(
+                    it,
+                    onEdit,
+                    onOutfits,
+                    clothingViewModel = clothingViewModel)
             }
         }
     }
@@ -170,6 +181,7 @@ fun GarmentCard(
             .fillMaxWidth()
             .clickable { onEdit(garment.id) }
             .padding(10.dp)
+            .testTag(TestTag.CLOTHING_ITEM)
     ) {
         AsyncImage(
             model = ImageRequest.Builder(LocalContext.current).data(thumbnail).build(),
@@ -202,7 +214,8 @@ fun GarmentCard(
                     garment.brand?.lowercase()?.replaceFirstChar {
                         it.titlecase(Locale.getDefault())
                     } ?: "Set Brand",
-                    color = if(garment.brand != null)  MaterialTheme.colorScheme.onBackground else Color.Gray
+                    color = if(garment.brand != null)  MaterialTheme.colorScheme.onBackground else Color.Gray,
+                    modifier = Modifier.testTag(TestTag.CLOTHING_BRAND_CARD_FIELD)
                 )
                 Text(
                     "#${garment.id}",
@@ -246,11 +259,13 @@ fun GarmentCard(
                     modifier = Modifier
                         .sizeIn(maxHeight = dimensionResource(R.dimen.icon_max_height))
                         .padding(start = 5.dp, end = 5.dp)
+                        .testTag("${TestTag.CLOTHING_LIST_CATEGORY_PREFIX}${icon}")
                 )
 
                 Row(
                     verticalAlignment = Alignment.Bottom,
-                    horizontalArrangement = Arrangement.Start
+                    horizontalArrangement = Arrangement.Start,
+                    modifier = Modifier.testTag(TestTag.OUTFIT_COUNT)
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.outfit),
@@ -368,11 +383,7 @@ fun ClothingBrandSelectionMenu(clothingViewModel: ClothingViewModel = viewModel(
                 }
             },
             onClick = {
-                for(brand in brands){
-                    if(menuState.filterExcludeBrands.contains(brand)) {
-                        clothingViewModel.removeBrandFromFilter(brand)
-                    }
-                }
+                clothingViewModel.removeBrandFromFilter(brands)
             }
         )
         DropdownMenuItem(
@@ -386,11 +397,7 @@ fun ClothingBrandSelectionMenu(clothingViewModel: ClothingViewModel = viewModel(
                 }
             },
             onClick = {
-                for(brand in brands){
-                    if(!menuState.filterExcludeBrands.contains(brand)) {
-                        clothingViewModel.addBrandToFilter(brand)
-                    }
-                }
+                clothingViewModel.addBrandToFilter(brands)
             }
         )
         for(brand in brands) {
@@ -458,11 +465,7 @@ fun ClothingColorSelectionMenu(clothingViewModel: ClothingViewModel = viewModel(
                 }
             },
             onClick = {
-                for(c in colorNames){
-                    if(menuState.filterExcludeColors.contains(c)) {
-                        clothingViewModel.removeColorFromFilter(c)
-                    }
-                }
+                clothingViewModel.removeColorFromFilter(colorNames)
             }
         )
         DropdownMenuItem(
@@ -476,11 +479,7 @@ fun ClothingColorSelectionMenu(clothingViewModel: ClothingViewModel = viewModel(
                 }
             },
             onClick = {
-                for(c in colorNames){
-                    if(!menuState.filterExcludeColors.contains(c)) {
-                        clothingViewModel.addColorToFilter(c)
-                    }
-                }
+                clothingViewModel.addColorToFilter(colorNames)
             }
         )
         for(color in colorNames) {
@@ -549,11 +548,7 @@ fun ClothingCategorySelectionMenu(clothingViewModel: ClothingViewModel = viewMod
                 }
             },
             onClick = {
-                for(c in categories){
-                    if(menuState.filterExcludeCategories.contains(c)) {
-                        clothingViewModel.removeCategoryFromFilter(c)
-                    }
-                }
+                clothingViewModel.removeCategoryFromFilter(categories)
             }
         )
         DropdownMenuItem(
@@ -567,11 +562,7 @@ fun ClothingCategorySelectionMenu(clothingViewModel: ClothingViewModel = viewMod
                 }
             },
             onClick = {
-                for(c in categories){
-                    if(!menuState.filterExcludeCategories.contains(c)) {
-                        clothingViewModel.addCategoryToFilter(c)
-                    }
-                }
+                clothingViewModel.addCategoryToFilter(categories)
             }
         )
         for(c in categories) {
