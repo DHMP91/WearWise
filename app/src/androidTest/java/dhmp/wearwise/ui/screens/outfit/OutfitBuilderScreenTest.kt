@@ -37,6 +37,7 @@ import dhmp.wearwise.ui.screens.common.WearWiseBottomAppBar
 import dhmp.wearwise.ui.screens.fakeImage
 import dhmp.wearwise.ui.theme.WearWiseTheme
 import dhmp.wearwise.ui.verifyScreenTitle
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert
@@ -44,7 +45,10 @@ import org.junit.Before
 import org.junit.Test
 import org.mockito.Mockito
 import org.mockito.invocation.InvocationOnMock
+import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
 import java.io.File
 import kotlin.time.Duration.Companion.minutes
 
@@ -102,8 +106,15 @@ class OutfitBuilderScreenTest: UITest() {
 
     @Test
     fun outfitBuilder_removeSelectedGarments() = runTest(timeout = 5.minutes){
-        base()
-        verifyScreenTitle("Outfit #${outfitId}")
+        val mockedGarmentRepo = Mockito.mock(GarmentsRepository::class.java)
+        val mockedOutfitRepo = Mockito.mock(OutfitsRepository::class.java)
+        val clothingModel = ClothingViewModel(mockedGarmentRepo)
+        val model = OutfitViewModel(mockedGarmentRepo, mockedOutfitRepo)
+
+        Mockito.`when`(mockedGarmentRepo.updateGarment(any())).thenAnswer{}
+        Mockito.`when`(mockedOutfitRepo.updateOutfit(any())).thenAnswer{}
+
+        base(mockedOutfitRepo, mockedGarmentRepo, model, clothingModel)
         composeTestRule.waitUntil{
             composeTestRule.onNode(hasText("Save Outfit")).isDisplayed()
         }
@@ -121,9 +132,82 @@ class OutfitBuilderScreenTest: UITest() {
             composeTestRule.waitForIdle()
         }
         Assert.assertEquals(0, selectedGarmentsCount())
-        image = composeTestRule.onNode(hasText("Save Outfit")).onParent().captureToImage()
-        val afterModifyColor = image.asAndroidBitmap().getPixel(image.width/3, image.height/2)
-        Assert.assertNotEquals(afterModifyColor, intialColor)
+        composeTestRule.waitUntil{
+            image = composeTestRule.onNode(hasText("Save Outfit")).onParent().captureToImage()
+            val afterModifyColor = image.asAndroidBitmap().getPixel(image.width/3, image.height/2)
+            afterModifyColor != intialColor
+        }
+
+        composeTestRule.onNode(hasText("Save Outfit")).performClick()
+        composeTestRule.waitForIdle()
+        verify(mockedGarmentRepo, times(3)).updateGarment(
+            any()
+        )
+
+        verify(mockedOutfitRepo, times(1)).updateOutfit(
+            any()
+        )
+    }
+
+    @Test
+    fun outfitBuilder_saveNoChanges() = runTest(timeout = 5.minutes){
+        val mockedGarmentRepo = Mockito.mock(GarmentsRepository::class.java)
+        val mockedOutfitRepo = Mockito.mock(OutfitsRepository::class.java)
+        val clothingModel = ClothingViewModel(mockedGarmentRepo)
+        val model = OutfitViewModel(mockedGarmentRepo, mockedOutfitRepo)
+
+        Mockito.`when`(mockedGarmentRepo.updateGarment(any())).thenAnswer{}
+        Mockito.`when`(mockedOutfitRepo.updateOutfit(any())).thenAnswer{}
+
+        base(mockedOutfitRepo, mockedGarmentRepo, model, clothingModel)
+        composeTestRule.waitUntil{
+            composeTestRule.onNode(hasText("Save Outfit")).isDisplayed()
+        }
+
+        composeTestRule.onNode(hasText("Save Outfit")).performClick()
+        composeTestRule.waitForIdle()
+        verify(mockedGarmentRepo, times(0)).updateGarment(
+            any()
+        )
+
+        verify(mockedOutfitRepo, times(0)).updateOutfit(
+            any()
+        )
+    }
+
+    @Test
+    fun outfitBuilder_addSelectedGarments() = runTest(timeout = 5.minutes){
+        val mockedGarmentRepo = Mockito.mock(GarmentsRepository::class.java)
+        val mockedOutfitRepo = Mockito.mock(OutfitsRepository::class.java)
+        val clothingModel = ClothingViewModel(mockedGarmentRepo)
+        val model = OutfitViewModel(mockedGarmentRepo, mockedOutfitRepo)
+
+        Mockito.`when`(mockedGarmentRepo.updateGarment(any())).thenAnswer{}
+        Mockito.`when`(mockedOutfitRepo.updateOutfit(any())).thenAnswer{}
+
+        base(mockedOutfitRepo, mockedGarmentRepo, model, clothingModel)
+        composeTestRule.waitUntil{
+            composeTestRule.onNode(hasText("Save Outfit")).isDisplayed()
+        }
+
+        //add garments
+        val category = Category.categories().first()
+        val categoryNode =  composeTestRule.onNode(hasText("${category.name} ($garmentsPerCategory)"))
+        categoryNode.performClick()
+        composeTestRule.waitForIdle()
+        composeTestRule.onAllNodes(hasTestTag("${TestTag.CATEGORIZED_GARMENT_PREFIX}${category.id}")).onFirst().performClick()
+
+        delay(1000)
+        composeTestRule.onNode(hasText("Save Outfit")).performClick()
+        composeTestRule.waitForIdle()
+
+        verify(mockedGarmentRepo, times(4)).updateGarment(
+            any()
+        )
+
+        verify(mockedOutfitRepo, times(1)).updateOutfit(
+            any()
+        )
     }
 
     @Test
@@ -178,7 +262,12 @@ class OutfitBuilderScreenTest: UITest() {
         }
     }
 
-    private suspend fun base() {
+    private suspend fun base(
+        mockedOutfitRepo: OutfitsRepository = this.mockedOutfitRepo,
+        mockedGarmentRepo: GarmentsRepository = this.mockedGarmentRepo,
+        outfitViewModel: OutfitViewModel = model,
+        clothingViewModel: ClothingViewModel = clothingModel
+    ) {
         Mockito.`when`(mockedOutfitRepo.getOutfitStream(fakeOutfit.id)).thenAnswer{
             flow {
                 emit(fakeOutfit)
@@ -192,6 +281,7 @@ class OutfitBuilderScreenTest: UITest() {
                         Garment(
                             id = id,
                             image = fakeImage.toUri().toString(),
+                            outfitsId = listOf(fakeOutfit.id)
                         )
                     )
                 }
@@ -208,13 +298,19 @@ class OutfitBuilderScreenTest: UITest() {
             val categoryId = invocation.arguments[0] as Int? // Access the argument
             val fakeGarments = mutableListOf<Garment>()
             repeat(garmentsPerCategory){
-                fakeGarments.add(
-                    Garment(
-                        id = (categoryId?.times(1000) ?: 0) + it.toLong(),
-                        categoryId = categoryId,
-                        image = fakeImage.toUri().toString()
-                    )
+                val garment = Garment(
+                    id = (categoryId?.times(1000) ?: 0) + it.toLong(),
+                    categoryId = categoryId,
+                    image = fakeImage.toUri().toString()
                 )
+                Mockito.`when`(mockedGarmentRepo.getGarmentStream(garment.id)).thenAnswer{
+                    flow {
+                        emit(
+                            garment
+                        )
+                    }
+                }
+                fakeGarments.add(garment)
             }
             FakePagingSource(
                 fakeGarments
@@ -242,8 +338,8 @@ class OutfitBuilderScreenTest: UITest() {
                             onCrop = { _ -> },
                             onFinish = {},
                             onBack = {},
-                            clothingViewModel = clothingModel,
-                            outfitViewModel = model
+                            clothingViewModel = clothingViewModel,
+                            outfitViewModel = outfitViewModel
                         )
                     }
                 }

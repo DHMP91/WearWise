@@ -257,9 +257,11 @@ fun SaveOutfit(
     val coroutineScope = rememberCoroutineScope()
     Button(
         onClick = {
-            coroutineScope.launch(Dispatchers.Main) {
-                outfitViewModel.saveOutfit()
-                onFinish()
+            if (!savedOutfitFlagState){
+                coroutineScope.launch(Dispatchers.Main) {
+                    outfitViewModel.saveOutfit()
+                    onFinish()
+                }
             }
         },
         colors = buttonColor,
