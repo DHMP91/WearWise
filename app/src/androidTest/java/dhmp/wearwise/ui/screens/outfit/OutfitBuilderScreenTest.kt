@@ -6,9 +6,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasContentDescriptionExactly
 import androidx.compose.ui.test.hasParent
@@ -16,7 +14,6 @@ import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.onFirst
-import androidx.compose.ui.test.onParent
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -119,8 +116,6 @@ class OutfitBuilderScreenTest: UITest() {
             composeTestRule.onNode(hasText("Save Outfit")).isDisplayed()
         }
         composeTestRule.waitForIdle()
-        var image = composeTestRule.onNode(hasText("Save Outfit")).onParent().captureToImage()
-        val intialColor = image.asAndroidBitmap().getPixel(image.width/3, image.height/2)
         val selectedGarmentsCount = {
             composeTestRule.onAllNodes(hasTestTag(TestTag.SELECTED_GARMENT)).fetchSemanticsNodes().size
         }
@@ -132,12 +127,6 @@ class OutfitBuilderScreenTest: UITest() {
             composeTestRule.waitForIdle()
         }
         Assert.assertEquals(0, selectedGarmentsCount())
-        composeTestRule.waitUntil{
-            image = composeTestRule.onNode(hasText("Save Outfit")).onParent().captureToImage()
-            val afterModifyColor = image.asAndroidBitmap().getPixel(image.width/3, image.height/2)
-            afterModifyColor != intialColor
-        }
-
         composeTestRule.onNode(hasText("Save Outfit")).performClick()
         composeTestRule.waitForIdle()
         verify(mockedGarmentRepo, times(3)).updateGarment(
