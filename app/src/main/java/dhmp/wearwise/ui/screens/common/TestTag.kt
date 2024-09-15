@@ -20,6 +20,8 @@ object TestTag {
     const val CLOTHING_LIST_CATEGORY_PREFIX = "CLOTHING_CATEGORY_ICON_"
     val OUTFIT_COUNT = randomUUIDStr()
     val CLOTHING_BRAND_CARD_FIELD = randomUUIDStr()
+    val FILTER_PREFIX = "FILTER_"
+    val FILTER_ROW_PREFIX = "FILTER_ROW_"
     val MAIN_MENU = randomUUIDStr()
 
 

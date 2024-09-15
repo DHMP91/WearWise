@@ -93,13 +93,14 @@ class ClothingScreenUITest: UITest() {
         launchClothingScreen()
 
         //Verify: Uncheck all category
+        val title = context.getString(R.string.filter_by_category)
         composeTestRule.onNode(hasTestTag(TestTag.MAIN_MENU)).performClick()
         composeTestRule.onNode(hasText(context.getString(R.string.filter_by_category))).performClick()
-        composeTestRule.onNode(hasText("Uncheck All")).performClick()
+        composeTestRule.onNode(hasText("All").and(hasTestTag("${TestTag.FILTER_PREFIX}${title}"))).performClick()
         composeTestRule.waitForIdle()
         Assert.assertTrue(itemCount() == 3)
 
-        composeTestRule.onNode(hasText("Check All")).performClick()
+        composeTestRule.onNode(hasText("All").and(hasTestTag("${TestTag.FILTER_PREFIX}${title}"))).performClick()
         composeTestRule.onNode(hasTestTag(TestTag.MAIN_MENU)).performClick()
         Assert.assertTrue(itemCount() != 3 && itemCount() > 0)
         composeTestRule.waitForIdle()
@@ -111,7 +112,8 @@ class ClothingScreenUITest: UITest() {
     fun clothingFilterByCategory_OneCategoryChecked() = runTest(timeout = 5.minutes) {
         baseMock()
         val categories = Category.categories()
-        val checkCategory = categories[categories.size/2]
+        val checkCategoryIndex = categories.size/2
+        val checkCategory = categories[checkCategoryIndex]
 
         Mockito.`when`(mockedGarmentRepo.getFilteredGarments(
             excludedCategories = categories,
@@ -147,9 +149,11 @@ class ClothingScreenUITest: UITest() {
         launchClothingScreen()
 
         //Verify: Check one category
+        val title = context.getString(R.string.filter_by_category)
         composeTestRule.onNode(hasTestTag(TestTag.MAIN_MENU)).performClick()
         composeTestRule.onNode(hasText(context.getString(R.string.filter_by_category))).performClick()
-        composeTestRule.onNode(hasText("Uncheck All")).performClick()
+        composeTestRule.onNode(hasText("All").and(hasTestTag("${TestTag.FILTER_PREFIX}${title}"))).performClick()
+        composeTestRule.onNode(hasTestTag("${TestTag.FILTER_ROW_PREFIX}${title}")).performScrollToIndex(checkCategoryIndex)
         composeTestRule.onNode(hasText(checkCategory.name)).performClick()
         composeTestRule.onNode(hasTestTag(TestTag.MAIN_MENU)).performClick()
         composeTestRule.waitForIdle()
@@ -160,7 +164,8 @@ class ClothingScreenUITest: UITest() {
     fun clothingFilterByCategory_OneCategoryUnchecked() = runTest(timeout = 5.minutes) {
         baseMock()
         val categories = Category.categories()
-        val unCheckCategory = categories[categories.size/2]
+        val unCheckCategoryIndex = categories.size/2
+        val unCheckCategory = categories[unCheckCategoryIndex]
         val listOfGarments = mutableListOf<Garment>()
         repeat(5) {
             val garment = Garment(
@@ -180,8 +185,10 @@ class ClothingScreenUITest: UITest() {
         launchClothingScreen()
 
         //Verify: Check one category
+        val title = context.getString(R.string.filter_by_category)
         composeTestRule.onNode(hasTestTag(TestTag.MAIN_MENU)).performClick()
         composeTestRule.onNode(hasText(context.getString(R.string.filter_by_category))).performClick()
+        composeTestRule.onNode(hasTestTag("${TestTag.FILTER_ROW_PREFIX}${title}")).performScrollToIndex(unCheckCategoryIndex)
         composeTestRule.onNode(hasText(unCheckCategory.name)).performClick()
         composeTestRule.onNode(hasTestTag(TestTag.MAIN_MENU)).performClick()
         composeTestRule.waitForIdle()
@@ -213,10 +220,11 @@ class ClothingScreenUITest: UITest() {
         launchClothingScreen()
 
         //Verify: Check all color
+        val title = context.getString(R.string.filter_by_color)
         composeTestRule.onNode(hasTestTag(TestTag.MAIN_MENU)).performClick()
         composeTestRule.onNode(hasText(context.getString(R.string.filter_by_color))).performClick()
-        composeTestRule.onNode(hasText("Uncheck All")).performClick()
-        composeTestRule.onNode(hasText("Check All")).performClick()
+        composeTestRule.onNode(hasText("All").and(hasTestTag("${TestTag.FILTER_PREFIX}${title}"))).performClick()
+        composeTestRule.onNode(hasText("All").and(hasTestTag("${TestTag.FILTER_PREFIX}${title}"))).performClick()
         composeTestRule.onNode(hasTestTag(TestTag.MAIN_MENU)).performClick()
         composeTestRule.waitForIdle()
         Assert.assertTrue(itemCount() != 4)
@@ -280,13 +288,14 @@ class ClothingScreenUITest: UITest() {
         launchClothingScreen()
 
         //Verify: Uncheck all category
+        val title = context.getString(R.string.filter_by_brand)
         composeTestRule.onNode(hasTestTag(TestTag.MAIN_MENU)).performClick()
         composeTestRule.onNode(hasText(context.getString(R.string.filter_by_brand))).performClick()
-        composeTestRule.onNode(hasText("Uncheck All")).performClick()
+        composeTestRule.onNode(hasText("All").and(hasTestTag("${TestTag.FILTER_PREFIX}${title}"))).performClick()
         composeTestRule.waitForIdle()
         Assert.assertTrue(itemCount() == 3)
 
-        composeTestRule.onNode(hasText("Check All")).performClick()
+        composeTestRule.onNode(hasText("All").and(hasTestTag("${TestTag.FILTER_PREFIX}${title}"))).performClick()
         composeTestRule.onNode(hasTestTag(TestTag.MAIN_MENU)).performClick()
         Assert.assertTrue(itemCount() != 3 && itemCount() > 0)
         composeTestRule.waitForIdle()
@@ -333,9 +342,10 @@ class ClothingScreenUITest: UITest() {
         launchClothingScreen()
 
         //Verify: Check one category
+        val title = context.getString(R.string.filter_by_brand)
         composeTestRule.onNode(hasTestTag(TestTag.MAIN_MENU)).performClick()
         composeTestRule.onNode(hasText(context.getString(R.string.filter_by_brand))).performClick()
-        composeTestRule.onNode(hasText("Uncheck All")).performClick()
+        composeTestRule.onNode(hasText("All").and(hasTestTag("${TestTag.FILTER_PREFIX}${title}"))).performClick()
         composeTestRule.onNode(hasText(checkedBrand)).performClick()
         composeTestRule.onNode(hasTestTag(TestTag.MAIN_MENU)).performClick()
         composeTestRule.waitForIdle()

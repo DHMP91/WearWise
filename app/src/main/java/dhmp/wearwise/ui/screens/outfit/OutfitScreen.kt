@@ -97,7 +97,7 @@ fun NewOutfit(onNewOutfit: () -> Unit){
             onNewOutfit()
         },
         containerColor = colorResource(R.color.accent),
-        elevation = FloatingActionButtonDefaults.bottomAppBarFabElevation(),
+        elevation = FloatingActionButtonDefaults.bottomAppBarFabElevation(dimensionResource(id = R.dimen.default_elevation)),
         modifier = Modifier.testTag(TestTag.NEW_OUTFIT_BUTTON)
     ) {
         Icon(Icons.Filled.Add, "Add Garment")

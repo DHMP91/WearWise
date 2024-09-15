@@ -3,4 +3,7 @@
     <dimen name="icon_max_height">25dp</dimen>
     <dimen name="icon_badge_size">25dp</dimen>
     <dimen name="screen_title_padding">20dp</dimen>
+    <dimen name="bottom_bar_height">60dp</dimen>
+    <dimen name="garment_item_height">130dp</dimen>
+    <dimen name="default_elevation">10dp</dimen>
 </resources>
