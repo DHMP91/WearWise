@@ -170,7 +170,7 @@ fun Title(
         contentAlignment = Alignment.CenterStart,
         modifier = Modifier
     ) {
-        ScreenTitle("Clothing Item #${garmentId}")
+        ScreenTitle("Clothing #${garmentId}")
     }
 }
 
@@ -243,7 +243,6 @@ fun GarmentImage(
                     modifier = Modifier
                         .clip(RoundedCornerShape(10.dp))
                         .heightIn(max = 300.dp)
-                        .fillMaxSize()
                         .clickable {
                             garment.image?.let {
                                 onClickPicture(it)

@@ -65,6 +65,7 @@ import dhmp.wearwise.R
 import dhmp.wearwise.model.Categories
 import dhmp.wearwise.model.Category
 import dhmp.wearwise.model.Garment
+import dhmp.wearwise.model.GarmentColorNames
 import dhmp.wearwise.ui.AppViewModelProvider
 import dhmp.wearwise.ui.screens.clothing.ClothingViewModel
 import dhmp.wearwise.ui.screens.common.Collapsible
@@ -153,11 +154,7 @@ fun OutfitBuilderHeader(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(
-                start = pad,
-                top = dimensionResource(id = R.dimen.screen_title_padding),
-                end = pad
-            )
+            .padding(pad)
     ) {
         Title(outfitViewModel)
         DeleteOutfit(onFinish = onFinish, outfitViewModel)
@@ -193,20 +190,16 @@ fun BuilderColumn(
 
         Row(modifier = Modifier
             .fillMaxSize()
-            .weight(3f)
+            .weight(2f)
             .padding(bottom = 10.dp)
         ) {
             OutfitImage(onTakePicture, onClickPicture, onCrop, outfitViewModel)
         }
 
         Row(modifier = Modifier
-            .weight(1f)
+            .weight(0.75f)
         ) {
             SelectedGarments(outfitViewModel)
-        }
-
-        Row {
-            SaveOutfit(onFinish, outfitViewModel)
         }
 
         Row(
@@ -217,6 +210,10 @@ fun BuilderColumn(
                 clothingViewModel,
                 outfitViewModel
             )
+        }
+
+        Row {
+            SaveOutfit(onFinish, outfitViewModel)
         }
 
     }
@@ -334,27 +331,46 @@ fun OutfitImage(
             }
 
             else -> {
+                val selectedItems by outfitViewModel.getGarments(it).collectAsState(
+                    initial = null
+                )
                 Row {
+
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
-                            .weight(0.5f)
-                    ) {
+                            .weight(0.5f),
+                        verticalArrangement = Arrangement.Bottom,
+                        horizontalAlignment = Alignment.End,
+
+                    ){
+                        selectedItems?.forEach { garment ->
+                            garment.color?.let { garmentColor ->
+                                val color = GarmentColorNames.find { color -> color.name == garmentColor }
+                                color?.let {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(dimensionResource(R.dimen.icon_max_height))  // Adjust the size as needed
+                                            .background(Color(color.color))
+                                    )
+                                }
+                            }
+                        }
                     }
 
                     Column(
                         modifier = Modifier
                             .weight(2f)
                             .fillMaxSize(),
-                        verticalArrangement = Arrangement.Center
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         AsyncImage(
                             model = ImageRequest.Builder(LocalContext.current).data(it.image)
                                 .build(),
                             contentDescription = "2",
-                            contentScale = ContentScale.Fit,
+                            contentScale = ContentScale.FillHeight,
                             modifier = Modifier
-                                .fillMaxSize()
                                 .clip(RoundedCornerShape(10.dp))
                                 .clickable {
                                     it.image?.let { image -> onClickPicture(image) }
@@ -394,7 +410,7 @@ fun OutfitImage(
                             modifier = Modifier
                                 .clickable {
                                     coroutineScope.launch(Dispatchers.Main) {
-                                        val id = outfitViewModel.saveOutfit() //Save current changes it any
+                                        val id = outfitViewModel.saveOutfit() //Save current changes
                                         id?.let {
                                             onTakePicture(id)
                                         }

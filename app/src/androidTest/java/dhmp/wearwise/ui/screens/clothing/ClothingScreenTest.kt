@@ -510,7 +510,7 @@ class ClothingScreenUITest: UITest() {
 
         composeTestRule.waitUntilAtLeastOneExists(hasTestTag(TestTag.SCREEN_TITLE), 10000)
         composeTestRule.waitForIdle()
-        verifyScreenTitle( Regex("Clothing Item #\\d+"))
+        verifyScreenTitle( Regex("Clothing #\\d+"))
 
         composeTestRule.onNode(hasTestTag(TestTag.BOTTOMBAR_CLOTHING)).performClick()
         composeTestRule.waitForIdle()
@@ -525,7 +525,7 @@ class ClothingScreenUITest: UITest() {
         composeTestRule.onAllNodes(hasTestTag(TestTag.CLOTHING_ITEM)).onFirst().performClick()
         val editClothingTitle = getText(composeTestRule.onNode(hasTestTag(TestTag.SCREEN_TITLE)))
         Assert.assertNotNull(editClothingTitle)
-        Assert.assertTrue(editClothingTitle!!.contains("Clothing Item #"))
+        Assert.assertTrue(editClothingTitle!!.contains("Clothing #"))
     }
 
 
