@@ -14,6 +14,7 @@ import dhmp.wearwise.data.GarmentsRepository
 import dhmp.wearwise.data.OutfitsRepository
 import dhmp.wearwise.model.Garment
 import dhmp.wearwise.model.Outfit
+import dhmp.wearwise.model.Season
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -207,6 +208,16 @@ class OutfitViewModel (
         }
     }
 
+    fun setSeason(season: Season){
+        viewModelScope.launch(dispatcherIO) {
+            _outfit.value?.let { it ->
+                it.season = season
+            }
+            savedOutfitFlag.update {
+                false
+            }
+        }
+    }
 
     suspend fun saveOutfit(outfit: Outfit): Long {
         return withContext(dispatcherIO) {

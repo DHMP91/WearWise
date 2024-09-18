@@ -25,8 +25,8 @@ object TestTag {
     val MAIN_MENU = randomUUIDStr()
 
 
-    //EditClothing
-    val EDIT_CLOTHING_DROPDOWN_PREFIX = "EDIT_CLOTHING_DROPDOWN_"
+    //Common
+    val DROPDOWN_MENU_PREFIX = "DROPDOWN_MENU_"
 
 
     //Outfit

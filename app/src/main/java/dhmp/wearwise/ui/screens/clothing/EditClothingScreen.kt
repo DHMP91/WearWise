@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -23,19 +22,15 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material.icons.outlined.Done
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -48,25 +43,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.toSize
-import androidx.compose.ui.window.PopupProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
@@ -76,6 +60,7 @@ import dhmp.wearwise.model.Garment
 import dhmp.wearwise.model.GarmentColorNames
 import dhmp.wearwise.model.Occasion
 import dhmp.wearwise.ui.AppViewModelProvider
+import dhmp.wearwise.ui.screens.common.DropdownMenuEditable
 import dhmp.wearwise.ui.screens.common.ScreenTitle
 import dhmp.wearwise.ui.screens.common.TestTag
 import kotlinx.coroutines.Dispatchers
@@ -108,29 +93,76 @@ fun EditClothingScreen(
     LaunchedEffect (garmentId) {
         clothingViewModel.getGarmentById(garmentId)
     }
-    val uiState by clothingViewModel.uiEditState.collectAsState()
+
 
     Column(
         modifier = modifier
             .fillMaxSize()
     ) {
-        val pad = dimensionResource(id = R.dimen.screen_title_padding)
-        Row(modifier = Modifier
-            .fillMaxWidth()
-            .wrapContentHeight()
-            .padding(
-                start = pad,
-                top = dimensionResource(id = R.dimen.screen_title_padding),
-                end = pad
+        Row(
+            modifier = Modifier
+                .padding(start = 10.dp, top = 5.dp, end = 10.dp, bottom = 5.dp)
+                .fillMaxSize()
+                .weight(2f)
+        ) {
+            ClothingCard(
+                onFinish = onFinish,
+                onOutfits = onOutfits,
+                onClickPicture = onClickPicture,
+                onCrop = onCrop,
+                garmentId = garmentId,
+                clothingViewModel = clothingViewModel
             )
+        }
+
+        Row(
+            modifier = Modifier
+                .padding(
+                    start = dimensionResource(id = R.dimen.screen_title_padding),
+                    end = dimensionResource(id = R.dimen.screen_title_padding)
+                )
+                .weight(0.2f)
+        ) {
+            Save(clothingViewModel)
+        }
+    }
+}
+
+@Composable
+fun ClothingCard(
+    onFinish: () -> Unit,
+    onOutfits: (Long) -> Unit,
+    onClickPicture: (String) -> Unit,
+    onCrop: (String) -> Unit,
+    garmentId: Long,
+    clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)
+){
+    val uiState by clothingViewModel.uiEditState.collectAsState()
+    Card(
+        modifier = Modifier
+            .fillMaxSize(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
+        colors = CardDefaults.cardColors(Color.White)
+    ) {
+        val pad = dimensionResource(id = R.dimen.screen_title_padding)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .wrapContentHeight()
+                .padding(
+                    start = pad,
+                    top = dimensionResource(id = R.dimen.screen_title_padding),
+                    end = pad
+                )
         ) {
             Title(garmentId)
             DeleteGarment(onFinish, garmentId, clothingViewModel)
         }
 
-        Row(modifier = Modifier
-            .fillMaxWidth()
-            .weight(4f)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(4f)
         ) {
             GarmentImage(uiState.editGarment, onOutfits, onClickPicture, onCrop)
         }
@@ -143,21 +175,23 @@ fun EditClothingScreen(
                 .weight(0.75f),
             horizontalArrangement = Arrangement.Center
         ) {
-            Row (
+            Row(
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 RemoveBackground(garmentId, uiState.editGarment.image, clothingViewModel)
                 AnalyzeGarment(garmentId, clothingViewModel)
-                Save(clothingViewModel)
+//                    Save(clothingViewModel)
             }
         }
 
-        Column(modifier = Modifier
-            .fillMaxWidth()
-            .weight(4f)
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(4f)
         ) {
             ClothingInfo(garmentId, clothingViewModel)
         }
+
     }
 }
 
@@ -261,7 +295,7 @@ fun GarmentImage(
             modifier = Modifier
                 .weight(0.25f)
                 .fillMaxHeight()
-                .padding(start= 5.dp),
+                .padding(start = 5.dp),
             verticalArrangement = Arrangement.Bottom,
             horizontalAlignment = Alignment.Start,
         ){
@@ -363,31 +397,25 @@ fun Save(clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModel
     val uiState by clothingViewModel.uiEditState.collectAsState()
     var buttonColor = ButtonDefaults.buttonColors(Color.Gray)
     var onClick = {}
+    var isSaved = true
     uiState.changes?.let{
         buttonColor = ButtonDefaults.buttonColors(colorResource(R.color.accent))
         onClick = {
             clothingViewModel.saveChanges(it)
         }
+        isSaved = false
     }
-
     Button(
         onClick = onClick,
         colors = buttonColor,
+        modifier = Modifier
+            .fillMaxWidth()
     ) {
-        Icon(
-            imageVector = Icons.Outlined.Done,
-            contentDescription = "Save Changes",
-            tint = if(uiState.changes == null) Color.White else Color.Black,
-            modifier = Modifier.size(18.dp)
-        )
         Text(
             text = "Save",
-            color = if(uiState.changes == null) Color.White else Color.Black,
-            style = MaterialTheme.typography.labelMedium,
+            color = if(isSaved) Color.White else Color.Black
         )
     }
-
-
 }
 
 
@@ -421,14 +449,19 @@ fun ClothingInfo(
             garment.color = name
             clothingViewModel.storeChanges(garment)
         }
-        GarmentDropdownMenu("Color", colorNames, garment.color, updateColor)
+        dhmp.wearwise.ui.screens.common.DropdownMenu(
+            "Color",
+            colorNames,
+            garment.color,
+            updateColor
+        )
 
 
         val updatebrand = { value: String ->
             garment.brand = value
             clothingViewModel.storeChanges(garment)
         }
-        GarmentDropdownMenuCustom("Brand", brands, garment.brand, updatebrand)
+        DropdownMenuEditable("Brand", brands, garment.brand, updatebrand)
 
         val updateOccasion = { value: String ->
             Occasion.valueOf(value)
@@ -436,7 +469,12 @@ fun ClothingInfo(
             clothingViewModel.storeChanges(garment)
         }
         val occasions = Occasion.entries.map { it.name }
-        GarmentDropdownMenu("Occasion", occasions, garment.occasion?.name, updateOccasion)
+        dhmp.wearwise.ui.screens.common.DropdownMenu(
+            "Occasion",
+            occasions,
+            garment.occasion?.name,
+            updateOccasion
+        )
 //    DropUpMenu("A")
 //    DropUpMenu("C")
 //    DropUpMenu("K")
@@ -461,7 +499,12 @@ fun GarmentCategorySelection(
     }
 
     if(category == null){
-        GarmentDropdownMenu("Category", categoryNames, null, updateCategory)
+        dhmp.wearwise.ui.screens.common.DropdownMenu(
+            "Category",
+            categoryNames,
+            null,
+            updateCategory
+        )
     }else {
         Row {
             Column(
@@ -469,7 +512,12 @@ fun GarmentCategorySelection(
                     .weight(1f)
                     .padding(end = 5.dp)
             ) {
-                GarmentDropdownMenu("Category", categoryNames, category!!.name, updateCategory)
+                dhmp.wearwise.ui.screens.common.DropdownMenu(
+                    "Category",
+                    categoryNames,
+                    category!!.name,
+                    updateCategory
+                )
             }
 
             val subCategoryNames = category!!.subCategories?.map { it.name }
@@ -487,7 +535,7 @@ fun GarmentCategorySelection(
                         garment.subCategoryId = Category.getCategory(name)?.id
                         clothingViewModel.storeChanges(garment)
                     }
-                    GarmentDropdownMenu(
+                    dhmp.wearwise.ui.screens.common.DropdownMenu(
                         "SubCategory",
                         subCategoryNames,
                         subCategory?.name,
@@ -499,191 +547,4 @@ fun GarmentCategorySelection(
     }
 }
 
-@Composable
-fun GarmentDropdownMenu(label: String, options: List<String>, fieldValue: String?, updateField: (String) -> Unit){
-    val density = LocalDensity.current
-    val configuration = LocalConfiguration.current
-    val screenHeightPx = configuration.screenHeightDp.dp
-    var expanded by remember { mutableStateOf(false) }
-    var expandedByFocus by remember { mutableStateOf(false) }
-    var dismissed by remember { mutableStateOf(false) }
-    var staticSelectedText by remember { mutableStateOf( fieldValue ?: "")}
-    var textFieldSize by remember { mutableStateOf(Size.Zero) }
-    val menuHeight = with(density) {
-        (screenHeightPx / 4).toPx().toDp()
-    }
-    val focusRequester = FocusRequester()
-    val icon = if (expanded) Icons.Filled.KeyboardArrowDown else Icons.Filled.KeyboardArrowRight
 
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-    ) {
-        OutlinedTextField(
-            readOnly = true,
-            value = if (staticSelectedText == "" && fieldValue != null) fieldValue else staticSelectedText,
-            onValueChange = {
-                updateField(it)
-                staticSelectedText = it
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .onGloballyPositioned { coordinates ->
-                    //This value is used to assign to the DropDown the same width
-                    textFieldSize = coordinates.size.toSize()
-                }
-                .focusRequester(focusRequester)
-                .onFocusChanged {
-                    if (it.hasFocus && !expanded && !expandedByFocus) {
-                        //Expand once when focus on field (clicking directly)
-                        expanded = true
-                        expandedByFocus = true
-                    }
-                }
-                .testTag("${TestTag.EDIT_CLOTHING_DROPDOWN_PREFIX}$label"),
-            label = { Text(label) },
-            trailingIcon = {
-                Icon(
-                    icon,
-                    "contentDescription",
-                    Modifier.clickable {
-                        if(!dismissed){
-                            expanded = !expanded
-                        }else if(!expanded){
-                            // Clickable is not called when readOnly (allowCustomValue = false)
-                            expanded = true
-                            dismissed = false //Reset, conflict event with closing + dismiss menu
-                        }else{
-                            dismissed = false
-                        }
-                    }
-                )
-            }
-        )
-
-        val textFieldHeightDp: Dp = with(density) { textFieldSize.height.toDp() }
-        val textFieldWidthDp: Dp = with(density) { textFieldSize.width.toDp() }
-
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = {
-                expanded = false
-                dismissed = true
-            },
-            offset = DpOffset(x = 0.dp, y = -menuHeight - textFieldHeightDp),
-            modifier = Modifier
-                .width(textFieldWidthDp)
-                .height(menuHeight),
-            properties = PopupProperties(focusable = true)
-        ) {
-            options.forEach { label ->
-                DropdownMenuItem(
-                    text = {
-                        Text(text = label)
-                    },
-                    onClick = {
-                        updateField(label)
-                        staticSelectedText = label
-                        expanded = false
-                    }
-                )
-            }
-        }
-    }
-}
-
-
-
-@Composable
-fun GarmentDropdownMenuCustom(label: String, options: List<String>, fieldValue: String?, updateField: (String) -> Unit){
-    val density = LocalDensity.current
-    val configuration = LocalConfiguration.current
-    val screenHeightPx = configuration.screenHeightDp.dp
-    var expanded by remember { mutableStateOf(false) }
-    var expandedByFocus by remember { mutableStateOf(false) }
-    var dismissed by remember { mutableStateOf(false) }
-    var selectedText by remember { mutableStateOf( fieldValue?: "") }
-    var textFieldSize by remember { mutableStateOf(Size.Zero) }
-    val menuHeight = with(density) {
-        (screenHeightPx / 4).toPx().toDp()
-    }
-    val focusRequester = FocusRequester()
-    val icon = if (expanded) Icons.Filled.KeyboardArrowDown else Icons.Filled.KeyboardArrowRight
-
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-    ) {
-        OutlinedTextField(
-            value = if (selectedText == "" && fieldValue != null) fieldValue else selectedText,
-            onValueChange = {
-                updateField(it)
-                selectedText = it
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .onGloballyPositioned { coordinates ->
-                    //This value is used to assign to the DropDown the same width
-                    textFieldSize = coordinates.size.toSize()
-                }
-                .focusRequester(focusRequester)
-                .onFocusChanged {
-                    if (it.hasFocus && !expanded && !expandedByFocus) {
-                        //Expand once when focus on field (clicking directly)
-                        expanded = true
-                        expandedByFocus = true
-                    } else if (!it.hasFocus && expanded) {
-                        expanded = false
-                        expandedByFocus = true
-                    }
-                }
-                .testTag("${TestTag.EDIT_CLOTHING_DROPDOWN_PREFIX}$label"),
-            label = { Text(label) },
-            trailingIcon = {
-                Icon(
-                    icon,
-                    "contentDescription",
-                    Modifier.clickable {
-                        if(!dismissed){
-                            expanded = !expanded
-                            if(expanded){
-                                focusRequester.requestFocus()
-                            }
-                        }else{
-                            dismissed = false
-                        }
-                    }
-                )
-            }
-        )
-
-        val textFieldHeightDp: Dp = with(density) { textFieldSize.height.toDp() }
-        val textFieldWidthDp: Dp = with(density) { textFieldSize.width.toDp() }
-
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = {
-                expanded = false
-                dismissed = true
-            },
-            offset = DpOffset(x = 0.dp, y = -textFieldHeightDp),
-            modifier = Modifier
-                .width(textFieldWidthDp)
-                .heightIn(max = menuHeight),
-            properties = PopupProperties(focusable = false)
-        ) {
-            options.forEach { label ->
-                DropdownMenuItem(
-                    text = {
-                        Text(text = label)
-                    },
-                    onClick = {
-                        updateField(label)
-                        selectedText = label
-                        expanded = false
-                    }
-                )
-            }
-        }
-    }
-}

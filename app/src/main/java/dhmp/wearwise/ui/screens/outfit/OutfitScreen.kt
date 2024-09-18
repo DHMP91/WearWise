@@ -116,7 +116,9 @@ fun OutfitList(
     clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)
 ){
 
-    Surface {
+    Surface (
+        color = MaterialTheme.colorScheme.background
+    ){
         Box(modifier = Modifier.fillMaxSize()) {
             LazyColumn {
                 item {
@@ -166,11 +168,11 @@ fun OutfitCard(
         modifier = Modifier
             .heightIn(max = 250.dp)
             .fillMaxWidth()
-            .padding(10.dp)
+            .padding(start = 10.dp, top = 5.dp, end = 10.dp, bottom = 5.dp)
             .clickable { onEdit(outfit.id) }
             .testTag(TestTag.OUTFIT_CARD),
         elevation = CardDefaults.cardElevation(defaultElevation = 5.dp),
-        colors = CardDefaults.cardColors(MaterialTheme.colorScheme.background)
+        colors = CardDefaults.cardColors(Color.White)
     ) {
         Row (
             modifier = Modifier
@@ -272,7 +274,6 @@ fun OutfitCard(
                                     Box(
                                         modifier = Modifier
                                             .weight(0.5f)
-                                            .sizeIn(maxHeight = dimensionResource(R.dimen.icon_max_height))
                                             .align(Alignment.CenterHorizontally)
                                             .testTag("${TestTag.CLOTHING_LIST_CATEGORY_PREFIX}${icon}")
                                     ) {
@@ -280,6 +281,8 @@ fun OutfitCard(
                                         Icon(
                                             painter = painterResource(icon),
                                             contentDescription = "Clothing Type",
+                                            modifier = Modifier
+                                                .sizeIn(maxHeight = dimensionResource(R.dimen.outfit_list_icon_height))
                                         )
                                     }
                                 }

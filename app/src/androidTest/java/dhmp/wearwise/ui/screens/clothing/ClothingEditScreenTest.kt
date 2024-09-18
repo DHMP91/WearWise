@@ -1,10 +1,6 @@
 package dhmp.wearwise.ui.screens.clothing
 
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.Canvas
-import android.graphics.Color
-import android.graphics.Paint
 import android.net.Uri
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
@@ -34,8 +30,6 @@ import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import org.mockito.Mockito
-import java.io.ByteArrayOutputStream
-import java.io.File
 import kotlin.time.Duration.Companion.minutes
 
 class ClothingEditScreenTest : UITest()  {
@@ -150,7 +144,7 @@ class ClothingEditScreenTest : UITest()  {
         }
 
         //Categpry
-        composeTestRule.onNode(hasTestTag("${TestTag.EDIT_CLOTHING_DROPDOWN_PREFIX}Category")).performClick()
+        composeTestRule.onNode(hasTestTag("${TestTag.DROPDOWN_MENU_PREFIX}Category")).performClick()
         for(c in categories){
             if(!composeTestRule.onNode(hasText(c.name)).isDisplayed()){
                 composeTestRule.onNode(hasText(c.name)).performScrollTo()
@@ -162,7 +156,7 @@ class ClothingEditScreenTest : UITest()  {
         composeTestRule.onNode(hasText(category.name)).isDisplayed()
 
         //Subcategory
-        composeTestRule.onNode(hasTestTag("${TestTag.EDIT_CLOTHING_DROPDOWN_PREFIX}SubCategory")).performClick()
+        composeTestRule.onNode(hasTestTag("${TestTag.DROPDOWN_MENU_PREFIX}SubCategory")).performClick()
         for(c in subCategories){
             if(!composeTestRule.onNode(hasText(c.name)).isDisplayed()){
                 composeTestRule.onNode(hasText(c.name)).performScrollTo()
@@ -174,7 +168,7 @@ class ClothingEditScreenTest : UITest()  {
         composeTestRule.onNode(hasText(subCategory.name)).isDisplayed()
 
         //Occasion
-        composeTestRule.onNode(hasTestTag("${TestTag.EDIT_CLOTHING_DROPDOWN_PREFIX}Occasion")).performClick()
+        composeTestRule.onNode(hasTestTag("${TestTag.DROPDOWN_MENU_PREFIX}Occasion")).performClick()
         for(x in Occasion.entries){
             if(!composeTestRule.onNode(hasText(x.name)).isDisplayed()){
                 composeTestRule.onNode(hasText(x.name)).performScrollTo()
@@ -185,7 +179,7 @@ class ClothingEditScreenTest : UITest()  {
         composeTestRule.onNode(hasText(occasion.name)).isDisplayed()
 
         //Color
-        composeTestRule.onNode(hasTestTag("${TestTag.EDIT_CLOTHING_DROPDOWN_PREFIX}Color")).performClick()
+        composeTestRule.onNode(hasTestTag("${TestTag.DROPDOWN_MENU_PREFIX}Color")).performClick()
         for(x in colors){
             if(!composeTestRule.onNode(hasText(x)).isDisplayed()){
                 composeTestRule.onNode(hasText(x)).performScrollTo()
@@ -196,14 +190,14 @@ class ClothingEditScreenTest : UITest()  {
         composeTestRule.onNode(hasText(color)).isDisplayed()
 
         //Brand
-        composeTestRule.onNode(hasTestTag("${TestTag.EDIT_CLOTHING_DROPDOWN_PREFIX}Brand")).performClick()
+        composeTestRule.onNode(hasTestTag("${TestTag.DROPDOWN_MENU_PREFIX}Brand")).performClick()
         for(x in brands){
             if(!composeTestRule.onNode(hasText(x)).isDisplayed()){
                 composeTestRule.onNode(hasText(x)).performScrollTo()
             }
             Assert.assertTrue(composeTestRule.onNode(hasText(x)).isDisplayed())
         }
-        composeTestRule.onNode(hasTestTag("${TestTag.EDIT_CLOTHING_DROPDOWN_PREFIX}Brand")).performTextInput("AnythingBrand")
+        composeTestRule.onNode(hasTestTag("${TestTag.DROPDOWN_MENU_PREFIX}Brand")).performTextInput("AnythingBrand")
         composeTestRule.onNode(hasText("AnythingBrand")).isDisplayed()
 
     }

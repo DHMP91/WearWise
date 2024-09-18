@@ -22,10 +22,11 @@ import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
@@ -38,7 +39,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -74,7 +74,9 @@ fun ClothingScreen(
     onOutfits: (Long) -> Unit,
     clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)
 ) {
-    Surface {
+    Surface (
+        color = MaterialTheme.colorScheme.background
+    ){
         Box(modifier = Modifier.fillMaxSize()){
             GarmentList(onEdit, onOutfits, clothingViewModel = clothingViewModel)
             FloatingActionButton(
@@ -154,10 +156,8 @@ fun GarmentList(
     val garments: LazyPagingItems<Garment> = clothingViewModel.garments.collectAsLazyPagingItems()
     LazyColumn(
         modifier = Modifier
-            .fillMaxWidth()
-            .wrapContentHeight()
-            .background(MaterialTheme.colorScheme.background)
-            .testTag(TestTag.CLOTHING_LIST),
+            .fillMaxSize()
+            .testTag(TestTag.CLOTHING_LIST)
     ) {
         item {
             Header(clothingViewModel = clothingViewModel)
@@ -186,118 +186,124 @@ fun GarmentCard(
     clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)
 ){
     val thumbnail by clothingViewModel.getGarmentThumbnail(garment).collectAsState(initial = "")
-    Row (
-        modifier = modifier
-            .background(
-                color = MaterialTheme.colorScheme.background,
-                shape = RoundedCornerShape(8.dp)
-            )
-            .heightIn(max = dimensionResource(id = R.dimen.garment_item_height))
-            .fillMaxWidth()
-            .clickable { onEdit(garment.id) }
-            .padding(10.dp)
-            .testTag(TestTag.CLOTHING_ITEM)
-    ) {
-        AsyncImage(
-            model = ImageRequest.Builder(LocalContext.current).data(thumbnail).build(),
-            contentDescription = "GarmentImage",
-            contentScale = ContentScale.FillWidth,
-            modifier = Modifier
-                .weight(2f)
-                .fillMaxSize()
-                .clip(RoundedCornerShape(10.dp))
-        )
 
-        Column (
-            modifier = Modifier
-                .weight(3f)
-                .fillMaxSize()
-                .padding(10.dp),
-            verticalArrangement = Arrangement.Top,
-        ){
+    Card(
+        modifier = Modifier
+            .wrapContentHeight()
+            .fillMaxWidth()
+            .padding(start = 10.dp, top = 5.dp, end = 10.dp, bottom = 5.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(Color.White)
+    ) {
+        Row(
+            modifier = modifier
+                .heightIn(max = dimensionResource(id = R.dimen.garment_item_height))
+                .fillMaxWidth()
+                .clickable { onEdit(garment.id) }
+                .testTag(TestTag.CLOTHING_ITEM)
+        ) {
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current).data(thumbnail).build(),
+                contentDescription = "GarmentImage",
+                contentScale = ContentScale.FillWidth,
+                modifier = Modifier
+                    .weight(2f)
+                    .fillMaxSize()
+            )
 
             Column(
                 modifier = Modifier
-                    .weight(2f)
-                    .fillMaxWidth(),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.Start
+                    .weight(3f)
+                    .fillMaxSize()
+                    .padding(10.dp),
+                verticalArrangement = Arrangement.Top,
             ) {
+
+                Column(
+                    modifier = Modifier
+                        .weight(2f)
+                        .fillMaxWidth(),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.Start
+                ) {
 //            Text(text="${garment.id}")
 
-                Text(
-                    garment.brand?.lowercase()?.replaceFirstChar {
-                        it.titlecase(Locale.getDefault())
-                    } ?: "Set Brand",
-                    color = if(garment.brand != null)  MaterialTheme.colorScheme.onBackground else Color.Gray,
-                    modifier = Modifier.testTag(TestTag.CLOTHING_BRAND_CARD_FIELD)
-                )
-                Text(
-                    "#${garment.id}",
-                    fontSize = MaterialTheme.typography.labelSmall.fontSize,
-                    modifier = Modifier
-                        .padding(top = 5.dp, bottom = 5.dp)
-                )
-                Text(
-                    garment.occasion?.name?.lowercase()?.replaceFirstChar {
-                        it.titlecase(Locale.getDefault())
-                    } ?: "Set Occasion",
-                    fontSize = MaterialTheme.typography.labelMedium.fontSize,
-                    color = if(garment.occasion != null)  MaterialTheme.colorScheme.onBackground else Color.Gray
-                )
-            }
-
-
-            Row(
-                modifier = Modifier
-                    .weight(0.75f)
-                    .fillMaxWidth()
-                    .padding(top = 5.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.End
-            ) {
-                val color = GarmentColorNames.find { it.name == garment.color}
-                color?.let {
-                    Box(
-                        modifier = Modifier
-                            .size(20.dp)
-                            .background(Color(color.color))
-                            .border(width = 1.dp, color = MaterialTheme.colorScheme.onBackground)
-                    )
-                }
-
-                val categories = Categories
-                val icon = categoryIcon(garment, categories)
-                Icon(
-                    painter = painterResource(icon),
-                    contentDescription = "Clothing Type",
-                    modifier = Modifier
-                        .sizeIn(maxHeight = dimensionResource(R.dimen.icon_max_height))
-                        .padding(start = 5.dp, end = 5.dp)
-                        .testTag("${TestTag.CLOTHING_LIST_CATEGORY_PREFIX}${icon}")
-                )
-
-                Row(
-                    verticalAlignment = Alignment.Bottom,
-                    horizontalArrangement = Arrangement.Start,
-                    modifier = Modifier.testTag(TestTag.OUTFIT_COUNT)
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.outfit),
-                        contentDescription = "Outfit Count",
-                        modifier = Modifier
-                            .sizeIn(maxHeight = dimensionResource(R.dimen.icon_max_height))
-                            .clickable {
-                                onOutfits(garment.id)
-                            }
+                    Text(
+                        garment.brand?.lowercase()?.replaceFirstChar {
+                            it.titlecase(Locale.getDefault())
+                        } ?: "Set Brand",
+                        color = if (garment.brand != null) MaterialTheme.colorScheme.onBackground else Color.Gray,
+                        modifier = Modifier.testTag(TestTag.CLOTHING_BRAND_CARD_FIELD)
                     )
                     Text(
-                        "${garment.outfitsId.size}"
+                        "#${garment.id}",
+                        fontSize = MaterialTheme.typography.labelSmall.fontSize,
+                        modifier = Modifier
+                            .padding(top = 5.dp, bottom = 5.dp)
+                    )
+                    Text(
+                        garment.occasion?.name?.lowercase()?.replaceFirstChar {
+                            it.titlecase(Locale.getDefault())
+                        } ?: "Set Occasion",
+                        fontSize = MaterialTheme.typography.labelMedium.fontSize,
+                        color = if (garment.occasion != null) MaterialTheme.colorScheme.onBackground else Color.Gray
+                    )
+                }
+
+
+                Row(
+                    modifier = Modifier
+                        .weight(0.75f)
+                        .fillMaxWidth()
+                        .padding(top = 5.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    val color = GarmentColorNames.find { it.name == garment.color }
+                    color?.let {
+                        Box(
+                            modifier = Modifier
+                                .size(20.dp)
+                                .background(Color(color.color))
+                                .border(
+                                    width = 1.dp,
+                                    color = MaterialTheme.colorScheme.onBackground
+                                )
+                        )
+                    }
+
+                    val categories = Categories
+                    val icon = categoryIcon(garment, categories)
+                    Icon(
+                        painter = painterResource(icon),
+                        contentDescription = "Clothing Type",
+                        modifier = Modifier
+                            .sizeIn(maxHeight = dimensionResource(R.dimen.clothing_list_icon_height))
+                            .padding(start = 5.dp, end = 5.dp)
+                            .testTag("${TestTag.CLOTHING_LIST_CATEGORY_PREFIX}${icon}")
                     )
 
+                    Row(
+                        verticalAlignment = Alignment.Bottom,
+                        horizontalArrangement = Arrangement.Start,
+                        modifier = Modifier.testTag(TestTag.OUTFIT_COUNT)
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.outfit),
+                            contentDescription = "Outfit Count",
+                            modifier = Modifier
+                                .sizeIn(maxHeight = dimensionResource(R.dimen.icon_max_height))
+                                .clickable {
+                                    onOutfits(garment.id)
+                                }
+                        )
+                        Text(
+                            "${garment.outfitsId.size}"
+                        )
+
+                    }
                 }
             }
-        }
 
 //        Column(
 //            modifier = Modifier
@@ -311,6 +317,7 @@ fun GarmentCard(
 //        }
 
 
+        }
     }
 }
 
