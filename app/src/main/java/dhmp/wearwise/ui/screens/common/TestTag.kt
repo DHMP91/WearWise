@@ -27,7 +27,8 @@ object TestTag {
 
     //Common
     val DROPDOWN_MENU_PREFIX = "DROPDOWN_MENU_"
-
+    val SAVE_BUTTON_ENABLED = randomUUIDStr()
+    val SAVE_BUTTON_DISABLED = randomUUIDStr()
 
     //Outfit
     val NEW_OUTFIT_BUTTON = randomUUIDStr()

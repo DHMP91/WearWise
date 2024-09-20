@@ -271,20 +271,18 @@ class OutfitBuilderScreenTest: UITest() {
         composeTestRule.waitUntil{
             composeTestRule.onNode(hasText("Save")).isDisplayed()
         }
+        composeTestRule.onNode(hasTestTag(TestTag.SAVE_BUTTON_DISABLED)).assertIsDisplayed()
 
         //Season
         val selectSeason = Season.entries.first()
-        composeTestRule.onNode(hasTestTag("${TestTag.DROPDOWN_MENU_PREFIX}Season")).performClick()
-//        for(c in Season.entries.map { it }){
-//            if(!composeTestRule.onNode(hasText(c.name)).isDisplayed()){
-//                composeTestRule.onNode(hasText(c.name)).performScrollTo()
-//            }
-//            Assert.assertTrue(composeTestRule.onNode(hasText(c.name)).isDisplayed())
-//        }
-        composeTestRule.onNode(hasText(selectSeason.name)).performScrollTo()
+        composeTestRule.onNode(hasTestTag("${TestTag.DROPDOWN_MENU_PREFIX}Season"))
+            .performClick()
+        composeTestRule.waitUntil { composeTestRule.onNode(hasText(selectSeason.name)).isDisplayed() }
         composeTestRule.onNode(hasText(selectSeason.name)).performClick()
-        composeTestRule.onNode(hasText(selectSeason.name)).isDisplayed()
+        composeTestRule.waitForIdle()
 
+        composeTestRule.waitUntil { composeTestRule.onNode(hasText(selectSeason.name)).isDisplayed() }
+        composeTestRule.waitUntil { composeTestRule.onNode(hasTestTag(TestTag.SAVE_BUTTON_ENABLED)).isDisplayed() }
         composeTestRule.onNode(hasText("Save")).performClick()
         composeTestRule.waitForIdle()
         verify(mockedOutfitRepo, times(1)).updateOutfit(

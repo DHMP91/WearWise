@@ -53,12 +53,14 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import dhmp.wearwise.R
 import dhmp.wearwise.model.Categories
+import dhmp.wearwise.model.Garment
 import dhmp.wearwise.model.Outfit
 import dhmp.wearwise.ui.AppViewModelProvider
 import dhmp.wearwise.ui.screens.clothing.ClothingViewModel
 import dhmp.wearwise.ui.screens.common.ScreenTitle
 import dhmp.wearwise.ui.screens.common.TestTag
 import dhmp.wearwise.ui.screens.common.categoryIcon
+import kotlinx.coroutines.flow.Flow
 
 @Composable
 fun OutfitScreen(
@@ -69,7 +71,16 @@ fun OutfitScreen(
     clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)
 ) {
     val outfits = model.outfits.collectAsLazyPagingItems()
-    OutfitList(outfits, onEdit, onTakePicture, onNewOutfit, model = model, clothingViewModel = clothingViewModel)
+    OutfitList(
+        outfits,
+        onEdit,
+        onTakePicture,
+        onNewOutfit,
+        onDelete = { id: Long -> model.deleteOutfit(id) },
+        onGetGarments = { outfit: Outfit -> model.getGarments(outfit) },
+        onGetOutfitThumbnail = { outfit: Outfit -> model.getOutfitThumbnail(outfit)},
+        onGetGarmentThumbnail = { garment: Garment -> clothingViewModel.getGarmentThumbnail(garment)},
+    )
 }
 
 
@@ -87,7 +98,17 @@ fun OutfitsByIdsScreen(
     }
     val uiState by clothingViewModel.uiEditState.collectAsState()
     val outfits = model.getOutfitsByListOfId(uiState.editGarment.outfitsId).collectAsLazyPagingItems()
-    OutfitList(outfits, onEdit, onTakePicture, onNewOutfit, title = "Outfits with clothing item #$garmentId")
+    OutfitList(
+        outfits,
+        onEdit,
+        onTakePicture,
+        onNewOutfit,
+        onDelete = { id: Long -> model.deleteOutfit(id) },
+        onGetGarments = { outfit: Outfit -> model.getGarments(outfit) },
+        onGetOutfitThumbnail = { outfit: Outfit -> model.getOutfitThumbnail(outfit)},
+        onGetGarmentThumbnail = { garment: Garment -> clothingViewModel.getGarmentThumbnail(garment)},
+        title = "Outfits with clothing item #$garmentId"
+    )
 }
 
 @Composable
@@ -111,11 +132,12 @@ fun OutfitList(
     onEdit: (Long) -> Unit,
     onTakePicture: (Long) -> Unit,
     onNewOutfit: () -> Unit,
-    title: String = "Outfits",
-    model: OutfitViewModel = viewModel(factory = AppViewModelProvider.OutFitFactory),
-    clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)
+    onDelete: (Long) -> Unit,
+    onGetGarments: (Outfit) -> Flow<List<Garment>>,
+    onGetOutfitThumbnail: (Outfit) -> Flow<String>,
+    onGetGarmentThumbnail: (Garment) -> Flow<String>,
+    title: String = "Outfits"
 ){
-
     Surface (
         color = MaterialTheme.colorScheme.background
     ){
@@ -133,9 +155,11 @@ fun OutfitList(
                 items(outfits.itemCount) { index ->
                     outfits[index]?.let {
                         if(it.image == null && it.garmentsId.isEmpty()) {
-                            model.deleteOutfit(it.id)
+                            onDelete(it.id)
                         } else {
-                            OutfitCard(it, onTakePicture, onEdit, model = model, clothingViewModel = clothingViewModel)
+                            val garments by remember(it) { onGetGarments(it) }.collectAsState(initial = null)
+                            val thumbnail by onGetOutfitThumbnail(it).collectAsState(initial = "")
+                            OutfitCard(it, garments, thumbnail, onTakePicture, onEdit, onGetGarmentThumbnail =  onGetGarmentThumbnail)
                         }
                     }
                 }
@@ -155,14 +179,13 @@ fun OutfitList(
 @Composable
 fun OutfitCard(
     outfit: Outfit,
+    garments: List<Garment>?,
+    thumbnail: String,
     onTakePicture: (Long) -> Unit,
     onEdit: (Long) -> Unit,
-    clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory),
-    model: OutfitViewModel = viewModel(factory = AppViewModelProvider.OutFitFactory),
+    onGetGarmentThumbnail: (Garment) -> Flow<String>,
 ){
     val categories = Categories
-    val garments by remember(outfit) { model.getGarments(outfit) }.collectAsState(initial = null)
-    val thumbnail by model.getOutfitThumbnail(outfit).collectAsState(initial = "")
     val row = garments ?: listOf()
     Card(
         modifier = Modifier
@@ -255,7 +278,7 @@ fun OutfitCard(
                                         .fillMaxHeight()
                                         .widthIn(min = 80.dp, max = 100.dp)
                                 ) {
-                                    val garmentThumbnail by clothingViewModel.getGarmentThumbnail(item).collectAsState(initial = "")
+                                    val garmentThumbnail by onGetGarmentThumbnail(item).collectAsState(initial = "")
                                     AsyncImage(
                                         model = ImageRequest.Builder(LocalContext.current)
                                             .data(garmentThumbnail).build(),
