@@ -18,6 +18,7 @@ import androidx.navigation.compose.rememberNavController
 import dhmp.wearwise.ui.screens.common.AppNav
 import dhmp.wearwise.ui.screens.common.AppScreens
 import dhmp.wearwise.ui.screens.common.WearWiseBottomAppBar
+import dhmp.wearwise.ui.screens.statistics.StatsScreem
 import dhmp.wearwise.ui.theme.WearWiseTheme
 
 class MainActivity : ComponentActivity() {
@@ -76,10 +77,8 @@ fun App(navController: NavHostController = rememberNavController()) {
 @Composable
 fun GreetingPreview() {
     WearWiseTheme {
-//        ClothingScreen()
-////        App()
-//        OutfitScreen(
-//            onEdit = {}
-//        )
+        StatsScreem(
+            onBack = {}
+        )
     }
 }

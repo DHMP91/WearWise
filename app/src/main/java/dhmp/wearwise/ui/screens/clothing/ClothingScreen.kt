@@ -66,6 +66,11 @@ import dhmp.wearwise.ui.screens.common.categoryIcon
 import java.util.Locale
 
 private val TAG = "ClothingScreen"
+enum class Filter {
+    BRAND,
+    COLOR,
+    CATEGORY,
+}
 
 @Composable
 fun ClothingScreen(
@@ -74,11 +79,88 @@ fun ClothingScreen(
     onOutfits: (Long) -> Unit,
     clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)
 ) {
+    LaunchedEffect(null) {
+        clothingViewModel.collectBrands()
+    }
+    val garments: LazyPagingItems<Garment> = clothingViewModel.garments.collectAsLazyPagingItems()
+    val menuState by clothingViewModel.uiMenuState.collectAsState()
+    val garmentCount by clothingViewModel.getGarmentsCount(
+        menuState.filterExcludeCategories,
+        menuState.filterExcludeColors,
+        menuState.filterExcludeBrands
+    ).collectAsState(initial = 0)
+    val brands by clothingViewModel.brands.collectAsState()
+
+    val filterAddFunc = { item: Any, type: Filter ->
+        when(type) {
+            Filter.BRAND -> clothingViewModel.addBrandToFilter(item as String)
+            Filter.COLOR -> clothingViewModel.addColorToFilter(item as String)
+            Filter.CATEGORY -> clothingViewModel.addCategoryToFilter(item as Category)
+        }
+    }
+
+    val filterRemoveFunc = { item: Any, type: Filter ->
+        when(type) {
+            Filter.BRAND -> clothingViewModel.removeBrandFromFilter(item as String)
+            Filter.COLOR -> clothingViewModel.removeColorFromFilter(item as String)
+            Filter.CATEGORY -> clothingViewModel.removeCategoryFromFilter(item as Category)
+        }
+    }
+
+    val filterAddAllFunc = { item: Any, type: Filter ->
+        when(type) {
+            Filter.BRAND -> clothingViewModel.addBrandToFilter(item as List<String>)
+            Filter.COLOR -> clothingViewModel.addColorToFilter(item as List<String>)
+            Filter.CATEGORY-> clothingViewModel.addCategoryToFilter(item as List<Category>)
+        }
+    }
+
+    val filterRemoveAllFunc = { item: Any, type: Filter ->
+        when(type) {
+            Filter.BRAND -> clothingViewModel.removeBrandFromFilter(item as List<String>)
+            Filter.COLOR -> clothingViewModel.removeColorFromFilter(item as List<String>)
+            Filter.CATEGORY -> clothingViewModel.removeCategoryFromFilter(item as List<Category>)
+        }
+    }
+
     Surface (
         color = MaterialTheme.colorScheme.background
     ){
         Box(modifier = Modifier.fillMaxSize()){
-            GarmentList(onEdit, onOutfits, clothingViewModel = clothingViewModel)
+
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .testTag(TestTag.CLOTHING_LIST)
+            ) {
+                item {
+                    Header(
+                        menuState = menuState,
+                        garmentCount,
+                        onShowMenu = { clothingViewModel.showMenu(!menuState.showMenu) }
+                    )
+                    TopBarSlideOutMenu(
+                        menuState = menuState,
+                        brands = brands,
+                        filterAddFunc,
+                        filterRemoveFunc,
+                        filterAddAllFunc,
+                        filterRemoveAllFunc,
+                    )
+                }
+                items(garments.itemCount) { index ->
+                    garments[index]?.let {
+                        val thumbnail by clothingViewModel.getGarmentThumbnail(it).collectAsState(initial = "")
+                        GarmentCard(
+                            it,
+                            thumbnail,
+                            onEdit,
+                            onOutfits,
+                        )
+                    }
+                }
+            }
+
             FloatingActionButton(
                 onClick = { onNewClothing() },
                 containerColor = colorResource(R.color.accent),
@@ -96,15 +178,10 @@ fun ClothingScreen(
 
 @Composable
 fun Header(
-    clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)
+    menuState: ClothingMenuUIState,
+    garmentCount: Int,
+    onShowMenu: () -> Unit
 ){
-    val menuState by clothingViewModel.uiMenuState.collectAsState()
-    val garmentCount by clothingViewModel.getGarmentsCount(
-        menuState.filterExcludeCategories,
-        menuState.filterExcludeColors,
-        menuState.filterExcludeBrands
-    ).collectAsState(initial = 0)
-
     var rowModifier = Modifier.fillMaxWidth()
     rowModifier = if(!menuState.showMenu){
         rowModifier
@@ -138,40 +215,9 @@ fun Header(
                 imageVector = Icons.Filled.Menu,
                 contentDescription = "Menu",
                 modifier = Modifier
-                    .clickable { clothingViewModel.showMenu(!menuState.showMenu) }
+                    .clickable { onShowMenu() }
                     .testTag(TestTag.MAIN_MENU)
             )
-        }
-    }
-
-}
-
-
-@Composable
-fun GarmentList(
-    onEdit: (Long) -> Unit,
-    onOutfits: (Long) -> Unit,
-    clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)
-){
-    val garments: LazyPagingItems<Garment> = clothingViewModel.garments.collectAsLazyPagingItems()
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .testTag(TestTag.CLOTHING_LIST)
-    ) {
-        item {
-            Header(clothingViewModel = clothingViewModel)
-            TopBarSlideOutMenu(clothingViewModel = clothingViewModel)
-        }
-        items(garments.itemCount) { index ->
-            garments[index]?.let {
-                GarmentCard(
-                    it,
-                    onEdit,
-                    onOutfits,
-                    clothingViewModel = clothingViewModel
-                )
-            }
         }
     }
 
@@ -180,13 +226,11 @@ fun GarmentList(
 @Composable
 fun GarmentCard(
     garment: Garment,
+    thumbnail: String,
     onEdit: (Long) -> Unit,
     onOutfits: (Long) -> Unit,
     modifier: Modifier = Modifier,
-    clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)
 ){
-    val thumbnail by clothingViewModel.getGarmentThumbnail(garment).collectAsState(initial = "")
-
     Card(
         modifier = Modifier
             .wrapContentHeight()
@@ -324,13 +368,13 @@ fun GarmentCard(
 
 @Composable
 fun TopBarSlideOutMenu(
-    clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)
+    menuState: ClothingMenuUIState,
+    brands: List<String>,
+    filterAddFunc: (Any, Filter) -> Unit,
+    filterRemoveFunc: (Any, Filter) -> Unit,
+    filterAddAllFunc: (List<Any>, Filter) -> Unit,
+    filterRemoveAllFunc: (List<Any>, Filter) -> Unit,
 ){
-    LaunchedEffect(null) {
-        clothingViewModel.collectBrands()
-    }
-    val menuState by clothingViewModel.uiMenuState.collectAsState()
-    val brands by clothingViewModel.brands.collectAsState()
     val density = LocalDensity.current
     AnimatedVisibility(
         menuState.showMenu,
@@ -356,10 +400,10 @@ fun TopBarSlideOutMenu(
                 title = stringResource(R.string.filter_by_brand),
                 items = brands,
                 filterExclude = { menuState.filterExcludeBrands },
-                addFunc = { item -> clothingViewModel.addBrandToFilter(item) },
-                removeFunc = { item -> clothingViewModel.removeBrandFromFilter(item) },
-                addAllFunc = { items -> clothingViewModel.addBrandToFilter(items) },
-                removeAllFunc = { items -> clothingViewModel.removeBrandFromFilter(items) }
+                addFunc = { item -> filterAddFunc(item, Filter.BRAND) },
+                removeFunc = { item -> filterRemoveFunc(item, Filter.BRAND) },
+                addAllFunc = { items -> filterAddAllFunc(items, Filter.BRAND) },
+                removeAllFunc = { items -> filterRemoveAllFunc(items, Filter.BRAND) }
             )
 
             val colorNames = GarmentColorNames.map { it.name }
@@ -367,10 +411,10 @@ fun TopBarSlideOutMenu(
                 title = stringResource(R.string.filter_by_color),
                 items = colorNames,
                 filterExclude = { menuState.filterExcludeColors },
-                addFunc = { item -> clothingViewModel.addColorToFilter(item) },
-                removeFunc = { item -> clothingViewModel.removeColorFromFilter(item) },
-                addAllFunc = { items -> clothingViewModel.addColorToFilter(items) },
-                removeAllFunc = { items -> clothingViewModel.removeColorFromFilter(items) }
+                addFunc = { item -> filterAddFunc(item, Filter.COLOR) },
+                removeFunc = { item -> filterRemoveFunc(item, Filter.COLOR) },
+                addAllFunc = { items -> filterAddAllFunc(items, Filter.COLOR) },
+                removeAllFunc = { items -> filterRemoveAllFunc(items, Filter.COLOR) }
             )
 
             val categories = Category.categories()
@@ -378,10 +422,10 @@ fun TopBarSlideOutMenu(
                 title = stringResource(R.string.filter_by_category),
                 items = categories,
                 filterExclude = { menuState.filterExcludeCategories },
-                addFunc = { item -> clothingViewModel.addCategoryToFilter(item) },
-                removeFunc = { item -> clothingViewModel.removeCategoryFromFilter(item) },
-                addAllFunc = { items -> clothingViewModel.addCategoryToFilter(items) },
-                removeAllFunc = { items -> clothingViewModel.removeCategoryFromFilter(items) }
+                addFunc = { item -> filterAddFunc(item, Filter.CATEGORY) },
+                removeFunc = { item -> filterRemoveFunc(item, Filter.CATEGORY) },
+                addAllFunc = { items -> filterAddAllFunc(items, Filter.CATEGORY) },
+                removeAllFunc = { items -> filterRemoveAllFunc(items, Filter.CATEGORY) }
             )
         }
     }
