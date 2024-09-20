@@ -28,7 +28,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -92,8 +91,12 @@ fun EditClothingScreen(
     }
     LaunchedEffect (garmentId) {
         clothingViewModel.getGarmentById(garmentId)
+        clothingViewModel.getGarmentById(garmentId)
+        clothingViewModel.collectBrands()
     }
-
+    val uiState by clothingViewModel.uiEditState.collectAsState()
+    val isProcessing by clothingViewModel.isProcessingBackground.collectAsState()
+    val brands by clothingViewModel.brands.collectAsState()
 
     Column(
         modifier = modifier
@@ -106,12 +109,20 @@ fun EditClothingScreen(
                 .weight(2f)
         ) {
             ClothingCard(
-                onFinish = onFinish,
+                uiState,
+                brands = brands,
+                isProcessing = isProcessing,
+                onDelete = {
+                    clothingViewModel.deleteGarment(garmentId)
+                    onFinish()
+                },
                 onOutfits = onOutfits,
                 onClickPicture = onClickPicture,
                 onCrop = onCrop,
                 garmentId = garmentId,
-                clothingViewModel = clothingViewModel
+                onRemoveBackground = {p -> clothingViewModel.removeBackGround(garmentId, p)},
+                onAnalyze = { clothingViewModel.analyzeGarment(garmentId) },
+                onStoreChanges = { garment: Garment -> clothingViewModel.storeChanges(garment)}
             )
         }
 
@@ -123,21 +134,25 @@ fun EditClothingScreen(
                 )
                 .weight(0.2f)
         ) {
-            Save(clothingViewModel)
+            Save(uiState, saveChanges = {garment: Garment -> clothingViewModel.saveChanges(garment)})
         }
     }
 }
 
 @Composable
 fun ClothingCard(
-    onFinish: () -> Unit,
+    uiState: EditClothingUIState,
+    brands: List<String>,
+    isProcessing: Boolean,
+    onDelete: () -> Unit,
     onOutfits: (Long) -> Unit,
     onClickPicture: (String) -> Unit,
     onCrop: (String) -> Unit,
     garmentId: Long,
-    clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)
+    onRemoveBackground: (String) -> Unit,
+    onAnalyze: () -> Unit,
+    onStoreChanges: (Garment) -> Unit
 ){
-    val uiState by clothingViewModel.uiEditState.collectAsState()
     Card(
         modifier = Modifier
             .fillMaxSize(),
@@ -156,7 +171,9 @@ fun ClothingCard(
                 )
         ) {
             Title(garmentId)
-            DeleteGarment(onFinish, garmentId, clothingViewModel)
+            DeleteGarment(
+                onDelete = onDelete
+            )
         }
 
         Row(
@@ -178,9 +195,8 @@ fun ClothingCard(
             Row(
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                RemoveBackground(garmentId, uiState.editGarment.image, clothingViewModel)
-                AnalyzeGarment(garmentId, clothingViewModel)
-//                    Save(clothingViewModel)
+                RemoveBackground(uiState.editGarment.image, isProcessing, onRemoveBackground)
+                AnalyzeGarment(isProcessing, onAnalyze = onAnalyze)
             }
         }
 
@@ -189,7 +205,7 @@ fun ClothingCard(
                 .fillMaxWidth()
                 .weight(4f)
         ) {
-            ClothingInfo(garmentId, clothingViewModel)
+            ClothingInfo(uiState, brands, onStoreChanges)
         }
 
     }
@@ -210,9 +226,7 @@ fun Title(
 
 @Composable
 fun DeleteGarment(
-    onFinish: ()-> Unit,
-    garmentId: Long,
-    clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)
+    onDelete: () -> Unit,
 ) {
     Box (
         modifier = Modifier
@@ -224,8 +238,7 @@ fun DeleteGarment(
             "Delete",
             modifier = Modifier
                 .clickable {
-                    clothingViewModel.deleteGarment(garmentId)
-                    onFinish()
+                    onDelete
                 }
         )
     }
@@ -340,13 +353,12 @@ fun GarmentImage(
 }
 
 @Composable
-fun RemoveBackground(garmentId: Long, image: String?, clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)) {
-    val isProcessing by clothingViewModel.isProcessingBackground.collectAsState()
+fun RemoveBackground(image: String?, isProcessing: Boolean, onRemoveBackground: (String) ->  Unit) {
     if(!isProcessing){
         Button(
             onClick = {
                 image.let{
-                    Uri.parse(it).path?.let { p -> clothingViewModel.removeBackGround(garmentId, p) }
+                    Uri.parse(it).path?.let { p -> onRemoveBackground(p) }
                 }
             },
             colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.onSurface),
@@ -374,13 +386,10 @@ fun RemoveBackground(garmentId: Long, image: String?, clothingViewModel: Clothin
 
 
 @Composable
-fun AnalyzeGarment(garmentId: Long, clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)) {
-    val isProcessing by clothingViewModel.isProcessingBackground.collectAsState()
+fun AnalyzeGarment(isProcessing: Boolean, onAnalyze: () -> Unit) {
     if(!isProcessing){
         Button(
-            onClick = {
-                clothingViewModel.analyzeGarment(garmentId)
-            },
+            onClick = onAnalyze,
             colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.onSurface),
         ) {
             Text(
@@ -393,15 +402,15 @@ fun AnalyzeGarment(garmentId: Long, clothingViewModel: ClothingViewModel = viewM
 
 
 @Composable
-fun Save(clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)) {
-    val uiState by clothingViewModel.uiEditState.collectAsState()
+fun Save(uiState: EditClothingUIState, saveChanges: (Garment) -> Unit) {
+
     var buttonColor = ButtonDefaults.buttonColors(Color.Gray)
     var onClick = {}
     var isSaved = true
     uiState.changes?.let{
         buttonColor = ButtonDefaults.buttonColors(colorResource(R.color.accent))
         onClick = {
-            clothingViewModel.saveChanges(it)
+            saveChanges(it)
         }
         isSaved = false
     }
@@ -419,22 +428,13 @@ fun Save(clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModel
 }
 
 
-
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ClothingInfo(
-    garmentId: Long,
-    clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)
+    uiState: EditClothingUIState,
+    brands: List<String>,
+    onStoreChanges: (Garment) -> Unit
 ){
-    LaunchedEffect (garmentId) {
-        clothingViewModel.getGarmentById(garmentId)
-        clothingViewModel.collectBrands()
-    }
-    val uiState by clothingViewModel.uiEditState.collectAsState()
-    val brands by clothingViewModel.brands.collectAsState()
     val garment = uiState.changes ?: uiState.editGarment
-
-
     Column (
         modifier = Modifier
             .fillMaxSize()
@@ -442,12 +442,12 @@ fun ClothingInfo(
             .padding(16.dp)
     ) {
 
-        GarmentCategorySelection(garment, clothingViewModel)
+        GarmentCategorySelection(garment, onStoreChanges)
 
         val colorNames = GarmentColorNames.map { it.name }
         val updateColor = { name: String ->
             garment.color = name
-            clothingViewModel.storeChanges(garment)
+            onStoreChanges(garment)
         }
         dhmp.wearwise.ui.screens.common.DropdownMenu(
             "Color",
@@ -459,14 +459,14 @@ fun ClothingInfo(
 
         val updatebrand = { value: String ->
             garment.brand = value
-            clothingViewModel.storeChanges(garment)
+            onStoreChanges(garment)
         }
         DropdownMenuEditable("Brand", brands, garment.brand, updatebrand)
 
         val updateOccasion = { value: String ->
             Occasion.valueOf(value)
             garment.occasion = Occasion.valueOf(value)
-            clothingViewModel.storeChanges(garment)
+            onStoreChanges(garment)
         }
         val occasions = Occasion.entries.map { it.name }
         dhmp.wearwise.ui.screens.common.DropdownMenu(
@@ -475,9 +475,6 @@ fun ClothingInfo(
             garment.occasion?.name,
             updateOccasion
         )
-//    DropUpMenu("A")
-//    DropUpMenu("C")
-//    DropUpMenu("K")
     }
 }
 
@@ -485,7 +482,7 @@ fun ClothingInfo(
 @Composable
 fun GarmentCategorySelection(
     garment: Garment,
-    clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory)
+    onStoreChanges: (Garment) -> Unit
 ){
     val categories = Category.categories()
     val categoryNames = categories.map { it.name }
@@ -495,7 +492,7 @@ fun GarmentCategorySelection(
     }
     val updateCategory = { name: String ->
         garment.categoryId = Category.getCategory(name)?.id
-        clothingViewModel.storeChanges(garment)
+        onStoreChanges(garment)
     }
 
     if(category == null){
@@ -533,7 +530,7 @@ fun GarmentCategorySelection(
                 ) {
                     val updateSubCategory = { name: String ->
                         garment.subCategoryId = Category.getCategory(name)?.id
-                        clothingViewModel.storeChanges(garment)
+                        onStoreChanges(garment)
                     }
                     dhmp.wearwise.ui.screens.common.DropdownMenu(
                         "SubCategory",
