@@ -1,18 +1,23 @@
-package dhmp.wearwise.ui.screens.statistics
+package dhmp.wearwise.ui.screens.user
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -26,6 +31,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -36,6 +42,7 @@ import androidx.compose.ui.unit.sp
 // https://medium.com/@developerchunk/create-custom-pie-chart-with-animations-in-jetpack-compose-android-studio-kotlin-49cf95ef321e
 
 val defaultColors =  listOf(
+    Color(0xFFE0E0E0), // Light Pastel Gray
     Color(0xFFFFB3C1), // Saturated Pastel Pink
     Color(0xFFAEC6CF), // Saturated Pastel Blue
     Color(0xFFFFF176), // Saturated Pastel Yellow
@@ -49,8 +56,36 @@ val defaultColors =  listOf(
 )
 
 @Composable
+fun PieCard(
+    title: String,
+    data: Map<String?, Int>,
+    radiusOuter: Dp = 50.dp,
+    chartBarWidth: Dp = 35.dp,
+    animDuration: Int = 700,
+    colors: List<Color> = defaultColors
+){
+    Card(
+        modifier = Modifier
+            .fillMaxSize()
+            .heightIn(max = 220.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
+        colors = CardDefaults.cardColors(Color.White)
+    ) {
+        PieRow(
+            title,
+            data = data,
+            radiusOuter = radiusOuter,
+            chartBarWidth = chartBarWidth,
+            animDuration = animDuration,
+            colors = colors
+        )
+    }
+}
+
+@Composable
 fun PieRow(
-    data: Map<String, Int>,
+    title: String,
+    data: Map<String?, Int>,
     radiusOuter: Dp = 50.dp,
     chartBarWidth: Dp = 35.dp,
     animDuration: Int = 700,
@@ -58,15 +93,16 @@ fun PieRow(
 ) {
     Row(
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(20.dp),
+            .fillMaxSize()
+            .padding(horizontal = 20.dp),
+        verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center
     ) {
         Column(
-            Modifier
+            modifier = Modifier
                 .weight(1f)
                 .fillMaxSize(),
-            verticalArrangement = Arrangement.Top,
+            verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             PieChart(
@@ -74,30 +110,44 @@ fun PieRow(
                 radiusOuter,
                 chartBarWidth,
                 animDuration,
-                defaultColors
+                colors
             )
         }
 
-        Row(
+        Column(
             Modifier
                 .weight(2f)
-                .fillMaxSize(),
-            verticalAlignment = Alignment.Top,
-            horizontalArrangement = Arrangement.Center
+                .fillMaxSize()
+                .padding(start = 20.dp),
         ) {
+            Box(
+                modifier = Modifier
+                    .padding(top = 10.dp)
+                    .fillMaxWidth(),
+            ) {
+                Text(title)
+            }
 
-            DetailsPieChart(
-                data = data,
-                colors = colors
-            )
-
+            Row(
+                Modifier
+                    .fillMaxSize()
+                    .padding(top = 20.dp)
+                    .horizontalScroll(rememberScrollState()),
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.Start
+            ) {
+                DetailsPieChart(
+                    data = data,
+                    colors = colors
+                )
+            }
         }
     }
 }
 
 @Composable
 fun PieChart(
-    data: Map<String, Int>,
+    data: Map<String?, Int>,
     radiusOuter: Dp,
     chartBarWidth: Dp,
     animDuration: Int,
@@ -105,15 +155,16 @@ fun PieChart(
 ){
     val totalSum = data.values.sum()
     val floatValue = mutableListOf<Float>()
+    var lastValue = 0f
+    val density = LocalDensity.current
+    val chartBarWidthPx = with(density) { chartBarWidth.toPx() }
+    val radiusOuterPx = with(density) { radiusOuter.toPx() }
 
     data.values.forEachIndexed { index, values ->
         floatValue.add(index, 360 * values.toFloat() / totalSum.toFloat())
     }
 
     var animationPlayed by remember { mutableStateOf(false) }
-
-    var lastValue = 0f
-
     val animateSize by animateFloatAsState(
         targetValue = if (animationPlayed) radiusOuter.value * 2f else 0f,
         animationSpec = tween(
@@ -122,9 +173,8 @@ fun PieChart(
             easing = LinearOutSlowInEasing
         )
     )
-
     val animateRotation by animateFloatAsState(
-        targetValue = if (animationPlayed) 90f * 11f else 0f,
+        targetValue = if (animationPlayed) 180f else 0f,
         animationSpec = tween(
             durationMillis = animDuration,
             delayMillis = 0,
@@ -135,6 +185,7 @@ fun PieChart(
     LaunchedEffect(key1 = true) {
         animationPlayed = true
     }
+
 
     Box(
         modifier = Modifier.size(animateSize.dp),
@@ -152,8 +203,24 @@ fun PieChart(
                     useCenter = false,
                     style = Stroke(chartBarWidth.toPx(), cap = StrokeCap.Butt)
                 )
+
+
+//                val middleAngle = lastValue + value / 2f
+//                val angleInRadians = middleAngle * PI / 180f
+//                val labelRadius = radiusOuterPx + chartBarWidthPx / 2f
+//                val x = (size.width / 2) + (labelRadius * cos(angleInRadians)).toFloat()
+//                val y = (size.height / 2) + (labelRadius * sin(angleInRadians)).toFloat()
+//                drawContext.canvas.nativeCanvas.apply {
+//                    val textPaint = android.graphics.Paint().apply {
+//                        color = android.graphics.Color.BLACK
+//                        textSize = 32f  // Text size is in pixels
+//                        textAlign = android.graphics.Paint.Align.CENTER
+//                    }
+//                    drawText("Label", x, y, textPaint)
+//                }
                 lastValue += value
             }
+
         }
     }
 
@@ -161,19 +228,18 @@ fun PieChart(
 
 @Composable
 fun DetailsPieChart(
-    data: Map<String, Int>,
-    colors: List<Color>
+    data: Map<String?, Int>,
+    colors: List<Color>,
+    maxRows: Int = 4
 ) {
-    val chunkedKeys = data.entries.chunked(3)
-    val chunkedColor = colors.chunked(3)
+    val chunkedKeys = data.entries.chunked(maxRows)
+    val chunkedColor = colors.chunked(maxRows)
 
     chunkedKeys.forEachIndexed { index, _ ->
         val dataMap = chunkedKeys[index]
         val colorList = chunkedColor[index]
 
-        Column(
-            modifier = Modifier.padding(start = 10.dp)
-        ){
+        Column{
             dataMap.forEachIndexed { index, value ->
                 DetailsPieChartItem(
                     data = value.toPair(),
@@ -187,7 +253,7 @@ fun DetailsPieChart(
 
 @Composable
 fun DetailsPieChartItem(
-    data: Pair<String, Int>,
+    data: Pair<String?, Int>,
     height: Dp = 20.dp,
     color: Color
 ) {
@@ -203,10 +269,11 @@ fun DetailsPieChartItem(
         Column {
             Text(
                 modifier = Modifier.padding(start = 15.dp),
-                text = data.first,
+                text = data.first ?: "Not Specified",
                 fontWeight = FontWeight.Medium,
                 fontSize = 12.sp,
-                color = Color.Black
+                color = Color.Black,
+                maxLines = 1
             )
             Text(
                 modifier = Modifier.padding(start = 15.dp),

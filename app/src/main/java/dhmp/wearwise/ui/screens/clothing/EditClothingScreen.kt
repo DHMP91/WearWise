@@ -120,7 +120,7 @@ fun EditClothingScreen(
                 onClickPicture = onClickPicture,
                 onCrop = onCrop,
                 garmentId = garmentId,
-                onRemoveBackground = {p -> clothingViewModel.removeBackGround(garmentId, p)},
+                onRemoveBackground = { p -> clothingViewModel.removeBackGround(garmentId, p)},
                 onAnalyze = { clothingViewModel.analyzeGarment(garmentId) },
                 onStoreChanges = { garment: Garment -> clothingViewModel.storeChanges(garment)}
             )
@@ -235,10 +235,10 @@ fun DeleteGarment(
     ) {
         Icon(
             imageVector = Icons.Outlined.Delete,
-            "Delete",
+            "Delete Clothing",
             modifier = Modifier
                 .clickable {
-                    onDelete
+                    onDelete()
                 }
         )
     }
@@ -270,7 +270,10 @@ fun GarmentImage(
                     Box(
                         modifier = Modifier
                             .size(dimensionResource(R.dimen.icon_max_height))  // Adjust the size as needed
-                            .background(Color(color.color))
+                            .background(
+                                Color(color.color),
+                                shape = RoundedCornerShape(20.dp)
+                            )
                     )
                 }
             }
@@ -389,7 +392,7 @@ fun RemoveBackground(image: String?, isProcessing: Boolean, onRemoveBackground: 
 fun AnalyzeGarment(isProcessing: Boolean, onAnalyze: () -> Unit) {
     if(!isProcessing){
         Button(
-            onClick = onAnalyze,
+            onClick = { onAnalyze() },
             colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.onSurface),
         ) {
             Text(

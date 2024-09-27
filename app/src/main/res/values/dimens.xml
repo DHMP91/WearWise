@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <dimen name="icon_max_height">25dp</dimen>
-    <dimen name="outfit_list_icon_height">20dp</dimen>
+    <dimen name="outfit_list_icon_height">25dp</dimen>
     <dimen name="clothing_list_icon_height">15dp</dimen>
     <dimen name="icon_badge_size">25dp</dimen>
     <dimen name="screen_title_padding">20dp</dimen>

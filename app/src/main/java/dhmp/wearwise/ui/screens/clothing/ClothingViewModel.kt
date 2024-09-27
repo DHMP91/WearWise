@@ -323,7 +323,7 @@ class ClothingViewModel(
     }
 
     fun analyzeGarment(id: Long){
-        viewModelScope.launch(Dispatchers.Default) {
+        viewModelScope.launch(dispatcherIO) {
             val garment = garmentRepository.getGarmentStream(id).flowOn(dispatcherIO).firstOrNull()
             garment?.let {
                 val image = it.imageOfSubject ?: it.image

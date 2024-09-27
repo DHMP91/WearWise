@@ -9,7 +9,6 @@ import dhmp.wearwise.ui.verifyScreenTitle
 import org.junit.Test
 
 class WearWiseBottomAppBarUITest: UITest() {
-    private val clothingRegexTitle = Regex("Clothing \\(\\d+\\)")
 
     @Test
     fun bottomNavigation() {
@@ -24,6 +23,6 @@ class WearWiseBottomAppBarUITest: UITest() {
         verifyScreenTitle("Outfits")
         composeTestRule.onNode(hasTestTag(TestTag.BOTTOMBAR_CLOTHING)).performClick()
         composeTestRule.waitForIdle()
-        verifyScreenTitle(clothingRegexTitle)
+        verifyScreenTitle("Clothing")
     }
 }

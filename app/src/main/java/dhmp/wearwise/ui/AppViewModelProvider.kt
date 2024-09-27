@@ -7,7 +7,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import dhmp.wearwise.WearWiseApplication
 import dhmp.wearwise.ui.screens.clothing.ClothingViewModel
 import dhmp.wearwise.ui.screens.outfit.OutfitViewModel
-import dhmp.wearwise.ui.screens.statistics.StatsViewModel
+import dhmp.wearwise.ui.screens.user.UserViewModel
 
 object AppViewModelProvider {
     val ClothingFactory = viewModelFactory {
@@ -27,9 +27,9 @@ object AppViewModelProvider {
             }
         }
 
-    val StatsFactory = viewModelFactory {
+    val UserFactory = viewModelFactory {
         initializer {
-            StatsViewModel(
+            UserViewModel(
                 wearWiseApplication().container.garmentsRespository,
                 wearWiseApplication().container.outfitsRepository
             )

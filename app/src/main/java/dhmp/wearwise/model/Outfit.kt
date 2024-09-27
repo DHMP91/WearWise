@@ -23,3 +23,9 @@ data class Outfit(
     @ColumnInfo(defaultValue = "")
     var season: Season = Season.ANY
 )
+
+
+data class SeasonCount(
+    val season: Season?,
+    val count: Int,
+)

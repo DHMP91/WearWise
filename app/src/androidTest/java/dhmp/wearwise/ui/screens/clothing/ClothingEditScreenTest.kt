@@ -30,6 +30,8 @@ import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import org.mockito.Mockito
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
 import kotlin.time.Duration.Companion.minutes
 
 class ClothingEditScreenTest : UITest()  {
@@ -202,6 +204,45 @@ class ClothingEditScreenTest : UITest()  {
 
     }
 
+    @Test
+    fun deleteClothing() = runTest(timeout = 5.minutes) {
+
+        val category = Category.categories().first()
+        val subCategory = category.subCategories?.first()
+        val occasion = Occasion.LOUNGE
+        val outfits = listOf<Long>(1, 2, 3)
+        val color = "Red"
+
+        val fakedGarment = Garment(
+            id = garmentId,
+            image = testImagePath.toString(),
+            color = color,
+            outfitsId = outfits,
+            categoryId = category.id,
+            subCategoryId = subCategory?.id,
+            occasion = occasion
+        )
+
+        baseMock(fakedGarment)
+        composeTestRule.setContent {
+            WearWiseTheme {
+                EditClothingScreen(
+                    onFinish = {},
+                    onOutfits = { _ -> },
+                    onClickPicture = { _ -> },
+                    onCrop = { _ -> },
+                    onBack = { },
+                    garmentId = garmentId,
+                    clothingViewModel = model
+                )
+            }
+        }
+
+        composeTestRule.onNode(hasContentDescriptionExactly("Delete Clothing")).performClick()
+        verify(mockedGarmentRepo, times(1)).deleteGarment(
+            fakedGarment
+        )
+    }
 
 
     private fun baseMock(fakedGarment: Garment) = runTest{

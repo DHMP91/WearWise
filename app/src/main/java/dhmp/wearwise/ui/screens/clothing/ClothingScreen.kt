@@ -7,7 +7,6 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,6 +21,7 @@ import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Menu
@@ -48,7 +48,9 @@ import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
@@ -205,7 +207,7 @@ fun Header(
             horizontalAlignment = Alignment.Start,
             verticalArrangement = Arrangement.Center
         ) {
-            ScreenTitle("Clothing ($garmentCount)")
+            ScreenTitle("Clothing")
         }
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -219,6 +221,22 @@ fun Header(
                     .testTag(TestTag.MAIN_MENU)
             )
         }
+    }
+
+    Row(
+        modifier = Modifier
+            .background(MaterialTheme.colorScheme.background)
+            .fillMaxWidth()
+            .padding(bottom = 5.dp),
+        horizontalArrangement = Arrangement.Center
+    ){
+        Text(
+            text = "$garmentCount Results",
+            fontWeight = FontWeight.Medium,
+            fontSize = 10.sp,
+            color = Color.Gray,
+            modifier = Modifier.testTag(TestTag.RESULT_COUNT)
+        )
     }
 
 }
@@ -308,11 +326,14 @@ fun GarmentCard(
                         Box(
                             modifier = Modifier
                                 .size(20.dp)
-                                .background(Color(color.color))
-                                .border(
-                                    width = 1.dp,
-                                    color = MaterialTheme.colorScheme.onBackground
+                                .background(
+                                    Color(color.color),
+                                    shape = RoundedCornerShape(10.dp)
                                 )
+//                                .border(
+//                                    width = 1.dp,
+//                                    color = MaterialTheme.colorScheme.onBackground
+//                                )
                         )
                     }
 

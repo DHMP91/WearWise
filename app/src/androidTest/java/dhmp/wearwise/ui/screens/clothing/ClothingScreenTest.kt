@@ -8,6 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isDisplayed
@@ -43,7 +44,7 @@ class ClothingScreenUITest: UITest() {
     private lateinit var mockedGarmentRepo: GarmentsRepository
     private lateinit var context: Context
     private lateinit var model: ClothingViewModel
-    private val clothingRegexTitle = Regex("Clothing \\(\\d+\\)")
+    private val clothingTitle = "Clothing"
     private val brands = listOf("Brand1", "Brand2", "Brand3")
 
     @Before
@@ -61,7 +62,7 @@ class ClothingScreenUITest: UITest() {
                 App()
             }
         }
-        verifyScreenTitle(clothingRegexTitle)
+        verifyScreenTitle(clothingTitle)
     }
 
 
@@ -415,10 +416,7 @@ class ClothingScreenUITest: UITest() {
         launchClothingScreen()
 
         // Verify: title clothing count
-        val clothingTitle = getText(composeTestRule.onNode(hasTestTag(TestTag.SCREEN_TITLE)))
-        val number = clothingTitle?.let {  extractNumber(it) }
-        Assert.assertNotNull(number)
-        Assert.assertTrue(number!!.toInt() == 999)
+        composeTestRule.onNode(hasText("999 Results")).assertIsDisplayed()
 
         // Verify lazy loading list initial amount
         var clothingCards =  composeTestRule.onAllNodes(hasTestTag(TestTag.CLOTHING_ITEM)).fetchSemanticsNodes()
@@ -484,8 +482,8 @@ class ClothingScreenUITest: UITest() {
             }
         }
 
-        val clothingTitle = getText(composeTestRule.onNode(hasTestTag(TestTag.SCREEN_TITLE)))
-        val number = clothingTitle?.let {  extractNumber(it) }
+        val resultCount = getText(composeTestRule.onNode(hasTestTag(TestTag.RESULT_COUNT)))
+        val number = resultCount?.let {  extractNumber(it) }
         Assert.assertNotNull(number)
         composeTestRule.waitUntilAtLeastOneExists(hasTestTag(TestTag.NEW_CLOTHING_BUTTON))
         composeTestRule.onNode(hasTestTag(TestTag.NEW_CLOTHING_BUTTON)).performClick()
@@ -510,14 +508,14 @@ class ClothingScreenUITest: UITest() {
 
         composeTestRule.waitUntilAtLeastOneExists(hasTestTag(TestTag.SCREEN_TITLE), 10000)
         composeTestRule.waitForIdle()
-        verifyScreenTitle( Regex("Clothing #\\d+"))
+        verifyScreenTitle(Regex("Clothing #\\d+"))
 
         composeTestRule.onNode(hasTestTag(TestTag.BOTTOMBAR_CLOTHING)).performClick()
         composeTestRule.waitForIdle()
-        verifyScreenTitle(clothingRegexTitle)
+        verifyScreenTitle(clothingTitle)
 
-        val clothingTitleAfter = getText(composeTestRule.onNode(hasTestTag(TestTag.SCREEN_TITLE)))
-        val numberAfter = clothingTitleAfter?.let {  extractNumber(it) }
+        val resultCountAfter = getText(composeTestRule.onNode(hasTestTag(TestTag.RESULT_COUNT)))
+        val numberAfter = resultCountAfter?.let {  extractNumber(it) }
         Assert.assertNotNull(numberAfter)
         Assert.assertTrue(numberAfter!!.toInt() == number!!.toInt() + 1)
 
@@ -525,12 +523,12 @@ class ClothingScreenUITest: UITest() {
         composeTestRule.onAllNodes(hasTestTag(TestTag.CLOTHING_ITEM)).onFirst().performClick()
         val editClothingTitle = getText(composeTestRule.onNode(hasTestTag(TestTag.SCREEN_TITLE)))
         Assert.assertNotNull(editClothingTitle)
-        Assert.assertTrue(editClothingTitle!!.contains("Clothing #"))
+        Assert.assertTrue(editClothingTitle!!.contains(clothingTitle))
     }
 
 
     private fun extractNumber(input: String): Int? {
-        val regex = "\\((\\d+)\\)".toRegex()
+        val regex = "(\\d+) Results".toRegex()
         val matchResult = regex.find(input)
         return matchResult?.groupValues?.get(1)?.toInt()
     }
@@ -552,6 +550,7 @@ class ClothingScreenUITest: UITest() {
                             navClothing = {},
                             navNewClothing = {},
                             navShop = {},
+                            navUser = {},
                             null
                         )
                     }

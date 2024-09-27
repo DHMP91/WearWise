@@ -6,8 +6,11 @@ import android.util.Log
 import androidx.core.net.toUri
 import androidx.paging.PagingSource
 import dhmp.wearwise.model.Category
+import dhmp.wearwise.model.CategoryCount
+import dhmp.wearwise.model.ColorCount
 import dhmp.wearwise.model.Garment
 import dhmp.wearwise.model.GarmentDao
+import dhmp.wearwise.model.OccasionCount
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
@@ -64,6 +67,12 @@ interface GarmentsRepository {
     suspend fun getGarmentThumbnail(garment: Garment): String?
 
     fun getGarmentsCount(excludedCategories: List<Category>, excludedColors: List<String>, excludedBrands: List<String>): Flow<Int>
+
+    fun getColorCount(): Flow<List<ColorCount>>
+
+    fun getCategoryCount(): Flow<List<CategoryCount>>
+
+    fun getOccasionCount(): Flow<List<OccasionCount>>
 }
 
 class DefaultGarmentsRepository(private val itemDao: GarmentDao) : GarmentsRepository {
@@ -136,5 +145,17 @@ class DefaultGarmentsRepository(private val itemDao: GarmentDao) : GarmentsRepos
     override fun getGarmentsCount(excludedCategories: List<Category>, excludedColors: List<String>, excludedBrands: List<String>): Flow<Int> {
         val excludedCategoryIds = excludedCategories.map { it.id }
         return itemDao.getGarmentsCount(excludedCategoryIds, excludedColors, excludedBrands)
+    }
+
+    override fun getColorCount(): Flow<List<ColorCount>> {
+        return itemDao.getColorsCount()
+    }
+
+    override fun getCategoryCount(): Flow<List<CategoryCount>> {
+        return itemDao.getCategoryCount()
+    }
+
+    override fun getOccasionCount(): Flow<List<OccasionCount>> {
+        return itemDao.getOccasionCount()
     }
 }

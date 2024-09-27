@@ -3,6 +3,8 @@ package dhmp.wearwise.data
 import androidx.paging.PagingSource
 import dhmp.wearwise.model.Outfit
 import dhmp.wearwise.model.OutfitDao
+import dhmp.wearwise.model.Season
+import dhmp.wearwise.model.SeasonCount
 import kotlinx.coroutines.flow.Flow
 
 
@@ -43,6 +45,10 @@ interface OutfitsRepository {
     suspend fun updateOutfit(item: Outfit)
 
     suspend fun getOutfitThumbnail(outfit: Outfit): String?
+
+    fun getOutfitsCount(excludedSeasons: List<Season>): Flow<Int>
+
+    fun getSeasonCount(): Flow<List<SeasonCount>>
 }
 
 
@@ -70,6 +76,14 @@ class DefaultOutfitRepository(private val itemDao: OutfitDao) : OutfitsRepositor
             return getThumbnail(it)
         }
         return null
+    }
+
+    override fun getOutfitsCount(excludedSeasons: List<Season>): Flow<Int> {
+        return itemDao.getOutfitsCount()
+    }
+
+    override fun getSeasonCount(): Flow<List<SeasonCount>> {
+        return itemDao.getSeasonCount()
     }
 
 }

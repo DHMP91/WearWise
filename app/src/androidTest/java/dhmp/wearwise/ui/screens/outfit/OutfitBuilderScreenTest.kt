@@ -354,6 +354,7 @@ class OutfitBuilderScreenTest: UITest() {
                             navClothing = {},
                             navNewClothing = {},
                             navShop = {},
+                            navUser = {},
                             null
                         )
                     }
