@@ -26,9 +26,7 @@ class UserViewModel (
         excludedBrands =  listOf()
     )
 
-    fun outfitCount(): Flow<Int> = outfitsRepository.getOutfitsCount(
-        excludedSeasons = listOf(),
-    )
+    fun outfitCount(): Flow<Int> = outfitsRepository.getOutfitsCount()
 
 
     fun colorCount(): Flow<Map<String?, Int>> {
