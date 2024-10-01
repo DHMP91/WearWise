@@ -181,10 +181,10 @@ class Category(
 val Categories = Category.categories()
 
 data class CategoryCount (
-    val categoryId: Int,
+    val categoryId: Int?,
     val count: Int
 ) {
     val categoryName: String?
-        get() = Category.getCategory(categoryId)?.name
+        get() = categoryId?.let { Category.getCategory(it)?.name }
 }
 

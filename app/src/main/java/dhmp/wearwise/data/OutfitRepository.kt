@@ -46,7 +46,7 @@ interface OutfitsRepository {
 
     suspend fun getOutfitThumbnail(outfit: Outfit): String?
 
-    fun getOutfitsCount(excludedSeasons: List<Season>): Flow<Int>
+    fun getOutfitsCount(excludedSeasons: List<Season> = listOf()): Flow<Int>
 
     fun getSeasonCount(): Flow<List<SeasonCount>>
 }
@@ -79,7 +79,7 @@ class DefaultOutfitRepository(private val itemDao: OutfitDao) : OutfitsRepositor
     }
 
     override fun getOutfitsCount(excludedSeasons: List<Season>): Flow<Int> {
-        return itemDao.getOutfitsCount()
+        return itemDao.getOutfitsCount(excludedSeasons)
     }
 
     override fun getSeasonCount(): Flow<List<SeasonCount>> {
