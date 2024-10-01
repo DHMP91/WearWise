@@ -115,7 +115,6 @@ class ClothingEditScreenTest : UITest()  {
         val subCategories =  category.subCategories!!
         val subCategory = subCategories.first()
         val occasion = Occasion.LOUNGE
-        val outfits = listOf<Long>(1, 2, 3)
         val colors = GarmentColorNames.map { it.name }
         val color = colors.first()
 

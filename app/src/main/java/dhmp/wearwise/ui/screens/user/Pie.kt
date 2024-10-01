@@ -157,8 +157,6 @@ fun PieChart(
     val floatValue = mutableListOf<Float>()
     var lastValue = 0f
     val density = LocalDensity.current
-    val chartBarWidthPx = with(density) { chartBarWidth.toPx() }
-    val radiusOuterPx = with(density) { radiusOuter.toPx() }
 
     data.values.forEachIndexed { index, values ->
         floatValue.add(index, 360 * values.toFloat() / totalSum.toFloat())

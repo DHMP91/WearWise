@@ -195,6 +195,7 @@ class OutfitViewModelTest {
         }
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun getOutfit_newOutfit(){
         val id: Long = 9090
@@ -221,6 +222,7 @@ class OutfitViewModelTest {
     }
 
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun saveOutfit_new(){
         val newId: Long = 9090
@@ -229,9 +231,6 @@ class OutfitViewModelTest {
         )
         val garmentTwo = Garment(
             id = 11
-        )
-        val garmentThree = Garment(
-            id = 12
         )
         val model =  OutfitViewModel(mockedGarmentRepo, mockedOutfitRepo, testDispatcher)
         runTest(testDispatcher, timeout = 1.minutes) {
@@ -289,6 +288,7 @@ class OutfitViewModelTest {
     }
 
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun saveOutfit_existing(){
         val newId: Long = 9090

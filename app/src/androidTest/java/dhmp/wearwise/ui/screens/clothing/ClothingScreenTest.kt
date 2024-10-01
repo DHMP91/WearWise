@@ -475,7 +475,7 @@ class ClothingScreenUITest: UITest() {
 
     @OptIn(ExperimentalTestApi::class)
     @Test
-    fun newClothing() = runTest(timeout = 5.minutes){
+    fun newClothing() = runBlocking {
         composeTestRule.setContent {
             WearWiseTheme {
                 App()
@@ -492,9 +492,6 @@ class ClothingScreenUITest: UITest() {
         composeTestRule.waitUntilAtLeastOneExists(hasTestTag(TestTag.USE_CAMERA_SELECTION))
         composeTestRule.onNode(hasTestTag(TestTag.USE_CAMERA_SELECTION)).performClick()
         composeTestRule.waitUntilDoesNotExist(hasTestTag(TestTag.USE_CAMERA_SELECTION))
-        composeTestRule.waitForIdle()
-
-
         while(
             composeTestRule.onAllNodes(hasTestTag(TestTag.CAMERA_TAKE_ICON), useUnmergedTree = true)
                 .fetchSemanticsNodes().isEmpty()
@@ -504,10 +501,7 @@ class ClothingScreenUITest: UITest() {
             }
         }
         composeTestRule.onNode(hasTestTag(TestTag.CAMERA_TAKE_ICON), useUnmergedTree = true).performClick()
-        composeTestRule.waitForIdle()
-
         composeTestRule.waitUntilAtLeastOneExists(hasTestTag(TestTag.SCREEN_TITLE), 10000)
-        composeTestRule.waitForIdle()
         verifyScreenTitle(Regex("Clothing #\\d+"))
 
         composeTestRule.onNode(hasTestTag(TestTag.BOTTOMBAR_CLOTHING)).performClick()

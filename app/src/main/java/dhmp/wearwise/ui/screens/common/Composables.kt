@@ -22,9 +22,9 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -223,7 +223,7 @@ fun DropdownMenu(label: String, options: List<String>, fieldValue: String?, upda
         (screenHeightPx / 4).toPx().toDp()
     }
     val focusRequester = FocusRequester()
-    val icon = if (expanded) Icons.Filled.KeyboardArrowDown else Icons.Filled.KeyboardArrowRight
+    val icon = if (expanded) Icons.Filled.KeyboardArrowDown else Icons.AutoMirrored.Filled.KeyboardArrowRight
 
     Box(
         modifier = Modifier
@@ -317,7 +317,7 @@ fun DropdownMenuEditable(label: String, options: List<String>, fieldValue: Strin
         (screenHeightPx / 4).toPx().toDp()
     }
     val focusRequester = FocusRequester()
-    val icon = if (expanded) Icons.Filled.KeyboardArrowDown else Icons.Filled.KeyboardArrowRight
+    val icon = if (expanded) Icons.Filled.KeyboardArrowDown else Icons.AutoMirrored.Filled.KeyboardArrowRight
 
     Box(
         modifier = Modifier

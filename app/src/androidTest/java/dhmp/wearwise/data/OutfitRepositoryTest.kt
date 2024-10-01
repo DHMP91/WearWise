@@ -44,7 +44,6 @@ class OutfitRepositoryTest {
             config = PagingConfig(pageSize = pageSize, enablePlaceholders = false),
             pagingSourceFactory = {  appContainer.outfitsRepository.getAllOutfitsPaged() }
         ).flow
-        var itemsSnapshot: List<Outfit> = pager.asSnapshot()
         val initial = appContainer.outfitsRepository.getOutfitsCount().first()
         val max = inject + initial
 
@@ -52,7 +51,7 @@ class OutfitRepositoryTest {
             appContainer.outfitsRepository.insertOutfit(Outfit())
         }
 
-        itemsSnapshot = pager.asSnapshot()
+        var itemsSnapshot: List<Outfit> = pager.asSnapshot()
         Assert.assertTrue(itemsSnapshot.size >= pageSize && itemsSnapshot.size <= pageSize*3)
 
         itemsSnapshot = pager.asSnapshot{
