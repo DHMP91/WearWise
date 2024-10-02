@@ -11,7 +11,7 @@ import dhmp.wearwise.model.GarmentColorNames
 import dhmp.wearwise.ui.screens.user.UserScreenContent
 import dhmp.wearwise.ui.theme.WearWiseTheme
 
-class PiePreviewScreenshots {
+class PieScreenshotTest {
 
     @Preview(showBackground = true)
     @Composable
