@@ -47,6 +47,30 @@ fun UserScreen(
     val categoryData by userViewModel.categoryCount().collectAsState(initial = mapOf())
     val occasionData by userViewModel.occasionCount().collectAsState(initial = mapOf())
     val outfitSeasonData by userViewModel.outfitSeasonCount().collectAsState(initial = mapOf())
+    val clothingColors = userViewModel.getColorPalette(colorData.keys.toList())
+
+    UserScreenContent(
+        garmentCount,
+        outfitCount,
+        colorData,
+        categoryData,
+        occasionData,
+        outfitSeasonData,
+        clothingColors
+    )
+}
+
+
+@Composable
+fun UserScreenContent(
+    garmentCount: Int,
+    outfitCount: Int,
+    colorData: Map<String? , Int>,
+    categoryData: Map<String? , Int>,
+    occasionData: Map<String? , Int>,
+    outfitSeasonData: Map<String? , Int>,
+    clothingColors: List<Color>
+){
 
     Column(
         modifier = Modifier
@@ -98,7 +122,7 @@ fun UserScreen(
             PieCard(
                 "Clothing's Color",
                 data = colorData,
-                colors = userViewModel.getColorPalette(colorData.keys.toList())
+                colors = clothingColors
             )
         }
 
@@ -129,7 +153,6 @@ fun UserScreen(
 
     }
 }
-
 
 
 @Composable
