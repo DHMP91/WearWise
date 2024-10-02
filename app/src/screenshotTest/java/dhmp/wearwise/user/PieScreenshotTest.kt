@@ -16,11 +16,37 @@ class PieScreenshotTest {
     @Preview(showBackground = true)
     @Composable
     fun PieCard() {
-        val fakeData: Map<String?, Int> = mapOf(
+        val fakeDataOneRow: Map<String?, Int> = mapOf(
             "Blue" to 11,
             "Red" to 5,
             "Green" to 20,
             null to 8
+        )
+
+        val fakeDataTwoRow: Map<String?, Int> = mapOf(
+            "1" to 11,
+            "2" to 5,
+            "3" to 20,
+            "4" to 14,
+            "5" to 11,
+            "6" to 5,
+            "7" to 28,
+            "8" to 7,
+        )
+
+        val fakeDataThreeRow: Map<String?, Int> = mapOf(
+            "1" to 11,
+            "2" to 5,
+            "3" to 20,
+            "4" to 14,
+            "5" to 11,
+            "6" to 5,
+            "7" to 28,
+            "8" to 7,
+            "9" to 9,
+            "10" to 10,
+            "11" to 11,
+            "12" to 12,
         )
 
         val fakeColors = listOf(
@@ -29,6 +55,14 @@ class PieScreenshotTest {
             Color(GarmentColorNames[3].color),
             Color(GarmentColorNames[4].color),
             Color(GarmentColorNames[5].color),
+            Color(GarmentColorNames[6].color),
+            Color(GarmentColorNames[7].color),
+            Color(GarmentColorNames[8].color),
+            Color(GarmentColorNames[9].color),
+            Color(GarmentColorNames[10].color),
+            Color(GarmentColorNames[11].color),
+            Color(GarmentColorNames[12].color),
+            Color(GarmentColorNames[13].color),
         )
         WearWiseTheme {
             Scaffold(
@@ -37,10 +71,10 @@ class PieScreenshotTest {
                     UserScreenContent(
                         10,
                         20,
-                        fakeData,
-                        fakeData,
-                        fakeData,
-                        fakeData,
+                        fakeDataOneRow,
+                        fakeDataTwoRow,
+                        fakeDataThreeRow,
+                        fakeDataOneRow,
                         fakeColors
                     )
                 }

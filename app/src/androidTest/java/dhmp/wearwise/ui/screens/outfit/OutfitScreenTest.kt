@@ -96,8 +96,6 @@ class OutfitScreenTest: UITest() {
             garmentFour
         )
 
-
-
         //Fake Outfits
         val outfitNoImage = Outfit(
             id = 1,
@@ -248,15 +246,19 @@ class OutfitScreenTest: UITest() {
             }
         }
         composeTestRule.onNode(hasTestTag(TestTag.CAMERA_TAKE_ICON), useUnmergedTree = true).performClick()
-        composeTestRule.waitForIdle()
-
         composeTestRule.waitUntilAtLeastOneExists(hasTestTag(TestTag.SCREEN_TITLE), 10000)
         composeTestRule.onNode(clickToTakePictureMatcher).assertDoesNotExist()
+        composeTestRule.waitForIdle()
         composeTestRule.onNode(hasTestTag(TestTag.BOTTOMBAR_OUTFIT)).performClick()
+        composeTestRule.waitUntil {
+            composeTestRule
+                .onAllNodes(hasTestTag(TestTag.OUTFIT_CARD))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
         composeTestRule.waitForIdle()
 
         val afterOutfitCount = composeTestRule.onAllNodes(hasTestTag(TestTag.OUTFIT_CARD)).fetchSemanticsNodes().size
         Assert.assertEquals(initialOutfitCount + 1, afterOutfitCount)
-
     }
 }

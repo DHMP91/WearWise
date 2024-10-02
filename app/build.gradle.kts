@@ -105,20 +105,19 @@ dependencies {
     //3rd Party Image Cropping
     implementation(libs.image.cropper)
 
+    debugImplementation(libs.androidx.ui.tooling)
+    debugImplementation(libs.androidx.ui.test.manifest)
     testImplementation(libs.junit)
+    testImplementation(libs.androidx.rules)
+    testImplementation(libs.mockito.core)
+    testImplementation(libs.mockito.kotlin)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
-    testImplementation(libs.androidx.rules)
     androidTestImplementation(libs.androidx.rules)
-    debugImplementation(libs.androidx.ui.tooling)
-    debugImplementation(libs.androidx.ui.test.manifest)
     androidTestImplementation(libs.mockito.core)
     androidTestImplementation(libs.mockito.kotlin)
     androidTestImplementation(libs.mockito.android)
-    testImplementation(libs.mockito.core)
-    testImplementation(libs.mockito.kotlin)
-
     screenshotTestImplementation(libs.androidx.compose.ui.tooling)
 }

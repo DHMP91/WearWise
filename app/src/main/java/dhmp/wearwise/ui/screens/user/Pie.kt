@@ -52,7 +52,18 @@ val defaultColors =  listOf(
     Color(0xFFFFAB91), // Saturated Pastel Coral
     Color(0xFFFFC4E0), // Saturated Pastel Rose
     Color(0xFFB3E5FC), // Saturated Pastel Sky Blue
-    Color(0xFFFFF59D)  // Saturated Pastel Lemon Yellow
+    Color(0xFFFFF59D),  // Saturated Pastel Lemon Yellow
+    Color(0xFFB2DFDB), // Saturated Pastel Teal
+    Color(0xFFFFCCBC), // Saturated Pastel Orange
+    Color(0xFFCCE5FF), // Saturated Pastel Light Blue
+    Color(0xFFF5C6CB), // Saturated Pastel Light Red
+    Color(0xFFDFD3C3), // Saturated Pastel Taupe
+    Color(0xFFC4E17F), // Saturated Pastel Lime
+    Color(0xFFFDDF98), // Saturated Pastel Apricot
+    Color(0xFFFFE4B5), // Saturated Pastel Moccasin
+    Color(0xFFF8BBD0), // Saturated Pastel Pink Blush
+    Color(0xFFE6E6FA), // Saturated Pastel Lavender
+    Color(0xFFFFD700)  // Saturated Pastel Gold
 )
 
 @Composable
