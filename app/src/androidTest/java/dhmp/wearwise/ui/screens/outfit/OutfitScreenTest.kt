@@ -8,6 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.performClick
 import androidx.core.net.toUri
 import androidx.test.platform.app.InstrumentationRegistry
@@ -219,9 +220,15 @@ class OutfitScreenTest: UITest() {
         }
 
         composeTestRule.onNode(hasTestTag(TestTag.BOTTOMBAR_OUTFIT)).performClick()
+        composeTestRule.waitUntil {
+            composeTestRule
+                .onNode(hasText("Outfits")).isDisplayed()
+        }
         composeTestRule.waitForIdle()
-        verifyScreenTitle("Outfits")
 
+        runBlocking {
+            delay(1000)
+        }
         val initialOutfitCount = composeTestRule.onAllNodes(hasTestTag(TestTag.OUTFIT_CARD)).fetchSemanticsNodes().size
         composeTestRule.waitUntilAtLeastOneExists(hasTestTag(TestTag.NEW_OUTFIT_BUTTON))
         composeTestRule.onNode(hasTestTag(TestTag.NEW_OUTFIT_BUTTON)).performClick()

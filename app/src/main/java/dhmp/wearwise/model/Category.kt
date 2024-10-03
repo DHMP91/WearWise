@@ -77,6 +77,7 @@ class Category(
             Category( id = 5004, name = "Hoodie"),
             Category( id = 5005, name = "Blazer"),
             Category( id = 5006, name = "Sweater"),
+            Category( id = 5007, name = "Jacket"),
         )
         private val outerWearCategory = Category(
             id = 5,
@@ -146,10 +147,10 @@ class Category(
 
         fun getCategory(id: Int): Category? {
             if(id <= 1000) {
-                return categories().find { it.id == id }
+                return searchCategory(id, categories())
             }else{
                 for (c in Categories){
-                    val subCategory = c.subCategories?.find { it.id == id }
+                    val subCategory = c.subCategories?.let {  searchCategory(id, it.toList()) }
                     if(subCategory != null)
                         return subCategory
                 }
@@ -174,6 +175,24 @@ class Category(
             return null
         }
 
+        private fun searchCategory(id: Int, categories: List<Category>): Category?{
+            //Binary Search
+            var min = 0
+            var max = categories.size - 1
+
+            while(min <= max){
+                val mid = ((min + max)/2)
+                val midCategory = categories[mid]
+                if(midCategory.id == id){
+                    return midCategory
+                }else if(midCategory.id > id){
+                    max = mid - 1
+                }else{
+                    min = mid + 1
+                }
+            }
+            return null
+        }
 
     }
 }
