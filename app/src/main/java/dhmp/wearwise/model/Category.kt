@@ -118,7 +118,8 @@ class Category(
             Category( id = 8004, name = "Glasses"),
             Category( id = 8005, name = "Bracelet"),
             Category( id = 8006, name = "Ring"),
-            Category( id = 8007, name = "Gloves")
+            Category( id = 8007, name = "Gloves"),
+            Category( id = 8008, name = "Belt")
         )
         private val accessoryCategory = Category(
             id = 8,

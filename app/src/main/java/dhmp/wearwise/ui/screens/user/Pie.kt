@@ -239,7 +239,7 @@ fun PieChart(
 fun DetailsPieChart(
     data: Map<String?, Int>,
     colors: List<Color>,
-    maxRows: Int = 4
+    maxRows: Int = 3
 ) {
     val chunkedKeys = data.entries.chunked(maxRows)
     val chunkedColor = colors.chunked(maxRows)
