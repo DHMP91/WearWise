@@ -8,6 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isDisplayed
@@ -43,7 +44,7 @@ class ClothingScreenUITest: UITest() {
     private lateinit var mockedGarmentRepo: GarmentsRepository
     private lateinit var context: Context
     private lateinit var model: ClothingViewModel
-    private val clothingRegexTitle = Regex("Clothing \\(\\d+\\)")
+    private val clothingTitle = "Clothing"
     private val brands = listOf("Brand1", "Brand2", "Brand3")
 
     @Before
@@ -61,7 +62,7 @@ class ClothingScreenUITest: UITest() {
                 App()
             }
         }
-        verifyScreenTitle(clothingRegexTitle)
+        verifyScreenTitle(clothingTitle)
     }
 
 
@@ -93,13 +94,14 @@ class ClothingScreenUITest: UITest() {
         launchClothingScreen()
 
         //Verify: Uncheck all category
+        val title = context.getString(R.string.filter_by_category)
         composeTestRule.onNode(hasTestTag(TestTag.MAIN_MENU)).performClick()
         composeTestRule.onNode(hasText(context.getString(R.string.filter_by_category))).performClick()
-        composeTestRule.onNode(hasText("Uncheck All")).performClick()
+        composeTestRule.onNode(hasText("All").and(hasTestTag("${TestTag.FILTER_PREFIX}${title}"))).performClick()
         composeTestRule.waitForIdle()
         Assert.assertTrue(itemCount() == 3)
 
-        composeTestRule.onNode(hasText("Check All")).performClick()
+        composeTestRule.onNode(hasText("All").and(hasTestTag("${TestTag.FILTER_PREFIX}${title}"))).performClick()
         composeTestRule.onNode(hasTestTag(TestTag.MAIN_MENU)).performClick()
         Assert.assertTrue(itemCount() != 3 && itemCount() > 0)
         composeTestRule.waitForIdle()
@@ -111,7 +113,8 @@ class ClothingScreenUITest: UITest() {
     fun clothingFilterByCategory_OneCategoryChecked() = runTest(timeout = 5.minutes) {
         baseMock()
         val categories = Category.categories()
-        val checkCategory = categories[categories.size/2]
+        val checkCategoryIndex = categories.size/2
+        val checkCategory = categories[checkCategoryIndex]
 
         Mockito.`when`(mockedGarmentRepo.getFilteredGarments(
             excludedCategories = categories,
@@ -147,9 +150,11 @@ class ClothingScreenUITest: UITest() {
         launchClothingScreen()
 
         //Verify: Check one category
+        val title = context.getString(R.string.filter_by_category)
         composeTestRule.onNode(hasTestTag(TestTag.MAIN_MENU)).performClick()
         composeTestRule.onNode(hasText(context.getString(R.string.filter_by_category))).performClick()
-        composeTestRule.onNode(hasText("Uncheck All")).performClick()
+        composeTestRule.onNode(hasText("All").and(hasTestTag("${TestTag.FILTER_PREFIX}${title}"))).performClick()
+        composeTestRule.onNode(hasTestTag("${TestTag.FILTER_ROW_PREFIX}${title}")).performScrollToIndex(checkCategoryIndex)
         composeTestRule.onNode(hasText(checkCategory.name)).performClick()
         composeTestRule.onNode(hasTestTag(TestTag.MAIN_MENU)).performClick()
         composeTestRule.waitForIdle()
@@ -160,7 +165,8 @@ class ClothingScreenUITest: UITest() {
     fun clothingFilterByCategory_OneCategoryUnchecked() = runTest(timeout = 5.minutes) {
         baseMock()
         val categories = Category.categories()
-        val unCheckCategory = categories[categories.size/2]
+        val unCheckCategoryIndex = categories.size/2
+        val unCheckCategory = categories[unCheckCategoryIndex]
         val listOfGarments = mutableListOf<Garment>()
         repeat(5) {
             val garment = Garment(
@@ -180,8 +186,10 @@ class ClothingScreenUITest: UITest() {
         launchClothingScreen()
 
         //Verify: Check one category
+        val title = context.getString(R.string.filter_by_category)
         composeTestRule.onNode(hasTestTag(TestTag.MAIN_MENU)).performClick()
         composeTestRule.onNode(hasText(context.getString(R.string.filter_by_category))).performClick()
+        composeTestRule.onNode(hasTestTag("${TestTag.FILTER_ROW_PREFIX}${title}")).performScrollToIndex(unCheckCategoryIndex)
         composeTestRule.onNode(hasText(unCheckCategory.name)).performClick()
         composeTestRule.onNode(hasTestTag(TestTag.MAIN_MENU)).performClick()
         composeTestRule.waitForIdle()
@@ -213,10 +221,11 @@ class ClothingScreenUITest: UITest() {
         launchClothingScreen()
 
         //Verify: Check all color
+        val title = context.getString(R.string.filter_by_color)
         composeTestRule.onNode(hasTestTag(TestTag.MAIN_MENU)).performClick()
         composeTestRule.onNode(hasText(context.getString(R.string.filter_by_color))).performClick()
-        composeTestRule.onNode(hasText("Uncheck All")).performClick()
-        composeTestRule.onNode(hasText("Check All")).performClick()
+        composeTestRule.onNode(hasText("All").and(hasTestTag("${TestTag.FILTER_PREFIX}${title}"))).performClick()
+        composeTestRule.onNode(hasText("All").and(hasTestTag("${TestTag.FILTER_PREFIX}${title}"))).performClick()
         composeTestRule.onNode(hasTestTag(TestTag.MAIN_MENU)).performClick()
         composeTestRule.waitForIdle()
         Assert.assertTrue(itemCount() != 4)
@@ -280,13 +289,14 @@ class ClothingScreenUITest: UITest() {
         launchClothingScreen()
 
         //Verify: Uncheck all category
+        val title = context.getString(R.string.filter_by_brand)
         composeTestRule.onNode(hasTestTag(TestTag.MAIN_MENU)).performClick()
         composeTestRule.onNode(hasText(context.getString(R.string.filter_by_brand))).performClick()
-        composeTestRule.onNode(hasText("Uncheck All")).performClick()
+        composeTestRule.onNode(hasText("All").and(hasTestTag("${TestTag.FILTER_PREFIX}${title}"))).performClick()
         composeTestRule.waitForIdle()
         Assert.assertTrue(itemCount() == 3)
 
-        composeTestRule.onNode(hasText("Check All")).performClick()
+        composeTestRule.onNode(hasText("All").and(hasTestTag("${TestTag.FILTER_PREFIX}${title}"))).performClick()
         composeTestRule.onNode(hasTestTag(TestTag.MAIN_MENU)).performClick()
         Assert.assertTrue(itemCount() != 3 && itemCount() > 0)
         composeTestRule.waitForIdle()
@@ -333,9 +343,10 @@ class ClothingScreenUITest: UITest() {
         launchClothingScreen()
 
         //Verify: Check one category
+        val title = context.getString(R.string.filter_by_brand)
         composeTestRule.onNode(hasTestTag(TestTag.MAIN_MENU)).performClick()
         composeTestRule.onNode(hasText(context.getString(R.string.filter_by_brand))).performClick()
-        composeTestRule.onNode(hasText("Uncheck All")).performClick()
+        composeTestRule.onNode(hasText("All").and(hasTestTag("${TestTag.FILTER_PREFIX}${title}"))).performClick()
         composeTestRule.onNode(hasText(checkedBrand)).performClick()
         composeTestRule.onNode(hasTestTag(TestTag.MAIN_MENU)).performClick()
         composeTestRule.waitForIdle()
@@ -405,10 +416,7 @@ class ClothingScreenUITest: UITest() {
         launchClothingScreen()
 
         // Verify: title clothing count
-        val clothingTitle = getText(composeTestRule.onNode(hasTestTag(TestTag.SCREEN_TITLE)))
-        val number = clothingTitle?.let {  extractNumber(it) }
-        Assert.assertNotNull(number)
-        Assert.assertTrue(number!!.toInt() == 999)
+        composeTestRule.onNode(hasText("999 Results")).assertIsDisplayed()
 
         // Verify lazy loading list initial amount
         var clothingCards =  composeTestRule.onAllNodes(hasTestTag(TestTag.CLOTHING_ITEM)).fetchSemanticsNodes()
@@ -467,15 +475,15 @@ class ClothingScreenUITest: UITest() {
 
     @OptIn(ExperimentalTestApi::class)
     @Test
-    fun newClothing() = runTest(timeout = 5.minutes){
+    fun newClothing() = runBlocking {
         composeTestRule.setContent {
             WearWiseTheme {
                 App()
             }
         }
 
-        val clothingTitle = getText(composeTestRule.onNode(hasTestTag(TestTag.SCREEN_TITLE)))
-        val number = clothingTitle?.let {  extractNumber(it) }
+        val resultCount = getText(composeTestRule.onNode(hasTestTag(TestTag.RESULT_COUNT)))
+        val number = resultCount?.let {  extractNumber(it) }
         Assert.assertNotNull(number)
         composeTestRule.waitUntilAtLeastOneExists(hasTestTag(TestTag.NEW_CLOTHING_BUTTON))
         composeTestRule.onNode(hasTestTag(TestTag.NEW_CLOTHING_BUTTON)).performClick()
@@ -484,9 +492,6 @@ class ClothingScreenUITest: UITest() {
         composeTestRule.waitUntilAtLeastOneExists(hasTestTag(TestTag.USE_CAMERA_SELECTION))
         composeTestRule.onNode(hasTestTag(TestTag.USE_CAMERA_SELECTION)).performClick()
         composeTestRule.waitUntilDoesNotExist(hasTestTag(TestTag.USE_CAMERA_SELECTION))
-        composeTestRule.waitForIdle()
-
-
         while(
             composeTestRule.onAllNodes(hasTestTag(TestTag.CAMERA_TAKE_ICON), useUnmergedTree = true)
                 .fetchSemanticsNodes().isEmpty()
@@ -496,18 +501,15 @@ class ClothingScreenUITest: UITest() {
             }
         }
         composeTestRule.onNode(hasTestTag(TestTag.CAMERA_TAKE_ICON), useUnmergedTree = true).performClick()
-        composeTestRule.waitForIdle()
-
         composeTestRule.waitUntilAtLeastOneExists(hasTestTag(TestTag.SCREEN_TITLE), 10000)
-        composeTestRule.waitForIdle()
-        verifyScreenTitle( Regex("Clothing Item #\\d+"))
+        verifyScreenTitle(Regex("Clothing #\\d+"))
 
         composeTestRule.onNode(hasTestTag(TestTag.BOTTOMBAR_CLOTHING)).performClick()
         composeTestRule.waitForIdle()
-        verifyScreenTitle(clothingRegexTitle)
+        verifyScreenTitle(clothingTitle)
 
-        val clothingTitleAfter = getText(composeTestRule.onNode(hasTestTag(TestTag.SCREEN_TITLE)))
-        val numberAfter = clothingTitleAfter?.let {  extractNumber(it) }
+        val resultCountAfter = getText(composeTestRule.onNode(hasTestTag(TestTag.RESULT_COUNT)))
+        val numberAfter = resultCountAfter?.let {  extractNumber(it) }
         Assert.assertNotNull(numberAfter)
         Assert.assertTrue(numberAfter!!.toInt() == number!!.toInt() + 1)
 
@@ -515,12 +517,12 @@ class ClothingScreenUITest: UITest() {
         composeTestRule.onAllNodes(hasTestTag(TestTag.CLOTHING_ITEM)).onFirst().performClick()
         val editClothingTitle = getText(composeTestRule.onNode(hasTestTag(TestTag.SCREEN_TITLE)))
         Assert.assertNotNull(editClothingTitle)
-        Assert.assertTrue(editClothingTitle!!.contains("Clothing Item #"))
+        Assert.assertTrue(editClothingTitle!!.contains(clothingTitle))
     }
 
 
     private fun extractNumber(input: String): Int? {
-        val regex = "\\((\\d+)\\)".toRegex()
+        val regex = "(\\d+) Results".toRegex()
         val matchResult = regex.find(input)
         return matchResult?.groupValues?.get(1)?.toInt()
     }
@@ -542,6 +544,7 @@ class ClothingScreenUITest: UITest() {
                             navClothing = {},
                             navNewClothing = {},
                             navShop = {},
+                            navUser = {},
                             null
                         )
                     }

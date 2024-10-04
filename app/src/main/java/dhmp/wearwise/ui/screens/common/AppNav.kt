@@ -21,6 +21,7 @@ import dhmp.wearwise.ui.screens.outfit.NewOutfitScreen
 import dhmp.wearwise.ui.screens.outfit.OutfitPictureScreen
 import dhmp.wearwise.ui.screens.outfit.OutfitScreen
 import dhmp.wearwise.ui.screens.outfit.OutfitsByIdsScreen
+import dhmp.wearwise.ui.screens.user.UserScreen
 import java.net.URLDecoder
 import java.net.URLEncoder
 import kotlin.text.Charsets.UTF_8
@@ -35,7 +36,8 @@ enum class AppScreens(@StringRes val title: Int) {
     NewOutfit(title = R.string.new_outfit),
     Shop(title = R.string.shop),
     ViewImage(title = R.string.view_image),
-    CropImage(title = R.string.crop_image)
+    CropImage(title = R.string.crop_image),
+    User(title = R.string.user)
 }
 
 @RequiresApi(Build.VERSION_CODES.P)
@@ -263,6 +265,12 @@ fun AppNav(modifier: Modifier = Modifier, navController: NavHostController = rem
                     }
                 )
             }
+        }
+
+        composable(route = AppScreens.User.name) {
+            UserScreen(
+                onBack = {}
+            )
         }
     }
 }

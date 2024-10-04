@@ -62,6 +62,11 @@ enum class Occasion {
 }
 
 
+data class OccasionCount (
+    val occasion: Occasion?,
+    val count: Int
+)
+
 //val topType: Set<String> =
 //    setOf(
 //        "TSHIRT",

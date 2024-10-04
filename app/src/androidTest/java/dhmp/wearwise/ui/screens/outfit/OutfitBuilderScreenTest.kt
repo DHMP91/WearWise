@@ -26,6 +26,7 @@ import dhmp.wearwise.data.OutfitsRepository
 import dhmp.wearwise.model.Category
 import dhmp.wearwise.model.Garment
 import dhmp.wearwise.model.Outfit
+import dhmp.wearwise.model.Season
 import dhmp.wearwise.ui.UITest
 import dhmp.wearwise.ui.screens.FakePagingSource
 import dhmp.wearwise.ui.screens.clothing.ClothingViewModel
@@ -89,7 +90,7 @@ class OutfitBuilderScreenTest: UITest() {
         composeTestRule.onNode(hasContentDescriptionExactly("Delete Outfit")).assertIsDisplayed()
         composeTestRule.onNode(hasContentDescriptionExactly("Crop Image")).assertIsDisplayed()
         composeTestRule.onNode(hasContentDescriptionExactly("Retake Image")).assertIsDisplayed()
-        composeTestRule.onNode(hasText("Save Outfit")).assertIsDisplayed()
+        composeTestRule.onNode(hasText("Save")).assertIsDisplayed()
         val selectedGarmentsCount = composeTestRule.onAllNodes(hasTestTag(TestTag.SELECTED_GARMENT)).fetchSemanticsNodes().size
         Assert.assertEquals(fakeOutfit.garmentsId.size, selectedGarmentsCount)
 
@@ -113,7 +114,7 @@ class OutfitBuilderScreenTest: UITest() {
 
         base(mockedOutfitRepo, mockedGarmentRepo, model, clothingModel)
         composeTestRule.waitUntil{
-            composeTestRule.onNode(hasText("Save Outfit")).isDisplayed()
+            composeTestRule.onNode(hasText("Save")).isDisplayed()
         }
         composeTestRule.waitForIdle()
         val selectedGarmentsCount = {
@@ -127,7 +128,7 @@ class OutfitBuilderScreenTest: UITest() {
             composeTestRule.waitForIdle()
         }
         Assert.assertEquals(0, selectedGarmentsCount())
-        composeTestRule.onNode(hasText("Save Outfit")).performClick()
+        composeTestRule.onNode(hasText("Save")).performClick()
         composeTestRule.waitForIdle()
         verify(mockedGarmentRepo, times(3)).updateGarment(
             any()
@@ -150,10 +151,10 @@ class OutfitBuilderScreenTest: UITest() {
 
         base(mockedOutfitRepo, mockedGarmentRepo, model, clothingModel)
         composeTestRule.waitUntil{
-            composeTestRule.onNode(hasText("Save Outfit")).isDisplayed()
+            composeTestRule.onNode(hasText("Save")).isDisplayed()
         }
 
-        composeTestRule.onNode(hasText("Save Outfit")).performClick()
+        composeTestRule.onNode(hasText("Save")).performClick()
         composeTestRule.waitForIdle()
         verify(mockedGarmentRepo, times(0)).updateGarment(
             any()
@@ -176,7 +177,7 @@ class OutfitBuilderScreenTest: UITest() {
 
         base(mockedOutfitRepo, mockedGarmentRepo, model, clothingModel)
         composeTestRule.waitUntil{
-            composeTestRule.onNode(hasText("Save Outfit")).isDisplayed()
+            composeTestRule.onNode(hasText("Save")).isDisplayed()
         }
 
         //add garments
@@ -187,7 +188,7 @@ class OutfitBuilderScreenTest: UITest() {
         composeTestRule.onAllNodes(hasTestTag("${TestTag.CATEGORIZED_GARMENT_PREFIX}${category.id}")).onFirst().performClick()
 
         delay(1000)
-        composeTestRule.onNode(hasText("Save Outfit")).performClick()
+        composeTestRule.onNode(hasText("Save")).performClick()
         composeTestRule.waitForIdle()
 
         verify(mockedGarmentRepo, times(4)).updateGarment(
@@ -234,21 +235,59 @@ class OutfitBuilderScreenTest: UITest() {
             composeTestRule.onAllNodes(hasTestTag("${TestTag.CATEGORIZED_GARMENT_PREFIX}${c.id}")).apply {
                 onFirst().performScrollTo()
             }
-            val startPosition = garments().last().boundsInRoot.centerRight
+
+            //Scroll from right to left on garment images
+            val width = garments().first().boundsInRoot.width / 3
             val endPosition = garments().first().boundsInRoot.centerLeft
-            composeTestRule.onRoot().performTouchInput {
-                swipe(
-                    start = Offset(startPosition.x, startPosition.y),
-                    end = Offset(endPosition.x, endPosition.y),
-                    durationMillis = 1000 // Adjust duration as needed
-                )
+            repeat(5) {
+                composeTestRule.onRoot().performTouchInput {
+                    swipe(
+                        start = Offset(endPosition.x + width, endPosition.y + width),
+                        end = Offset(endPosition.x, endPosition.y),
+                        durationMillis = 1000 // Adjust duration as needed
+                    )
+                }
             }
             composeTestRule.waitForIdle()
             val initialCount = categorizedGarmentsCount
             categorizedGarmentsCount = garments().size
-            Assert.assertTrue(initialCount < categorizedGarmentsCount)
+             Assert.assertTrue(initialCount < categorizedGarmentsCount)
             categoryNode.performClick()
         }
+    }
+
+
+    @Test
+    fun outfitBuilder_setSeason() = runTest(timeout = 5.minutes){
+        val mockedGarmentRepo = Mockito.mock(GarmentsRepository::class.java)
+        val mockedOutfitRepo = Mockito.mock(OutfitsRepository::class.java)
+        val clothingModel = ClothingViewModel(mockedGarmentRepo)
+        val model = OutfitViewModel(mockedGarmentRepo, mockedOutfitRepo)
+
+        Mockito.`when`(mockedGarmentRepo.updateGarment(any())).thenAnswer{}
+        Mockito.`when`(mockedOutfitRepo.updateOutfit(any())).thenAnswer{}
+
+        base(mockedOutfitRepo, mockedGarmentRepo, model, clothingModel)
+        composeTestRule.waitUntil{
+            composeTestRule.onNode(hasText("Save")).isDisplayed()
+        }
+        composeTestRule.onNode(hasTestTag(TestTag.SAVE_BUTTON_DISABLED)).assertIsDisplayed()
+
+        //Season
+        val selectSeason = Season.entries.first()
+        composeTestRule.onNode(hasTestTag("${TestTag.DROPDOWN_MENU_PREFIX}Season"))
+            .performClick()
+        composeTestRule.waitUntil { composeTestRule.onNode(hasText(selectSeason.name)).isDisplayed() }
+        composeTestRule.onNode(hasText(selectSeason.name)).performClick()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.waitUntil { composeTestRule.onNode(hasText(selectSeason.name)).isDisplayed() }
+        composeTestRule.waitUntil { composeTestRule.onNode(hasTestTag(TestTag.SAVE_BUTTON_ENABLED)).isDisplayed() }
+        composeTestRule.onNode(hasText("Save")).performClick()
+        composeTestRule.waitForIdle()
+        verify(mockedOutfitRepo, times(1)).updateOutfit(
+            any()
+        )
     }
 
     private suspend fun base(
@@ -315,6 +354,7 @@ class OutfitBuilderScreenTest: UITest() {
                             navClothing = {},
                             navNewClothing = {},
                             navShop = {},
+                            navUser = {},
                             null
                         )
                     }

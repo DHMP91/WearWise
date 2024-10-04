@@ -45,11 +45,12 @@ import kotlin.math.abs
 import kotlin.math.min
 import kotlin.math.sqrt
 
-private const val ITEMS_PER_PAGE = 10
+
 class ClothingViewModel(
     private val garmentRepository: GarmentsRepository,
-    private val dispatcherIO: CoroutineDispatcher = Dispatchers.IO
+    private val dispatcherIO: CoroutineDispatcher = Dispatchers.IO,
 ): ViewModel() {
+    private val pageSize = 10
     private val tag: String = "ClothingViewModel"
 
     private val _newItemId = MutableStateFlow(0L)
@@ -69,7 +70,7 @@ class ClothingViewModel(
         val filterExcludeBrands = menuState.last().filterExcludeBrands
         val filterExcludeColors = menuState.last().filterExcludeColors
         Pager(
-            config = PagingConfig(pageSize = ITEMS_PER_PAGE, enablePlaceholders = false),
+            config = PagingConfig(pageSize = pageSize, enablePlaceholders = false),
             pagingSourceFactory = {
                 garmentRepository.getFilteredGarments(
                     excludedCategories = filterExcludeCategories,
@@ -260,7 +261,7 @@ class ClothingViewModel(
             return storedPager
         }
         val pager =  Pager(
-                config = PagingConfig(pageSize = ITEMS_PER_PAGE, enablePlaceholders = false),
+                config = PagingConfig(pageSize = pageSize, enablePlaceholders = false),
                 pagingSourceFactory = { garmentRepository.getGarmentsByCategoryPaged(categoryId) }
             )
                 .flow
@@ -323,7 +324,7 @@ class ClothingViewModel(
     }
 
     fun analyzeGarment(id: Long){
-        viewModelScope.launch(Dispatchers.Default) {
+        viewModelScope.launch(dispatcherIO) {
             val garment = garmentRepository.getGarmentStream(id).flowOn(dispatcherIO).firstOrNull()
             garment?.let {
                 val image = it.imageOfSubject ?: it.image

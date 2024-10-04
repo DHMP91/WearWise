@@ -34,4 +34,13 @@ interface OutfitDao {
 
     @Query("SELECT * from Outfits WHERE id IN (:ids) ORDER BY id DESC")
     fun getOutfitsByListOfIdsPaged(ids: List<Long>): PagingSource<Int, Outfit>
+
+    @Query("SELECT COUNT(*) from Outfits " +
+            "WHERE (Outfits.season NOT IN (:excludeSeason))")
+    fun getOutfitsCount(excludeSeason: List<Season>): Flow<Int>
+
+    @Query("SELECT Outfits.season AS season, COUNT(Outfits.id) AS count " +
+            "FROM Outfits " +
+            "GROUP BY Outfits.season")
+    fun getSeasonCount(): Flow<List<SeasonCount>>
 }

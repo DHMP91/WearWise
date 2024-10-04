@@ -8,6 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.performClick
 import androidx.core.net.toUri
 import androidx.test.platform.app.InstrumentationRegistry
@@ -96,8 +97,6 @@ class OutfitScreenTest: UITest() {
             garmentFour
         )
 
-
-
         //Fake Outfits
         val outfitNoImage = Outfit(
             id = 1,
@@ -165,6 +164,7 @@ class OutfitScreenTest: UITest() {
                                 navClothing = {},
                                 navNewClothing = {},
                                 navShop = {},
+                                navUser = {},
                                 null
                             )
                         }
@@ -220,9 +220,15 @@ class OutfitScreenTest: UITest() {
         }
 
         composeTestRule.onNode(hasTestTag(TestTag.BOTTOMBAR_OUTFIT)).performClick()
+        composeTestRule.waitUntil {
+            composeTestRule
+                .onNode(hasText("Outfits")).isDisplayed()
+        }
         composeTestRule.waitForIdle()
-        verifyScreenTitle("Outfits")
 
+        runBlocking {
+            delay(2000)
+        }
         val initialOutfitCount = composeTestRule.onAllNodes(hasTestTag(TestTag.OUTFIT_CARD)).fetchSemanticsNodes().size
         composeTestRule.waitUntilAtLeastOneExists(hasTestTag(TestTag.NEW_OUTFIT_BUTTON))
         composeTestRule.onNode(hasTestTag(TestTag.NEW_OUTFIT_BUTTON)).performClick()
@@ -247,15 +253,19 @@ class OutfitScreenTest: UITest() {
             }
         }
         composeTestRule.onNode(hasTestTag(TestTag.CAMERA_TAKE_ICON), useUnmergedTree = true).performClick()
-        composeTestRule.waitForIdle()
-
         composeTestRule.waitUntilAtLeastOneExists(hasTestTag(TestTag.SCREEN_TITLE), 10000)
         composeTestRule.onNode(clickToTakePictureMatcher).assertDoesNotExist()
+        composeTestRule.waitForIdle()
         composeTestRule.onNode(hasTestTag(TestTag.BOTTOMBAR_OUTFIT)).performClick()
+        composeTestRule.waitUntil {
+            composeTestRule
+                .onAllNodes(hasTestTag(TestTag.OUTFIT_CARD))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
         composeTestRule.waitForIdle()
 
         val afterOutfitCount = composeTestRule.onAllNodes(hasTestTag(TestTag.OUTFIT_CARD)).fetchSemanticsNodes().size
         Assert.assertEquals(initialOutfitCount + 1, afterOutfitCount)
-
     }
 }

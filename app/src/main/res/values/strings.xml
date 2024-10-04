@@ -9,9 +9,10 @@
     <string name="edit_outfit">Edit Outfit</string>
     <string name="new_outfit">New Outfit</string>
     <string name="shop">Shop</string>
-    <string name="filter_by_brand">Filter By Brand</string>
-    <string name="filter_by_category">Filter By Category</string>
-    <string name="filter_by_color">Filter By Color</string>
+    <string name="filter_by_brand">Brands</string>
+    <string name="filter_by_category">Categorys</string>
+    <string name="filter_by_color">Colors</string>
     <string name="view_image">View Image</string>
     <string name="crop_image">Crop Image</string>
+    <string name="user">User</string>
 </resources>

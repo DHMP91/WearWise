@@ -11,6 +11,7 @@ object TestTag {
     //BottomBar
     val BOTTOMBAR_CLOTHING = randomUUIDStr()
     val BOTTOMBAR_OUTFIT = randomUUIDStr()
+    val BOTTOMBAR_USER = randomUUIDStr()
 
 
     //Clothing
@@ -20,12 +21,16 @@ object TestTag {
     const val CLOTHING_LIST_CATEGORY_PREFIX = "CLOTHING_CATEGORY_ICON_"
     val OUTFIT_COUNT = randomUUIDStr()
     val CLOTHING_BRAND_CARD_FIELD = randomUUIDStr()
+    val FILTER_PREFIX = "FILTER_"
+    val FILTER_ROW_PREFIX = "FILTER_ROW_"
     val MAIN_MENU = randomUUIDStr()
 
 
-    //EditClothing
-    val EDIT_CLOTHING_DROPDOWN_PREFIX = "EDIT_CLOTHING_DROPDOWN_"
-
+    //Common
+    val DROPDOWN_MENU_PREFIX = "DROPDOWN_MENU_"
+    val SAVE_BUTTON_ENABLED = randomUUIDStr()
+    val SAVE_BUTTON_DISABLED = randomUUIDStr()
+    val RESULT_COUNT = randomUUIDStr()
 
     //Outfit
     val NEW_OUTFIT_BUTTON = randomUUIDStr()

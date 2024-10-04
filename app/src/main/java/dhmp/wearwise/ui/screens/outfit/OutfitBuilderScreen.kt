@@ -33,6 +33,7 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -58,6 +59,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.paging.PagingData
 import androidx.paging.compose.collectAsLazyPagingItems
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
@@ -65,15 +67,21 @@ import dhmp.wearwise.R
 import dhmp.wearwise.model.Categories
 import dhmp.wearwise.model.Category
 import dhmp.wearwise.model.Garment
+import dhmp.wearwise.model.GarmentColorNames
+import dhmp.wearwise.model.Outfit
+import dhmp.wearwise.model.Season
 import dhmp.wearwise.ui.AppViewModelProvider
 import dhmp.wearwise.ui.screens.clothing.ClothingViewModel
 import dhmp.wearwise.ui.screens.common.Collapsible
+import dhmp.wearwise.ui.screens.common.DropdownMenu
 import dhmp.wearwise.ui.screens.common.ImageScreen
 import dhmp.wearwise.ui.screens.common.ScreenTitle
 import dhmp.wearwise.ui.screens.common.TestTag
 import dhmp.wearwise.ui.screens.common.categoryIcon
+import dhmp.wearwise.ui.screens.common.fieldBorder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.android.awaitFrame
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 
 
@@ -91,8 +99,32 @@ fun EditOutfitScreen(
     LaunchedEffect(id) {
         outfitViewModel.getOutfit(id)
     }
-    BuilderColumn(onFinish, onTakePicture, onClickPicture, onCrop, clothingViewModel, outfitViewModel)
+    val outfit by outfitViewModel.outfit.collectAsState()
+    val savedOutfitFlagState by outfitViewModel.savedOutfitFlag.collectAsState()
+    val onSave = suspend {
+        outfitViewModel.saveOutfit()
+    }
+    val onDelete = {
+        outfitViewModel.deleteOutfit()
+    }
+    val onGetGarments = { it: Outfit ->
+        outfitViewModel.getGarments(it)
 
+    }
+    val onRemoveFromOutfit = { garment: Garment ->
+        outfitViewModel.removeFromOutfit(garment)
+    }
+    val onGetGarmentsByCategory = { it: Int? ->
+        clothingViewModel.getGarmentsByCategory(it)
+    }
+    val onAddToOutfit = { garment: Garment ->
+        outfitViewModel.addToOutfit(garment)
+    }
+
+    val onSetSeason = { season: Season ->
+        outfitViewModel.setSeason(season)
+    }
+    BuilderColumn(outfit, savedOutfitFlagState, onSave, onFinish, onDelete, onTakePicture, onClickPicture, onCrop, onGetGarments, onRemoveFromOutfit, onGetGarmentsByCategory, onAddToOutfit, onSetSeason)
     var backPressHandled by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
     BackHandler(enabled = !backPressHandled) {
@@ -116,8 +148,170 @@ fun NewOutfitScreen(
     LaunchedEffect(null) {
         outfitViewModel.newOutfit()
     }
-    BuilderColumn(onFinish, onTakePicture, onClickPicture, {}, clothingViewModel, outfitViewModel)
+    val outfit by outfitViewModel.outfit.collectAsState()
+    val savedOutfitFlagState by outfitViewModel.savedOutfitFlag.collectAsState()
+    val onSave = suspend {
+        outfitViewModel.saveOutfit()
+    }
+    val onDelete = {
+        outfitViewModel.deleteOutfit()
+    }
+    val onGetGarments = { it: Outfit ->
+        outfitViewModel.getGarments(it)
 
+    }
+    val onRemoveFromOutfit = { garment: Garment ->
+        outfitViewModel.removeFromOutfit(garment)
+    }
+
+    val onGetGarmentsByCategory = { it: Int? ->
+        clothingViewModel.getGarmentsByCategory(it)
+    }
+    val onAddToOutfit = { garment: Garment ->
+        outfitViewModel.addToOutfit(garment)
+    }
+    val onSetSeason = { season: Season ->
+        outfitViewModel.setSeason(season)
+    }
+    BuilderColumn(outfit, savedOutfitFlagState, onSave, onFinish, onDelete, onTakePicture, onClickPicture, {}, onGetGarments, onRemoveFromOutfit, onGetGarmentsByCategory, onAddToOutfit, onSetSeason)
+
+}
+
+@Composable
+fun BuilderColumn(
+    outfit: Outfit?,
+    savedOutfitFlagState: Boolean,
+    onSave: suspend () -> Long?,
+    onFinish: () -> Unit,
+    onDelete: () -> Unit,
+    onTakePicture: (Long) -> Unit,
+    onClickPicture: (String) -> Unit,
+    onCrop: (String) -> Unit,
+    onGetGarments: (Outfit) -> Flow<List<Garment>>,
+    onRemoveFromOutfit: (Garment) -> Unit,
+    onGetGarmentsByCategory: (Int?) -> Flow<PagingData<Garment>>,
+    onAddToOutfit: (Garment) -> Unit,
+    onSetSeason: (Season) -> Unit
+){
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(color = MaterialTheme.colorScheme.background)
+    ) {
+
+        Row(
+            modifier = Modifier
+                .padding(start = 10.dp, top = 5.dp, end = 10.dp, bottom = 5.dp)
+                .fillMaxSize()
+                .weight(2f)
+        ) {
+            OutfitCard(
+                outfit,
+                onSave = onSave,
+                onFinish = onFinish,
+                onDelete = onDelete,
+                onTakePicture = onTakePicture,
+                onClickPicture = onClickPicture,
+                onCrop = onCrop,
+                onGetGarments = onGetGarments,
+                onRemoveFromOutfit = onRemoveFromOutfit,
+                onGetGarmentsByCategory = onGetGarmentsByCategory,
+                onAddToOutfit = onAddToOutfit,
+                onSetSeason = onSetSeason
+            )
+        }
+
+        Row(
+            modifier = Modifier
+                .padding(
+                    start = dimensionResource(id = R.dimen.screen_title_padding),
+                    end = dimensionResource(id = R.dimen.screen_title_padding)
+                )
+                .weight(0.2f)
+        ) {
+            SaveOutfit(savedOutfitFlagState, onSave, onFinish)
+        }
+
+    }
+}
+
+@Composable
+fun OutfitCard(
+    outfit: Outfit?,
+    onSave: suspend () -> Long?,
+    onFinish: () -> Unit,
+    onDelete: () ->  Unit,
+    onTakePicture: (Long) -> Unit,
+    onClickPicture: (String) -> Unit,
+    onCrop: (String) -> Unit,
+    onGetGarments: (Outfit) -> Flow<List<Garment>>,
+    onRemoveFromOutfit: (Garment) -> Unit,
+    onGetGarmentsByCategory: (Int?) -> Flow<PagingData<Garment>>,
+    onAddToOutfit: (Garment) -> Unit,
+    onSetSeason: (Season) -> Unit
+){
+    Card(
+        modifier = Modifier
+            .fillMaxSize(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
+        colors = CardDefaults.cardColors(Color.White)
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(
+                    start = dimensionResource(id = R.dimen.screen_title_padding),
+                    top = dimensionResource(id = R.dimen.screen_title_padding),
+                    end = dimensionResource(id = R.dimen.screen_title_padding)
+                )
+        ) {
+            OutfitBuilderHeader(outfit, onFinish, onDelete)
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .wrapContentHeight()
+                .weight(2.5f)
+        ) {
+            OutfitImage(outfit, onSave, onTakePicture, onClickPicture, onCrop, onGetGarments)
+        }
+
+        Row(
+            modifier = Modifier
+                .weight(1f)
+                .wrapContentHeight()
+                .padding(start = 10.dp, top = 10.dp, end = 10.dp)
+        ) {
+            SelectedGarments(outfit, onGetGarments, onRemoveFromOutfit)
+        }
+
+
+        Row(
+            modifier = Modifier
+                .weight(2.2f)
+                .wrapContentHeight()
+                .padding(start = 10.dp, top = 10.dp, end = 10.dp)
+        ) {
+            OutlinedCard (
+                colors = CardDefaults.cardColors(Color.White),
+                border = fieldBorder()
+            ){
+                CategorizedGarments(
+                    onGetGarmentsByCategory,
+                    onAddToOutfit
+                )
+            }
+        }
+
+        Row(
+            modifier = Modifier
+                .weight(1f)
+                .padding(start = 10.dp, top = 2.dp, end = 10.dp)
+        ) {
+            SeasonField(outfit, onSetSeason = onSetSeason)
+        }
+
+    }
 }
 
 @Composable
@@ -146,86 +340,36 @@ fun OutfitPictureScreen(
 
 @Composable
 fun OutfitBuilderHeader(
+    outfit: Outfit?,
     onFinish: () -> Unit,
-    outfitViewModel: OutfitViewModel = viewModel(factory = AppViewModelProvider.OutFitFactory)
+    onDelete: () -> Unit
 ){
-    val pad = dimensionResource(id = R.dimen.screen_title_padding)
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(
-                start = pad,
-                top = dimensionResource(id = R.dimen.screen_title_padding),
-                end = pad
-            )
     ) {
-        Title(outfitViewModel)
-        DeleteOutfit(onFinish = onFinish, outfitViewModel)
+        Title(outfit)
+        DeleteOutfit(onDelete = onDelete, onFinish = onFinish)
     }
 }
 
 
 @Composable
 fun Title(
-    outfitViewModel: OutfitViewModel = viewModel(factory = AppViewModelProvider.OutFitFactory)
+    outfit: Outfit?
 ){
-    val outfit by outfitViewModel.outfit.collectAsState()
     Box(
         contentAlignment = Alignment.CenterStart,
     ) {
-        ScreenTitle("Outfit #${outfit?.id}")
+        ScreenTitle("Outfit #${outfit?.id ?: 0}")
     }
 }
 
-
-@Composable
-fun BuilderColumn(
-    onFinish: () -> Unit,
-    onTakePicture: (Long) -> Unit,
-    onClickPicture: (String) -> Unit,
-    onCrop: (String) -> Unit,
-    clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory),
-    outfitViewModel: OutfitViewModel = viewModel(factory = AppViewModelProvider.OutFitFactory)
-){
-    Column {
-
-        OutfitBuilderHeader(onFinish, outfitViewModel)
-
-        Row(modifier = Modifier
-            .fillMaxSize()
-            .weight(3f)
-            .padding(bottom = 10.dp)
-        ) {
-            OutfitImage(onTakePicture, onClickPicture, onCrop, outfitViewModel)
-        }
-
-        Row(modifier = Modifier
-            .weight(1f)
-        ) {
-            SelectedGarments(outfitViewModel)
-        }
-
-        Row {
-            SaveOutfit(onFinish, outfitViewModel)
-        }
-
-        Row(
-            modifier = Modifier
-                .weight(2f)
-        ) {
-            CategorizedGarments(
-                clothingViewModel,
-                outfitViewModel
-            )
-        }
-
-    }
-}
 
 @Composable
 fun DeleteOutfit(
+    onDelete : () -> Unit,
     onFinish: () -> Unit,
-    outfitViewModel: OutfitViewModel = viewModel(factory = AppViewModelProvider.OutFitFactory)
 ){
     Box (
         modifier = Modifier
@@ -237,7 +381,7 @@ fun DeleteOutfit(
             "Delete Outfit",
             modifier = Modifier
                 .clickable {
-                    outfitViewModel.deleteOutfit()
+                    onDelete()
                     onFinish()
                 }
         )
@@ -247,10 +391,10 @@ fun DeleteOutfit(
 
 @Composable
 fun SaveOutfit(
+    savedOutfitFlagState: Boolean,
+    onSave: suspend () -> Long?,
     onFinish: () -> Unit,
-    outfitViewModel: OutfitViewModel = viewModel(factory = AppViewModelProvider.OutFitFactory)
 ){
-    val savedOutfitFlagState by outfitViewModel.savedOutfitFlag.collectAsState()
     val buttonColor =
         if(savedOutfitFlagState) ButtonDefaults.buttonColors(Color.Gray)
         else ButtonDefaults.buttonColors(colorResource(R.color.accent))
@@ -259,18 +403,18 @@ fun SaveOutfit(
         onClick = {
             if (!savedOutfitFlagState){
                 coroutineScope.launch(Dispatchers.Main) {
-                    outfitViewModel.saveOutfit()
+                    onSave()
                     onFinish()
                 }
             }
         },
         colors = buttonColor,
         modifier = Modifier
-            .padding(16.dp)
             .fillMaxWidth()
+            .testTag(if (savedOutfitFlagState) TestTag.SAVE_BUTTON_DISABLED else TestTag.SAVE_BUTTON_ENABLED)
     ) {
         Text(
-            text = "Save Outfit",
+            text = "Save",
             color = if(savedOutfitFlagState) Color.White else Color.Black
         )
     }
@@ -278,12 +422,13 @@ fun SaveOutfit(
 
 @Composable
 fun OutfitImage(
+    outfit: Outfit?,
+    onSave: suspend() -> Long?,
     onTakePicture: (Long) -> Unit,
     onClickPicture: (String) -> Unit,
     onCrop: (String) -> Unit,
-    outfitViewModel: OutfitViewModel = viewModel(factory = AppViewModelProvider.OutFitFactory)
+    onGetGarments: (Outfit) -> Flow<List<Garment>>
 ){
-    val outfit by outfitViewModel.outfit.collectAsState()
     val coroutineScope = rememberCoroutineScope()
     outfit?.let {
         when (it.image) {
@@ -294,7 +439,7 @@ fun OutfitImage(
                         .padding(10.dp)
                         .clickable {
                             coroutineScope.launch(Dispatchers.Main) {
-                                val id = outfitViewModel.saveOutfit() //Save current changes it any
+                                val id = onSave() //Save current changes it any
                                 id?.let {
                                     onTakePicture(id)
                                 }
@@ -334,27 +479,46 @@ fun OutfitImage(
             }
 
             else -> {
+                val selectedItems by onGetGarments(it).collectAsState(
+                    initial = null
+                )
                 Row {
+
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
-                            .weight(0.5f)
-                    ) {
+                            .weight(0.5f),
+                        verticalArrangement = Arrangement.Bottom,
+                        horizontalAlignment = Alignment.End,
+
+                    ){
+                        selectedItems?.forEach { garment ->
+                            garment.color?.let { garmentColor ->
+                                val color = GarmentColorNames.find { color -> color.name == garmentColor }
+                                color?.let {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(dimensionResource(R.dimen.icon_max_height))  // Adjust the size as needed
+                                            .background(Color(color.color))
+                                    )
+                                }
+                            }
+                        }
                     }
 
                     Column(
                         modifier = Modifier
                             .weight(2f)
                             .fillMaxSize(),
-                        verticalArrangement = Arrangement.Center
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         AsyncImage(
                             model = ImageRequest.Builder(LocalContext.current).data(it.image)
                                 .build(),
                             contentDescription = "2",
-                            contentScale = ContentScale.Fit,
+                            contentScale = ContentScale.FillHeight,
                             modifier = Modifier
-                                .fillMaxSize()
                                 .clip(RoundedCornerShape(10.dp))
                                 .clickable {
                                     it.image?.let { image -> onClickPicture(image) }
@@ -394,7 +558,7 @@ fun OutfitImage(
                             modifier = Modifier
                                 .clickable {
                                     coroutineScope.launch(Dispatchers.Main) {
-                                        val id = outfitViewModel.saveOutfit() //Save current changes it any
+                                        val id = onSave() //Save current changes
                                         id?.let {
                                             onTakePicture(id)
                                         }
@@ -411,21 +575,21 @@ fun OutfitImage(
 
 @Composable
 fun SelectedGarments(
-    outfitViewModel: OutfitViewModel = viewModel(factory = AppViewModelProvider.OutFitFactory)
+    outfit: Outfit?,
+    onGetGarments: (Outfit) -> Flow<List<Garment>>,
+    onRemoveFromOutfit: (Garment) -> Unit
 ){
-
-    val outfit by outfitViewModel.outfit.collectAsState()
     outfit?.let {
-        val selectedItems by outfitViewModel.getGarments(it).collectAsState(
+        val selectedItems by onGetGarments(it).collectAsState(
             initial = null
         )
         val categories = Categories
 
-        Card(
+        OutlinedCard(
             modifier = Modifier
                 .fillMaxSize(),
-            elevation = CardDefaults.cardElevation(defaultElevation = 5.dp),
-            colors = CardDefaults.cardColors(MaterialTheme.colorScheme.background),
+            colors = CardDefaults.cardColors(Color.White),
+            border = fieldBorder()
         ) {
             if (selectedItems.isNullOrEmpty()) {
                 Box(
@@ -435,7 +599,7 @@ fun SelectedGarments(
                 )
                 {
                     Text(
-                        text = "Click on image(s) below to start an building your outfit",
+                        text = "No Items Selected",
                         fontSize = MaterialTheme.typography.titleSmall.fontSize,
                     )
 
@@ -473,7 +637,7 @@ fun SelectedGarments(
                                 )
 
                                 FloatingActionButton(
-                                    onClick = { outfitViewModel.removeFromOutfit(item) },
+                                    onClick = { onRemoveFromOutfit(item) },
                                     containerColor = colorResource(R.color.accent),
                                     elevation = FloatingActionButtonDefaults.bottomAppBarFabElevation(),
                                     modifier = Modifier
@@ -504,22 +668,23 @@ fun SelectedGarments(
 
 @Composable
 fun CategorizedGarments(
-    clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory),
-    outfitViewModel: OutfitViewModel = viewModel(factory = AppViewModelProvider.OutFitFactory)
+    onGetGarmentsByCategory: (Int?) -> Flow<PagingData<Garment>>,
+    onAddToOutfit: (Garment) -> Unit
 ){
     val categories = Categories
-    LazyColumn(
-        modifier = Modifier
-            .wrapContentHeight()
-            .fillMaxWidth()
-            .padding(top = 5.dp, bottom = 5.dp),
-    ) {
+    LazyColumn {
+        item {
+            Box(modifier = Modifier.padding(5.dp)){
+                //Empty Box
+            }
+        }
+
         categories.forEach { category ->
             item {
                 ClothBuilderRow(
                     category,
-                    clothingViewModel = clothingViewModel,
-                    outfitViewModel = outfitViewModel
+                    onGetGarmentsByCategory,
+                    onAddToOutfit
                 )
             }
         }
@@ -527,9 +692,15 @@ fun CategorizedGarments(
         item {
             ClothBuilderRow(
                 null,
-                clothingViewModel = clothingViewModel,
-                outfitViewModel = outfitViewModel
+                onGetGarmentsByCategory,
+                onAddToOutfit
             )
+        }
+
+        item {
+            Box(modifier = Modifier.padding(50.dp)){
+                //Empty Box
+            }
         }
     }
 
@@ -539,22 +710,21 @@ fun CategorizedGarments(
 @Composable
 fun ClothBuilderRow(
     category: Category?,
-    clothingViewModel: ClothingViewModel = viewModel(factory = AppViewModelProvider.ClothingFactory),
-    outfitViewModel: OutfitViewModel = viewModel(factory = AppViewModelProvider.OutFitFactory)
+    onGetGarmentsByCategory: (Int?) -> Flow<PagingData<Garment>>,
+    onAddToOutfit: (Garment) -> Unit,
 ){
     val itemWidthDp = 150.dp // Assume each item is 150.dp wide, adjust as needed
     val itemHeightMax = 100.dp
-    val rowPadding = 20.dp
     val configuration = LocalConfiguration.current
     val screenWidthDp = configuration.screenWidthDp.dp
-    val startPadding = max((screenWidthDp - itemWidthDp) / 4, 0.dp)
+    val startPadding = max((screenWidthDp - itemWidthDp) / 8, 0.dp)
     val garmentsFlow = remember(category?.id) {
-        clothingViewModel.getGarmentsByCategory(category?.id)
+        onGetGarmentsByCategory(category?.id)
     }
     val garments = garmentsFlow.collectAsLazyPagingItems()
     var headerText = "Unidentified"
     val onClick = { garment: Garment ->
-        outfitViewModel.addToOutfit(garment)
+        onAddToOutfit(garment)
     }
 
     if(category != null) {
@@ -569,7 +739,7 @@ fun ClothBuilderRow(
             modifier = Modifier
                 .fillMaxHeight()
                 .background(MaterialTheme.colorScheme.background)
-                .padding(rowPadding)
+                .padding(start = 20.dp, top = 5.dp, end = 20.dp)
                 .background(MaterialTheme.colorScheme.background),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(startPadding),
@@ -602,7 +772,7 @@ fun ClothBuilderItem(
                 onClick(garment)
             }
             .testTag("${TestTag.CATEGORIZED_GARMENT_PREFIX}${garment.categoryId}"),
-        elevation = CardDefaults.cardElevation(defaultElevation = 5.dp),
+//        elevation = CardDefaults.cardElevation(defaultElevation = 5.dp),
         colors = CardDefaults.cardColors(MaterialTheme.colorScheme.background)
     ) {
         AsyncImage(
@@ -613,5 +783,14 @@ fun ClothBuilderItem(
                 .fillMaxSize()
         )
     }
+}
+
+@Composable
+fun SeasonField(outfit: Outfit?, onSetSeason: (Season) -> Unit){
+    val updateSeason = { value: String ->
+        onSetSeason(Season.valueOf(value))
+    }
+    val seasons = Season.entries.map { it.name }
+    DropdownMenu("Season", seasons, outfit?.season?.name, updateSeason)
 }
 

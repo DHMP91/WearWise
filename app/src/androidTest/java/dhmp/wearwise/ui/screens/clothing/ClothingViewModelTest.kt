@@ -10,7 +10,6 @@ import androidx.test.platform.app.InstrumentationRegistry
 import dhmp.wearwise.data.GarmentsRepository
 import dhmp.wearwise.model.Category
 import dhmp.wearwise.model.Garment
-import dhmp.wearwise.model.GarmentColorNames
 import dhmp.wearwise.ui.screens.FakePagingSource
 import dhmp.wearwise.ui.screens.capture
 import dhmp.wearwise.ui.screens.fakeImage
@@ -266,11 +265,11 @@ class ClothingViewModelTest {
     @Test
     fun analyzeGarment() = runTest(timeout = 9.minutes){
         val tests = mapOf(
-            GarmentColorNames.find { it.name == "Crimson" }!!.color to "Red",
-            GarmentColorNames.find { it.name == "Silver" }!!.color to "White",
-            GarmentColorNames.find { it.name == "Lime" }!!.color to "Green",
-            GarmentColorNames.find { it.name == "Navy" }!!.color to "Blue",
-            GarmentColorNames.find { it.name == "Gold" }!!.color to "Yellow",
+            0xFFDC143C.toInt() to "Red", // Crimson
+            0xFFC0C0C0.toInt() to "White", // Silver
+            0xFF00FF00.toInt() to "Green", // Lime
+            0xFF000042.toInt() to "Blue", // Navy
+            0xFFFFD700.toInt() to "Yellow", // Gold
         )
         for(test in tests) {
             val colorCode = test.key

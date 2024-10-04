@@ -44,15 +44,14 @@ class OutfitRepositoryTest {
             config = PagingConfig(pageSize = pageSize, enablePlaceholders = false),
             pagingSourceFactory = {  appContainer.outfitsRepository.getAllOutfitsPaged() }
         ).flow
-        var itemsSnapshot: List<Outfit> = pager.asSnapshot()
-        val initial = itemsSnapshot.size
+        val initial = appContainer.outfitsRepository.getOutfitsCount().first()
         val max = inject + initial
 
         repeat(inject) {
             appContainer.outfitsRepository.insertOutfit(Outfit())
         }
 
-        itemsSnapshot = pager.asSnapshot()
+        var itemsSnapshot: List<Outfit> = pager.asSnapshot()
         Assert.assertTrue(itemsSnapshot.size >= pageSize && itemsSnapshot.size <= pageSize*3)
 
         itemsSnapshot = pager.asSnapshot{
@@ -63,23 +62,32 @@ class OutfitRepositoryTest {
         itemsSnapshot = pager.asSnapshot {
             scrollTo(index = pageSize*3 + 1)
         }
-        Assert.assertTrue(itemsSnapshot.size == inject )
+        Assert.assertEquals(itemsSnapshot.size, inject )
 
 
         itemsSnapshot = pager.asSnapshot {
             scrollTo(index = max - 1)
         }
-        Assert.assertTrue(itemsSnapshot.size == max)
+        Assert.assertEquals(itemsSnapshot.size, max)
 
         val pager2 =  Pager(
-            config = PagingConfig(pageSize = 10, enablePlaceholders = false),
+            config = PagingConfig(pageSize = 1, enablePlaceholders = false),
             pagingSourceFactory = {  appContainer.outfitsRepository.getAllOutfitsPaged() }
         ).flow
 
-        itemsSnapshot = pager2.asSnapshot {
+        val itemsSnapshot1 = pager2.asSnapshot {
             scrollTo(index = 1)
         }
-        Assert.assertTrue(itemsSnapshot.size == max)
+
+        val pager3 =  Pager(
+            config = PagingConfig(pageSize = 3, enablePlaceholders = false),
+            pagingSourceFactory = {  appContainer.outfitsRepository.getAllOutfitsPaged() }
+        ).flow
+
+        val itemsSnapshot2 = pager3.asSnapshot {
+            scrollTo(index = 1)
+        }
+        Assert.assertEquals(itemsSnapshot2.size, itemsSnapshot1.size*3)
     }
 
     @Test
@@ -142,6 +150,67 @@ class OutfitRepositoryTest {
         val updatedOutfit = appContainer.outfitsRepository.getOutfitStream(id).firstOrNull()
         Assert.assertTrue(updatedOutfit!! == outfit)
     }
+
+    @Test
+    fun getOutfitsCount() = runTest {
+        Season.entries.forEach { season ->
+            val otherSeasons = Season.entries.filter { it != season }
+            val countBefore = appContainer.outfitsRepository.getOutfitsCount(otherSeasons).first()
+            appContainer.outfitsRepository.insertOutfit(Outfit(season = season))
+            val countAfter = appContainer.outfitsRepository.getOutfitsCount(otherSeasons).first()
+            Assert.assertEquals(countAfter - countBefore, 1)
+
+            val outfitsAllCountAfter = appContainer.outfitsRepository.getOutfitsCount(listOf()).first()
+            val excludeOneSeasonCount = appContainer.outfitsRepository.getOutfitsCount(listOf(season)).first()
+
+            Assert.assertEquals(outfitsAllCountAfter - 1 - countBefore, excludeOneSeasonCount)
+        }
+    }
+
+    @Test
+    fun getSeasonCount() = runTest {
+        val seasonCountBefore = appContainer.outfitsRepository.getSeasonCount().first()
+        val inject: Map<Season, Int> = mutableMapOf(
+            Season.entries[0] to 12,
+            Season.entries[1] to 6,
+            Season.entries[2] to 11,
+            Season.entries[3] to 2,
+        )
+        inject.forEach { (season, count) ->
+            repeat(count) {
+                appContainer.outfitsRepository.insertOutfit(Outfit(season = season))
+            }
+        }
+
+        val seasonCount = appContainer.outfitsRepository.getSeasonCount().firstOrNull()
+        val anySeasonCountBefore = seasonCount?.find { it.season == Season.ANY }?.count
+        val seasonCountMap = mutableMapOf<Season, Int>()
+        seasonCount?.map {
+            if(it.season != Season.ANY) {
+                seasonCountMap[it.season!!] = it.count
+            }
+        }
+
+        val none = 3
+        repeat(none) {
+            appContainer.outfitsRepository.insertOutfit(Outfit())
+        }
+        val seasonCountAfter = appContainer.outfitsRepository.getSeasonCount().firstOrNull()
+        val anySeasonCountAfter = seasonCountAfter?.find { it.season == Season.ANY }?.count
+
+        Assert.assertNotNull(seasonCount)
+        Assert.assertNotNull(anySeasonCountAfter)
+        Assert.assertTrue((anySeasonCountAfter!! - anySeasonCountBefore!!) == none)
+
+        inject.forEach { (season, injectCount) ->
+            val beforeCount = seasonCountBefore.find { it.season == season }?.count
+            val expected = (beforeCount ?: 0) + injectCount
+            val afterCount = seasonCountAfter.find { it.season == season }?.count ?: 0
+            Assert.assertEquals(expected, afterCount)
+        }
+
+    }
+
 
     @After
     fun closeDatabase() {

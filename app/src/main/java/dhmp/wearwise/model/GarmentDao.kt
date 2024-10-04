@@ -54,4 +54,20 @@ interface GarmentDao {
             "AND (Garments.color NOT IN (:excludedColor) OR Garments.color IS NULL)" +
             "AND (Garments.brand NOT IN (:excludedBrand) OR Garments.brand IS NULL)")
     fun getGarmentsCount(excludedCategoryId: List<Int>, excludedColor: List<String>, excludedBrand: List<String>): Flow<Int>
+
+    @Query("SELECT Garments.color AS color, COUNT(Garments.id) AS count " +
+            "FROM Garments " +
+            "GROUP BY Garments.color")
+    fun getColorsCount(): Flow<List<ColorCount>>
+
+    @Query("SELECT Garments.categoryId AS categoryId, COUNT(Garments.id) AS count " +
+            "FROM Garments " +
+            "GROUP BY Garments.categoryId")
+    fun getCategoryCount(): Flow<List<CategoryCount>>
+
+
+    @Query("SELECT Garments.occasion AS occasion, COUNT(Garments.id) AS count " +
+            "FROM Garments " +
+            "GROUP BY Garments.occasion")
+    fun getOccasionCount(): Flow<List<OccasionCount>>
 }

@@ -14,6 +14,7 @@ import dhmp.wearwise.model.Season
 import dhmp.wearwise.ui.screens.FakePagingSource
 import dhmp.wearwise.ui.screens.fakeImage
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.runBlocking
@@ -194,6 +195,7 @@ class OutfitViewModelTest {
         }
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun getOutfit_newOutfit(){
         val id: Long = 9090
@@ -220,6 +222,7 @@ class OutfitViewModelTest {
     }
 
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun saveOutfit_new(){
         val newId: Long = 9090
@@ -228,9 +231,6 @@ class OutfitViewModelTest {
         )
         val garmentTwo = Garment(
             id = 11
-        )
-        val garmentThree = Garment(
-            id = 12
         )
         val model =  OutfitViewModel(mockedGarmentRepo, mockedOutfitRepo, testDispatcher)
         runTest(testDispatcher, timeout = 1.minutes) {
@@ -288,6 +288,7 @@ class OutfitViewModelTest {
     }
 
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun saveOutfit_existing(){
         val newId: Long = 9090
@@ -420,6 +421,30 @@ class OutfitViewModelTest {
             )
             Assert.assertFalse(file.exists())
 
+        }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun setSeason() {
+        val id: Long = 9090
+        val outfit = Outfit(
+            id = id
+        )
+        val model =  OutfitViewModel(mockedGarmentRepo, mockedOutfitRepo, testDispatcher)
+        runTest(testDispatcher, timeout = 1.minutes) {
+            Mockito.`when`(mockedOutfitRepo.getOutfitStream(id)).thenAnswer {
+                flow {
+                    emit(outfit)
+                }
+            }
+
+            model.getOutfit(id)
+            model.setSeason(Season.SPRING)
+
+            advanceUntilIdle()
+            Assert.assertTrue(model.outfit.first()?.season == Season.SPRING)
+            Assert.assertFalse(model.savedOutfitFlag.value)
         }
     }
 
