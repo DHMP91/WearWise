@@ -238,6 +238,7 @@ class ClothingEditScreenTest : UITest()  {
         }
 
         composeTestRule.onNode(hasContentDescriptionExactly("Delete Clothing")).performClick()
+        composeTestRule.waitForIdle()
         verify(mockedGarmentRepo, times(1)).deleteGarment(
             fakedGarment
         )

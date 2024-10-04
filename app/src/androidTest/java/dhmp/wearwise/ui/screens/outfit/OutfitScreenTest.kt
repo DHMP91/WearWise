@@ -227,7 +227,7 @@ class OutfitScreenTest: UITest() {
         composeTestRule.waitForIdle()
 
         runBlocking {
-            delay(1000)
+            delay(2000)
         }
         val initialOutfitCount = composeTestRule.onAllNodes(hasTestTag(TestTag.OUTFIT_CARD)).fetchSemanticsNodes().size
         composeTestRule.waitUntilAtLeastOneExists(hasTestTag(TestTag.NEW_OUTFIT_BUTTON))
