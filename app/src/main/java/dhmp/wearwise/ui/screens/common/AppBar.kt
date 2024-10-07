@@ -29,6 +29,7 @@ import dhmp.wearwise.R
 
 @Composable
 fun WearWiseBottomAppBar(
+    modifier: Modifier = Modifier,
     navOutfit: () -> Unit,
     navClothing: () -> Unit,
     navNewClothing: () -> Unit,
@@ -37,7 +38,7 @@ fun WearWiseBottomAppBar(
     route: String?
 ) {
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .height(dimensionResource(id = R.dimen.bottom_bar_height))
             .shadow(elevation = dimensionResource(id = R.dimen.default_elevation))
