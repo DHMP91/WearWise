@@ -49,7 +49,6 @@ fun App(navController: NavHostController = rememberNavController()) {
     Scaffold (
         bottomBar = {
             WearWiseBottomAppBar(
-                modifier = Modifier.navigationBarsPadding(),
                 navOutfit = { navController.navigate(AppScreens.Outfit.name){
                     popUpTo(AppScreens.Outfit.name) {
                         inclusive = false
@@ -62,12 +61,9 @@ fun App(navController: NavHostController = rememberNavController()) {
                         }
                     }
                 },
-                navNewClothing = {
-                    navController.navigate(AppScreens.NewClothing.name)
-                },
-                navShop = { navController.navigate(AppScreens.Shop.name) },
                 navUser = { navController.navigate(AppScreens.User.name) },
-                currentRoute
+                route = currentRoute,
+                modifier = Modifier.navigationBarsPadding()
             )
         },
     ) { innerPadding ->
@@ -80,8 +76,6 @@ fun App(navController: NavHostController = rememberNavController()) {
 @Composable
 fun GreetingPreview() {
     WearWiseTheme {
-        UserScreen(
-            onBack = {}
-        )
+        UserScreen()
     }
 }

@@ -352,10 +352,8 @@ class OutfitBuilderScreenTest: UITest() {
                         WearWiseBottomAppBar(
                             navOutfit = {},
                             navClothing = {},
-                            navNewClothing = {},
-                            navShop = {},
                             navUser = {},
-                            null
+                            route = null
                         )
                     }
                 ) { innerPadding ->

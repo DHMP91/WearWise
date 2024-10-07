@@ -268,9 +268,7 @@ fun AppNav(modifier: Modifier = Modifier, navController: NavHostController = rem
         }
 
         composable(route = AppScreens.User.name) {
-            UserScreen(
-                onBack = {}
-            )
+            UserScreen()
         }
     }
 }

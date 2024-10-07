@@ -38,7 +38,6 @@ import dhmp.wearwise.ui.AppViewModelProvider
 
 @Composable
 fun UserScreen(
-    onBack: () -> Unit,
     userViewModel: UserViewModel = viewModel(factory = AppViewModelProvider.UserFactory),
 ){
     val garmentCount by userViewModel.garmentCount().collectAsState(initial = 0)

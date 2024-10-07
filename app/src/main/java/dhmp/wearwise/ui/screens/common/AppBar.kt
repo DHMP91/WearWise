@@ -29,13 +29,13 @@ import dhmp.wearwise.R
 
 @Composable
 fun WearWiseBottomAppBar(
-    modifier: Modifier = Modifier,
     navOutfit: () -> Unit,
     navClothing: () -> Unit,
-    navNewClothing: () -> Unit,
-    navShop: () -> Unit,
     navUser: () ->  Unit,
-    route: String?
+//    navNewClothing: () -> Unit,
+//    navShop: () -> Unit,
+    route: String?,
+    modifier: Modifier = Modifier,
 ) {
     Box(
         modifier = modifier
