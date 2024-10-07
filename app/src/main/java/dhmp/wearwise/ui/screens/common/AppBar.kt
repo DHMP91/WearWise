@@ -44,19 +44,19 @@ fun WearWiseBottomAppBar(
             .shadow(elevation = dimensionResource(id = R.dimen.default_elevation))
     ) {
         Row(
-            modifier = modifier
+            modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
         ) {
             Column(
-                modifier = modifier
+                modifier = Modifier
                     .weight(2f)
                     .fillMaxSize()
             ) {
                 Row {
                     IconButton(
                         onClick = { navClothing() },
-                        modifier = modifier
+                        modifier = Modifier
                             .fillMaxWidth()
                             .weight(1f)
                             .testTag(TestTag.BOTTOMBAR_CLOTHING)
@@ -65,7 +65,7 @@ fun WearWiseBottomAppBar(
                     }
                     IconButton(
                         onClick = { navOutfit() },
-                        modifier = modifier
+                        modifier = Modifier
                             .fillMaxWidth()
                             .weight(1f)
                             .testTag(TestTag.BOTTOMBAR_OUTFIT),
@@ -75,7 +75,7 @@ fun WearWiseBottomAppBar(
 
                     IconButton(
                         onClick = { navUser() },
-                        modifier = modifier
+                        modifier = Modifier
                             .fillMaxWidth()
                             .weight(1f)
                             .testTag(TestTag.BOTTOMBAR_USER),
