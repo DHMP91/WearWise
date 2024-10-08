@@ -26,3 +26,12 @@ Features:
 <p align="left">
   <img src="https://github.com/user-attachments/assets/8fb195b1-970e-4b15-a71b-85d998ae5ff2" width="100" />
 </p>
+
+
+## Tech
+Framework/ToolKit: Jetpack Compose
+Language: Kotlin
+Database: SQLLite
+Persistence layer: Room DAO
+Test: Junit4, Mockito(Kotlin), Compose Test Rules, Compose Preview Screenshot Testing 
+Others: Google MLKit, CameraX
