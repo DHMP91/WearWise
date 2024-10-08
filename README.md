@@ -29,9 +29,9 @@ Features:
 
 
 ## Tech
-Framework/ToolKit: Jetpack Compose
-Language: Kotlin
-Database: SQLLite
-Persistence layer: Room DAO
-Test: Junit4, Mockito(Kotlin), Compose Test Rules, Compose Preview Screenshot Testing 
-Others: Google MLKit, CameraX
+- Framework/ToolKit: Jetpack Compose
+- Language: Kotlin
+- Database: SQLLite
+- Persistence layer: Room DAO
+- Test: Junit4, Mockito(Kotlin), Compose Test Rules, Compose Preview Screenshot Testing 
+- Others: Google MLKit, CameraX
