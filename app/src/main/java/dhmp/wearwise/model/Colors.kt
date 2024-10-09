@@ -1,7 +1,6 @@
 package dhmp.wearwise.model
 
 
-
 class ColorName(
     val name: String,
     val color: Int
@@ -52,6 +51,14 @@ val GarmentColorNames = listOf(
     ColorName("Turquoise", 0xFF30D5C8.toInt()),
     ColorName("Violet", 0xFF8F00FF.toInt())
 )
+
+val GarmentColorNameTable: HashMap<String, ColorName> = hashMapOf<String, ColorName>().apply {
+    putAll(GarmentColorNames.associateBy { it.name })
+}
+
+val GarmentColorColorTable: HashMap<Int, ColorName> = hashMapOf<Int, ColorName>().apply {
+    putAll(GarmentColorNames.associateBy { it.color })
+}
 
 data class ColorCount(
     val color: String?,

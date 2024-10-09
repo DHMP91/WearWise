@@ -67,7 +67,7 @@ import dhmp.wearwise.R
 import dhmp.wearwise.model.Categories
 import dhmp.wearwise.model.Category
 import dhmp.wearwise.model.Garment
-import dhmp.wearwise.model.GarmentColorNames
+import dhmp.wearwise.model.GarmentColorNameTable
 import dhmp.wearwise.model.Outfit
 import dhmp.wearwise.model.Season
 import dhmp.wearwise.ui.AppViewModelProvider
@@ -494,7 +494,7 @@ fun OutfitImage(
                     ){
                         selectedItems?.forEach { garment ->
                             garment.color?.let { garmentColor ->
-                                val color = GarmentColorNames.find { color -> color.name == garmentColor }
+                                val color = GarmentColorNameTable[garmentColor]
                                 color?.let {
                                     Box(
                                         modifier = Modifier

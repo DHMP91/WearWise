@@ -16,8 +16,7 @@ class Category(
     }
 
     override fun hashCode(): Int {
-        var result = id
-        result = 31 * result + name.hashCode()
+        val result = 31 * id + name.hashCode()
         return result
     }
 
@@ -132,69 +131,62 @@ class Category(
             name = "OTHER"
         )
 
+        private val allCategories = setOf(
+            hatsCategory,
+            topsCategory,
+            bottomCategory,
+            onePieceCategory,
+            outerWearCategory,
+            intimatesCategory,
+            footwearCategory,
+            accessoryCategory,
+            otherCategory,
+        )
+
+        private val categoriesNameTable: HashMap<String, Category> = hashMapOf<String, Category>().apply {
+            putAll(allCategories.associateBy { it.name })
+        }
+
+        private val subCategoriesNameTable: HashMap<String, Category> = hashMapOf<String, Category>().apply {
+            allCategories.forEach { category ->
+                category.subCategories?.let { subCategoriesList ->
+                    putAll(subCategoriesList.associateBy { it.name })
+                }
+            }
+        }
+
+        private val categoriesIdTable: HashMap<Int, Category> = hashMapOf<Int, Category>().apply {
+            putAll(allCategories.associateBy { it.id })
+        }
+
+        private val subCategoriesIdTable: HashMap<Int, Category> = hashMapOf<Int, Category>().apply {
+            allCategories.forEach { category ->
+                category.subCategories?.let { subCategoriesList ->
+                    putAll(subCategoriesList.associateBy { it.id })
+                }
+            }
+        }
+
         fun categories(): List<Category> {
-            return setOf(
-                hatsCategory,
-                topsCategory,
-                bottomCategory,
-                onePieceCategory,
-                outerWearCategory,
-                intimatesCategory,
-                footwearCategory,
-                accessoryCategory,
-                otherCategory,
-            ).toList()
+            return allCategories.toList()
         }
 
         fun getCategory(id: Int): Category? {
             if(id <= 1000) {
-                return searchCategory(id, categories())
+                return categoriesIdTable[id]
             }else{
-                for (c in Categories){
-                    val subCategory = c.subCategories?.let {  searchCategory(id, it.toList()) }
-                    if(subCategory != null)
-                        return subCategory
-                }
+                return subCategoriesIdTable[id]
             }
-            return null
         }
 
         fun getCategory(name: String): Category?{
-            categories().forEach { category ->
-                if(category.name == name){
-                    return category
-                } else {
-                    category.subCategories?.let { subCategories ->
-                        subCategories.forEach { subCategory ->
-                            if(subCategory.name == name) {
-                                return subCategory
-                            }
-                        }
-                    }
-                }
+            val category = categoriesNameTable[name]
+            if(category == null){
+                return subCategoriesNameTable[name]
+            }else{
+                return category
             }
-            return null
         }
-
-        private fun searchCategory(id: Int, categories: List<Category>): Category?{
-            //Binary Search
-            var min = 0
-            var max = categories.size - 1
-
-            while(min <= max){
-                val mid = ((min + max)/2)
-                val midCategory = categories[mid]
-                if(midCategory.id == id){
-                    return midCategory
-                }else if(midCategory.id > id){
-                    max = mid - 1
-                }else{
-                    min = mid + 1
-                }
-            }
-            return null
-        }
-
     }
 }
 
