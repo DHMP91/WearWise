@@ -56,6 +56,7 @@ import coil.request.ImageRequest
 import dhmp.wearwise.R
 import dhmp.wearwise.model.Category
 import dhmp.wearwise.model.Garment
+import dhmp.wearwise.model.GarmentColorNameTable
 import dhmp.wearwise.model.GarmentColorNames
 import dhmp.wearwise.model.Occasion
 import dhmp.wearwise.ui.AppViewModelProvider
@@ -265,7 +266,7 @@ fun GarmentImage(
             horizontalAlignment = Alignment.End,
         ){
             garment.color?.let {garmentColor ->
-                val color = GarmentColorNames.find { it.name == garmentColor }
+                val color = GarmentColorNameTable[garmentColor]
                 color?.let {
                     Box(
                         modifier = Modifier

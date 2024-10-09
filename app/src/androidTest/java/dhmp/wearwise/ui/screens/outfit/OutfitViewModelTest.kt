@@ -362,6 +362,7 @@ class OutfitViewModelTest {
         }
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun deleteOutfit() {
         val newId: Long = 9090

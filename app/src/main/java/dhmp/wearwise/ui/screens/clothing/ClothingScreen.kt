@@ -60,6 +60,7 @@ import dhmp.wearwise.R
 import dhmp.wearwise.model.Categories
 import dhmp.wearwise.model.Category
 import dhmp.wearwise.model.Garment
+import dhmp.wearwise.model.GarmentColorNameTable
 import dhmp.wearwise.model.GarmentColorNames
 import dhmp.wearwise.ui.AppViewModelProvider
 import dhmp.wearwise.ui.screens.common.ScreenTitle
@@ -321,7 +322,7 @@ fun GarmentCard(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.End
                 ) {
-                    val color = GarmentColorNames.find { it.name == garment.color }
+                    val color = GarmentColorNameTable[garment.color]
                     color?.let {
                         Box(
                             modifier = Modifier

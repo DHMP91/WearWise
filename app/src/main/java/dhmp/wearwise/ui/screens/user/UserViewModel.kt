@@ -6,7 +6,7 @@ import dhmp.wearwise.data.GarmentsRepository
 import dhmp.wearwise.data.OutfitsRepository
 import dhmp.wearwise.model.CategoryCount
 import dhmp.wearwise.model.ColorCount
-import dhmp.wearwise.model.GarmentColorNames
+import dhmp.wearwise.model.GarmentColorNameTable
 import dhmp.wearwise.model.OccasionCount
 import dhmp.wearwise.model.SeasonCount
 import kotlinx.coroutines.CoroutineDispatcher
@@ -58,7 +58,7 @@ class UserViewModel (
         val colorPalette = mutableListOf<Color>()
 
         colors.forEach {
-            val garmentColor = GarmentColorNames.firstOrNull { garmentColor -> garmentColor.name == it }?.color
+            val garmentColor = GarmentColorNameTable[it]?.color
             val color = when(garmentColor) {
                 null -> Color(0xFFF2F2F2)
                 else -> Color(garmentColor)
