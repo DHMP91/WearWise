@@ -311,7 +311,7 @@ fun DropdownMenuEditable(label: String, options: List<String>, fieldValue: Strin
     var expanded by remember { mutableStateOf(false) }
     var expandedByFocus by remember { mutableStateOf(false) }
     var dismissed by remember { mutableStateOf(false) }
-    var selectedText by remember { mutableStateOf(fieldValue ?: "") }
+    var selectedText by remember { mutableStateOf(fieldValue) }
     var textFieldSize by remember { mutableStateOf(Size.Zero) }
     val menuHeight = with(density) {
         (screenHeightPx / 4).toPx().toDp()
@@ -324,10 +324,12 @@ fun DropdownMenuEditable(label: String, options: List<String>, fieldValue: Strin
             .fillMaxWidth()
     ) {
         OutlinedTextField(
-            value = if (selectedText == "" && fieldValue != null) fieldValue else selectedText,
+            value = (selectedText ?: fieldValue) ?: "",
             onValueChange = {
-                updateField(it)
-                selectedText = it
+                if (selectedText != it) {
+                    updateField(it)
+                    selectedText = it
+                }
             },
             modifier = Modifier
                 .fillMaxWidth()
@@ -388,8 +390,10 @@ fun DropdownMenuEditable(label: String, options: List<String>, fieldValue: Strin
                         Text(text = label)
                     },
                     onClick = {
-                        updateField(label)
-                        selectedText = label
+                        if (selectedText != label) {
+                            updateField(label)
+                            selectedText = label
+                        }
                         expanded = false
                     }
                 )
