@@ -15,6 +15,7 @@ import androidx.core.net.toUri
 import androidx.test.platform.app.InstrumentationRegistry
 import dhmp.wearwise.data.DefaultAppContainer
 import dhmp.wearwise.data.GarmentsRepository
+import dhmp.wearwise.data.UserConfigRepository
 import dhmp.wearwise.model.Category
 import dhmp.wearwise.model.Garment
 import dhmp.wearwise.model.GarmentColorNames
@@ -36,6 +37,7 @@ import kotlin.time.Duration.Companion.minutes
 
 class ClothingEditScreenTest : UITest()  {
     private lateinit var mockedGarmentRepo: GarmentsRepository
+    private lateinit var userConfigRepo: UserConfigRepository
     private lateinit var context: Context
     private lateinit var model: ClothingViewModel
     private lateinit var appContainer: DefaultAppContainer
@@ -47,7 +49,8 @@ class ClothingEditScreenTest : UITest()  {
     fun setup() = runBlocking{
         context = InstrumentationRegistry.getInstrumentation().targetContext
         mockedGarmentRepo = Mockito.mock(GarmentsRepository::class.java)
-        model = ClothingViewModel(mockedGarmentRepo)
+        userConfigRepo = Mockito.mock(UserConfigRepository::class.java)
+        model = ClothingViewModel(mockedGarmentRepo, userConfigRepo)
         appContainer = DefaultAppContainer(context)
 
         val testImage = fakeImage(context, "testImage.png")
