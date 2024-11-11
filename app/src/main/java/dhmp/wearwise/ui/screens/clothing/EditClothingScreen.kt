@@ -3,6 +3,13 @@ package dhmp.wearwise.ui.screens.clothing
 import android.content.Context
 import android.net.Uri
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.VectorConverter
+import androidx.compose.animation.core.animateValue
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -43,12 +50,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
@@ -98,7 +109,7 @@ fun EditClothingScreen(
     val uiState by clothingViewModel.uiEditState.collectAsState()
     val isProcessing by clothingViewModel.isProcessingBackground.collectAsState()
     val brands by clothingViewModel.brands.collectAsState()
-
+    val isAnalyzing by clothingViewModel.analyzing.collectAsState()
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -113,6 +124,7 @@ fun EditClothingScreen(
                 uiState,
                 brands = brands,
                 isProcessing = isProcessing,
+                isAnalyzing = isAnalyzing,
                 onDelete = {
                     clothingViewModel.deleteGarment(garmentId)
                     onFinish()
@@ -145,6 +157,7 @@ fun ClothingCard(
     uiState: EditClothingUIState,
     brands: List<String>,
     isProcessing: Boolean,
+    isAnalyzing: Boolean,
     onDelete: () -> Unit,
     onOutfits: (Long) -> Unit,
     onClickPicture: (String) -> Unit,
@@ -182,7 +195,7 @@ fun ClothingCard(
                 .fillMaxWidth()
                 .weight(4f)
         ) {
-            GarmentImage(uiState.editGarment, onOutfits, onClickPicture, onCrop)
+            GarmentImage(uiState.editGarment, onOutfits, onClickPicture, onCrop, isAnalyzing)
         }
 
         Row(
@@ -197,7 +210,7 @@ fun ClothingCard(
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 RemoveBackground(uiState.editGarment.image, isProcessing, onRemoveBackground)
-                AnalyzeGarment(isProcessing, onAnalyze = onAnalyze)
+                AnalyzeGarment(isProcessing, isAnalyzing, onAnalyze = onAnalyze)
             }
         }
 
@@ -252,6 +265,7 @@ fun GarmentImage(
     onOutfits: (Long) -> Unit,
     onClickPicture: (String) -> Unit,
     onCrop: (String) -> Unit,
+    isAnalyzing: Boolean,
     context: Context = LocalContext.current,
 ){
     Row(modifier = Modifier
@@ -287,20 +301,37 @@ fun GarmentImage(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             if (garment.image != null) {
-                AsyncImage(
-                    model = ImageRequest.Builder(context).data(garment.image).build(),
-                    contentDescription = "GarmentImage",
-                    contentScale = ContentScale.Fit,
+                Box (
                     modifier = Modifier
-                        .clip(RoundedCornerShape(10.dp))
-                        .heightIn(max = 300.dp)
-                        .clickable {
-                            garment.image?.let {
-                                onClickPicture(it)
+                        .align(Alignment.CenterHorizontally)
+                ){
+                    var boxHeight by remember { mutableStateOf(0f) }
+                    var boxWidth by remember { mutableStateOf(0f) }
+                    AsyncImage(
+                        model = ImageRequest.Builder(context).data(garment.image).build(),
+                        contentDescription = "GarmentImage",
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(10.dp))
+                            .fillMaxWidth()
+                            .heightIn(max = 300.dp)
+                            .clickable {
+                                garment.image?.let {
+                                    onClickPicture(it)
+                                }
                             }
+                            .onGloballyPositioned { layoutCoordinates ->
+                                // Capture the height of the Box
+                                boxHeight = layoutCoordinates.size.height.toFloat()
+                                boxWidth = layoutCoordinates.size.width.toFloat()
+                            }
+                    )
+                    if(isAnalyzing) {
+                        with(LocalDensity.current) {
+                            ScanningAnimation(boxHeight.toDp(), boxWidth.toDp())
                         }
-                )
-
+                    }
+                }
             } else {
                 CircularProgressIndicator(
                     color = MaterialTheme.colorScheme.secondary,
@@ -357,6 +388,110 @@ fun GarmentImage(
 }
 
 @Composable
+fun ScanningAnimation(targetHeight: Dp = 250.dp, scanWidth: Dp = 100.dp){
+    val infiniteTransition = rememberInfiniteTransition(label = "transition")
+    val verticalOffsetAnimation by infiniteTransition.animateValue(
+        initialValue = 0.dp,
+        targetValue = targetHeight,
+        typeConverter = Dp.VectorConverter,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2000, easing = LinearEasing, delayMillis = 500),
+            repeatMode = RepeatMode.Restart
+        ), label = "transition vertical"
+    )
+
+    val horizontalOffsetAnimation by infiniteTransition.animateValue(
+        initialValue = 0.dp,
+        targetValue = scanWidth,
+        typeConverter = Dp.VectorConverter,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2000, easing = LinearEasing, delayMillis = 500),
+            repeatMode = RepeatMode.Restart
+        ), label = "transition horizonal"
+    )
+
+
+    // Bottom to top scanner
+    val startBottom = targetHeight - verticalOffsetAnimation
+    VerticalScanLine(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = if(startBottom > 10.dp) startBottom - 2.dp else startBottom),
+        scanWidth
+    )
+
+    //Top to bottom scanner
+    VerticalScanLine(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(1.dp)
+            .padding(top = verticalOffsetAnimation),
+        scanWidth
+    )
+
+    //Left to right scanner
+    HorizontalScanLine(
+        modifier = Modifier
+            .fillMaxWidth()
+            .width(1.dp)
+            .padding(start = horizontalOffsetAnimation + 1.dp),
+        targetHeight
+    )
+
+    //Right to left scanner
+    val startRight = scanWidth - horizontalOffsetAnimation
+    HorizontalScanLine(
+        modifier = Modifier
+            .fillMaxWidth()
+            .width(1.dp)
+            .padding(start = if(startRight > 10.dp) startRight - 1.dp else startRight),
+        targetHeight
+    )
+}
+
+@Composable
+fun VerticalScanLine(modifier: Modifier, scanWidth: Dp){
+    Box(
+        modifier = modifier
+    ) {
+        Box(
+            modifier = Modifier
+                .width(scanWidth)
+                .heightIn(3.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(color = Color.Yellow)
+                .graphicsLayer {
+                    shadowElevation = 40.dp.toPx()
+                    shape = RoundedCornerShape(10.dp)
+                    clip = true
+                }
+                .background(color = Color(0x66FFFF00))
+        )
+    }
+}
+
+@Composable
+fun HorizontalScanLine(modifier: Modifier, scanHeight: Dp){
+    Box(
+        modifier = modifier
+    ) {
+        Box(
+            modifier = Modifier
+                .width(3.dp)
+                .heightIn(scanHeight)
+                .clip(RoundedCornerShape(10.dp))
+                .background(color = Color.Yellow)
+                .graphicsLayer {
+                    shadowElevation = 40.dp.toPx()
+                    shape = RoundedCornerShape(10.dp)
+                    clip = true
+                }
+                .background(color = Color(0x66FFFF00))
+        )
+    }
+}
+
+@Composable
 fun RemoveBackground(image: String?, isProcessing: Boolean, onRemoveBackground: (String) ->  Unit) {
     if(!isProcessing){
         Button(
@@ -390,16 +525,34 @@ fun RemoveBackground(image: String?, isProcessing: Boolean, onRemoveBackground: 
 
 
 @Composable
-fun AnalyzeGarment(isProcessing: Boolean, onAnalyze: () -> Unit) {
+fun AnalyzeGarment(isProcessing: Boolean, isAnalyzing: Boolean, onAnalyze: () -> Unit) {
     if(!isProcessing){
-        Button(
-            onClick = { onAnalyze() },
-            colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.onSurface),
-        ) {
-            Text(
-                text = "Auto Complete",
-                style = MaterialTheme.typography.labelMedium,
-            )
+        if(isAnalyzing){
+            Button(
+                onClick = { },
+                colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.onSurface),
+            ) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(18.dp),
+                    color = MaterialTheme.colorScheme.secondary,
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                )
+                Text(
+                    text = "Scanning",
+                    style = MaterialTheme.typography.labelMedium,
+                )
+            }
+        }else {
+            Button(
+                onClick = { onAnalyze() },
+                colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.onSurface),
+            ) {
+                Text(
+                    text = "Auto Complete",
+                    style = MaterialTheme.typography.labelMedium,
+                )
+
+            }
         }
     }
 }

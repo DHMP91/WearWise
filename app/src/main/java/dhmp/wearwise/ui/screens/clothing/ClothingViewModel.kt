@@ -24,10 +24,8 @@ import dhmp.wearwise.data.AIGarmentRepository
 import dhmp.wearwise.data.AIRepository
 import dhmp.wearwise.data.GarmentsRepository
 import dhmp.wearwise.data.UserConfigRepository
-import dhmp.wearwise.model.AISource
 import dhmp.wearwise.model.Category
 import dhmp.wearwise.model.Garment
-import dhmp.wearwise.model.UserConfig
 import dhmp.wearwise.model.nearestColorMatchList
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -67,6 +65,8 @@ class ClothingViewModel(
 
     private val _uiMenuState = MutableStateFlow(ClothingMenuUIState())
     val uiMenuState: StateFlow<ClothingMenuUIState> = _uiMenuState.asStateFlow()
+
+    val analyzing = MutableStateFlow(false)
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val garments: Flow<PagingData<Garment>> = combine(
@@ -331,17 +331,11 @@ class ClothingViewModel(
 
     fun analyzeGarment(id: Long){
         viewModelScope.launch(Dispatchers.IO) {
-            val updateConfig = UserConfig(
-                aiSource = AISource.GOOGLE,
-                aiApiKey = "",
-                aiModelName = "gemini-1.5-flash-latest"
-            )
-
-            userConfigRepository.updateUserConfig(updateConfig)
             val userConfig = userConfigRepository.getUserConfigStream().flowOn(dispatcherIO).firstOrNull()
             userConfig?.let { u ->
                 val aiRepo = AIGarmentRepository()
                 val model: AIRepository? = aiRepo.getModel(u)
+                analyzing.update { true }
                 if (model != null) {
                     try {
                         analyzeByAI(id, model)
@@ -352,6 +346,7 @@ class ClothingViewModel(
                 } else {
                     dumbAnalyze(id)
                 }
+                analyzing.update { false }
             }
         }
     }
@@ -521,6 +516,8 @@ class ClothingViewModel(
             image?.let { img ->
                 model.garmentCategory(bitmap)?.let { c -> it.categoryId = c.id }
                 model.garmentColor(bitmap)?.let { c -> it.color = c.name }
+                model.garmentBrand(bitmap)?.let { b -> it.brand = b }
+                model.garmentOccasion(bitmap)?.let { o -> it.occasion = o }
                 it.categoryId?.let { id ->
                     model.garmentSubCategory(bitmap, id)?.let { c ->
                         it.subCategoryId = c.id

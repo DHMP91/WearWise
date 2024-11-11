@@ -7,6 +7,7 @@ import com.google.ai.client.generativeai.type.content
 import dhmp.wearwise.model.AISource
 import dhmp.wearwise.model.Category
 import dhmp.wearwise.model.ColorName
+import dhmp.wearwise.model.Occasion
 import dhmp.wearwise.model.UserConfig
 import dhmp.wearwise.model.nearestColorMatchList
 
@@ -14,6 +15,8 @@ interface AIRepository {
     suspend fun garmentCategory(bitmap: Bitmap): Category?
     suspend fun garmentSubCategory(bitmap: Bitmap, categoryId: Int): Category?
     suspend fun garmentColor(bitmap: Bitmap): ColorName?
+    suspend fun garmentOccasion(bitmap: Bitmap): Occasion?
+    suspend fun garmentBrand(bitmap: Bitmap): String?
 }
 
 
@@ -77,6 +80,34 @@ class GarmentGeminiRepository(val apiKey: String, val modelName: String) : AIRep
         return colorAns?.let { ans ->
             nearestColorMatchList.find {
                     c -> ans.lowercase().contains(c.name.lowercase())
+            }
+        }
+    }
+
+    override suspend fun garmentOccasion(bitmap: Bitmap): Occasion? {
+        val occasions = Occasion.entries.map { it.name }
+        val occasionQuestion = "This clothing piece is best for which occasion: ${occasions.joinToString(separator = ",")}?"
+        val result = generateImageContent(bitmap, occasionQuestion)
+        val occasionAns = result.text
+
+        return occasionAns?.let { ans ->
+            Occasion.entries.find {
+                    c -> ans.lowercase().contains(c.name.lowercase())
+            }
+        }
+    }
+
+    override suspend fun garmentBrand(bitmap: Bitmap): String? {
+        val noBrand = "None"
+        val brandQuestion = "What's the brand of this clothing piece, if no brand reply \"${noBrand}\"?"
+        val result = generateImageContent(bitmap, brandQuestion)
+        val brandAns = result.text
+
+        return brandAns?.let { ans ->
+            if(brandAns.contains(noBrand)){
+                return null
+            }else{
+                return ans
             }
         }
     }
