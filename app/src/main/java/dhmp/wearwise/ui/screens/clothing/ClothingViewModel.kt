@@ -332,10 +332,10 @@ class ClothingViewModel(
     fun analyzeGarment(id: Long){
         viewModelScope.launch(Dispatchers.IO) {
             val userConfig = userConfigRepository.getUserConfigStream().flowOn(dispatcherIO).firstOrNull()
-            userConfig?.let { u ->
+            analyzing.update { true }
+            if(userConfig != null){
                 val aiRepo = AIGarmentRepository()
-                val model: AIRepository? = aiRepo.getModel(u)
-                analyzing.update { true }
+                val model: AIRepository? = aiRepo.getModel(userConfig)
                 if (model != null) {
                     try {
                         analyzeByAI(id, model)
@@ -343,11 +343,11 @@ class ClothingViewModel(
                         Log.e(tag, e.toString())
                         dumbAnalyze(id)
                     }
-                } else {
-                    dumbAnalyze(id)
                 }
-                analyzing.update { false }
+            }else{
+                dumbAnalyze(id)
             }
+            analyzing.update { false }
         }
     }
 

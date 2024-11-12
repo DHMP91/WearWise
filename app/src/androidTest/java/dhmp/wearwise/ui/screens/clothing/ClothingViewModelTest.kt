@@ -57,6 +57,9 @@ class ClothingViewModelTest {
         context = InstrumentationRegistry.getInstrumentation().targetContext
         mockedGarmentRepo = Mockito.mock(GarmentsRepository::class.java)
         mockedUserConfigRepo = Mockito.mock(UserConfigRepository::class.java)
+        `when`(mockedUserConfigRepo.getUserConfigStream()).thenAnswer {
+            flow { emit(null) }
+        }
         testDispatcher = StandardTestDispatcher()
         model = ClothingViewModel(mockedGarmentRepo, mockedUserConfigRepo)
     }

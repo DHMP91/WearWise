@@ -38,8 +38,12 @@ class UserViewModelTest {
         mockedGarmentRepo = Mockito.mock(GarmentsRepository::class.java)
         mockedOutfitRepo = Mockito.mock(OutfitsRepository::class.java)
         mockedUserConfigRepo = Mockito.mock(UserConfigRepository::class.java)
+        Mockito.`when`(mockedUserConfigRepo.getUserConfigStream()).thenAnswer {
+            flow { emit(null) }
+        }
         testDispatcher = StandardTestDispatcher()
         model = UserViewModel(mockedGarmentRepo, mockedOutfitRepo, mockedUserConfigRepo)
+
     }
 
 //    @Test

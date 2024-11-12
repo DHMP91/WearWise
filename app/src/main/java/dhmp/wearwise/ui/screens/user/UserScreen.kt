@@ -112,16 +112,14 @@ fun UserScreenContent(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.End
         ){
-            Box (modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 10.dp)
+            Row (modifier = Modifier
                 .clickable { onConfig() }
             ) {
                 Icon(Icons.Filled.Settings, "User Settings")
             }
-            Box (modifier = Modifier
+            Row (modifier = Modifier
+                .padding(vertical = 2.dp)
                 .fillMaxWidth()
-                .padding(vertical = 10.dp)
             ) {
                 UserConfigSlideOut(showConfig, userConfig, onSaveUserConfig)
             }
