@@ -23,6 +23,7 @@ import androidx.core.net.toUri
 import androidx.test.platform.app.InstrumentationRegistry
 import dhmp.wearwise.data.GarmentsRepository
 import dhmp.wearwise.data.OutfitsRepository
+import dhmp.wearwise.data.UserConfigRepository
 import dhmp.wearwise.model.Category
 import dhmp.wearwise.model.Garment
 import dhmp.wearwise.model.Outfit
@@ -53,6 +54,7 @@ import kotlin.time.Duration.Companion.minutes
 class OutfitBuilderScreenTest: UITest() {
     private lateinit var mockedGarmentRepo: GarmentsRepository
     private lateinit var mockedOutfitRepo: OutfitsRepository
+    private lateinit var mockedUserConfigRepo: UserConfigRepository
     private lateinit var context: Context
     private lateinit var clothingModel: ClothingViewModel
     private lateinit var model: OutfitViewModel
@@ -68,7 +70,8 @@ class OutfitBuilderScreenTest: UITest() {
         context = InstrumentationRegistry.getInstrumentation().targetContext
         mockedGarmentRepo = Mockito.mock(GarmentsRepository::class.java)
         mockedOutfitRepo = Mockito.mock(OutfitsRepository::class.java)
-        clothingModel = ClothingViewModel(mockedGarmentRepo)
+        mockedUserConfigRepo = Mockito.mock(UserConfigRepository::class.java)
+        clothingModel = ClothingViewModel(mockedGarmentRepo, mockedUserConfigRepo)
         model = OutfitViewModel(mockedGarmentRepo, mockedOutfitRepo)
         fakeOutfitImage = fakeImage(context, "test_outfitbuilder.png")
         fakeImage = fakeImage(context, "test_outfitBuilder.png")
@@ -106,7 +109,7 @@ class OutfitBuilderScreenTest: UITest() {
     fun outfitBuilder_removeSelectedGarments() = runTest(timeout = 5.minutes){
         val mockedGarmentRepo = Mockito.mock(GarmentsRepository::class.java)
         val mockedOutfitRepo = Mockito.mock(OutfitsRepository::class.java)
-        val clothingModel = ClothingViewModel(mockedGarmentRepo)
+        val clothingModel = ClothingViewModel(mockedGarmentRepo, mockedUserConfigRepo)
         val model = OutfitViewModel(mockedGarmentRepo, mockedOutfitRepo)
 
         Mockito.`when`(mockedGarmentRepo.updateGarment(any())).thenAnswer{}
@@ -143,7 +146,7 @@ class OutfitBuilderScreenTest: UITest() {
     fun outfitBuilder_saveNoChanges() = runTest(timeout = 5.minutes){
         val mockedGarmentRepo = Mockito.mock(GarmentsRepository::class.java)
         val mockedOutfitRepo = Mockito.mock(OutfitsRepository::class.java)
-        val clothingModel = ClothingViewModel(mockedGarmentRepo)
+        val clothingModel = ClothingViewModel(mockedGarmentRepo, mockedUserConfigRepo)
         val model = OutfitViewModel(mockedGarmentRepo, mockedOutfitRepo)
 
         Mockito.`when`(mockedGarmentRepo.updateGarment(any())).thenAnswer{}
@@ -169,7 +172,7 @@ class OutfitBuilderScreenTest: UITest() {
     fun outfitBuilder_addSelectedGarments() = runTest(timeout = 5.minutes){
         val mockedGarmentRepo = Mockito.mock(GarmentsRepository::class.java)
         val mockedOutfitRepo = Mockito.mock(OutfitsRepository::class.java)
-        val clothingModel = ClothingViewModel(mockedGarmentRepo)
+        val clothingModel = ClothingViewModel(mockedGarmentRepo, mockedUserConfigRepo)
         val model = OutfitViewModel(mockedGarmentRepo, mockedOutfitRepo)
 
         Mockito.`when`(mockedGarmentRepo.updateGarment(any())).thenAnswer{}
@@ -261,7 +264,7 @@ class OutfitBuilderScreenTest: UITest() {
     fun outfitBuilder_setSeason() = runTest(timeout = 5.minutes){
         val mockedGarmentRepo = Mockito.mock(GarmentsRepository::class.java)
         val mockedOutfitRepo = Mockito.mock(OutfitsRepository::class.java)
-        val clothingModel = ClothingViewModel(mockedGarmentRepo)
+        val clothingModel = ClothingViewModel(mockedGarmentRepo, mockedUserConfigRepo)
         val model = OutfitViewModel(mockedGarmentRepo, mockedOutfitRepo)
 
         Mockito.`when`(mockedGarmentRepo.updateGarment(any())).thenAnswer{}

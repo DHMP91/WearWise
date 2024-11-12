@@ -8,6 +8,7 @@ import androidx.core.net.toUri
 import androidx.paging.testing.asSnapshot
 import androidx.test.platform.app.InstrumentationRegistry
 import dhmp.wearwise.data.GarmentsRepository
+import dhmp.wearwise.data.UserConfigRepository
 import dhmp.wearwise.model.Category
 import dhmp.wearwise.model.Garment
 import dhmp.wearwise.ui.screens.FakePagingSource
@@ -42,6 +43,7 @@ class ClothingViewModelTest {
     @Captor
     private lateinit var updateGarmentCaptor: ArgumentCaptor<Garment>
     private lateinit var mockedGarmentRepo: GarmentsRepository
+    private lateinit var mockedUserConfigRepo: UserConfigRepository
     private lateinit var context: Context
     private lateinit var model: ClothingViewModel
     private lateinit var testDispatcher: CoroutineDispatcher
@@ -54,8 +56,9 @@ class ClothingViewModelTest {
     fun setup() {
         context = InstrumentationRegistry.getInstrumentation().targetContext
         mockedGarmentRepo = Mockito.mock(GarmentsRepository::class.java)
+        mockedUserConfigRepo = Mockito.mock(UserConfigRepository::class.java)
         testDispatcher = StandardTestDispatcher()
-        model = ClothingViewModel(mockedGarmentRepo)
+        model = ClothingViewModel(mockedGarmentRepo, mockedUserConfigRepo)
     }
 
     @Test
@@ -312,7 +315,7 @@ class ClothingViewModelTest {
     @Test
     fun deleteGarment() {
         val fakedFiles = mutableListOf<File>()
-        val model = ClothingViewModel(mockedGarmentRepo, testDispatcher)
+        val model = ClothingViewModel(mockedGarmentRepo, mockedUserConfigRepo, testDispatcher)
         repeat(5) {
             val fileName = "test_analyzeGarment_deleteGarment_${it}.png"
             val file = fakeImage(context, fileName)
@@ -346,7 +349,7 @@ class ClothingViewModelTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun collectBrands(){
-        val model = ClothingViewModel(mockedGarmentRepo, testDispatcher)
+        val model = ClothingViewModel(mockedGarmentRepo, mockedUserConfigRepo, testDispatcher)
         val brands = listOf("Brand1", "Brand2", "Brand3")
         runTest(testDispatcher) {
             `when`(mockedGarmentRepo.getBrands()).thenAnswer {

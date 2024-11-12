@@ -12,7 +12,7 @@ enum class AISource {
 data class UserConfig(
     @PrimaryKey
     val id: Int = 1,
-    @ColumnInfo(name = "AISource") var aiSource: AISource,
+    @ColumnInfo(name = "AISource") var aiSource: AISource?,
     @ColumnInfo(name = "AIModelName") var aiModelName: String,
     @ColumnInfo(name = "AIApiKey") var aiApiKey: String
 )

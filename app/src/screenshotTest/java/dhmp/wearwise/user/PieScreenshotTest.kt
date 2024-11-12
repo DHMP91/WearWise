@@ -7,7 +7,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
+import dhmp.wearwise.model.AISource
 import dhmp.wearwise.model.GarmentColorNames
+import dhmp.wearwise.model.UserConfig
 import dhmp.wearwise.ui.screens.user.UserScreenContent
 import dhmp.wearwise.ui.theme.WearWiseTheme
 
@@ -75,7 +77,11 @@ class PieScreenshotTest {
                         fakeDataTwoRow,
                         fakeDataThreeRow,
                         fakeDataOneRow,
-                        fakeColors
+                        fakeColors,
+                        {},
+                        false,
+                        UserConfig(-1, AISource.GOOGLE, "", ""),
+                        { _ -> }
                     )
                 }
             }

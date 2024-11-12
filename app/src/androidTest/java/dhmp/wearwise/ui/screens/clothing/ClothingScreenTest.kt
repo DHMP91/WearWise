@@ -19,6 +19,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import dhmp.wearwise.App
 import dhmp.wearwise.R
 import dhmp.wearwise.data.GarmentsRepository
+import dhmp.wearwise.data.UserConfigRepository
 import dhmp.wearwise.model.Category
 import dhmp.wearwise.model.Garment
 import dhmp.wearwise.model.GarmentColorNames
@@ -42,6 +43,7 @@ import kotlin.time.Duration.Companion.minutes
 
 class ClothingScreenUITest: UITest() {
     private lateinit var mockedGarmentRepo: GarmentsRepository
+    private lateinit var mockedUserConfigRepo: UserConfigRepository
     private lateinit var context: Context
     private lateinit var model: ClothingViewModel
     private val clothingTitle = "Clothing"
@@ -51,7 +53,8 @@ class ClothingScreenUITest: UITest() {
     fun setup() {
         context = InstrumentationRegistry.getInstrumentation().targetContext
         mockedGarmentRepo = Mockito.mock(GarmentsRepository::class.java)
-        model = ClothingViewModel(mockedGarmentRepo)
+        mockedUserConfigRepo = Mockito.mock(UserConfigRepository::class.java)
+        model = ClothingViewModel(mockedGarmentRepo, mockedUserConfigRepo)
     }
 
 

@@ -2,24 +2,43 @@ package dhmp.wearwise.ui.screens.user
 
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import dhmp.wearwise.data.GarmentsRepository
 import dhmp.wearwise.data.OutfitsRepository
+import dhmp.wearwise.data.UserConfigRepository
+import dhmp.wearwise.model.AISource
 import dhmp.wearwise.model.CategoryCount
 import dhmp.wearwise.model.ColorCount
 import dhmp.wearwise.model.GarmentColorNameTable
 import dhmp.wearwise.model.OccasionCount
 import dhmp.wearwise.model.SeasonCount
+import dhmp.wearwise.model.UserConfig
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 class UserViewModel (
     private val garmentRepository: GarmentsRepository,
     private val outfitsRepository: OutfitsRepository,
+    private val userConfigRepository: UserConfigRepository,
     private val dispatcherIO: CoroutineDispatcher = Dispatchers.IO
 ): ViewModel() {
+    private val _userConfig: MutableStateFlow<UserConfig> = MutableStateFlow(UserConfig(-1, AISource.GOOGLE, "", ""))
+    val userConfig: StateFlow<UserConfig> = _userConfig.asStateFlow()
 
+    val showConfig = MutableStateFlow(false)
+
+    init {
+        getUserConfig()
+    }
     fun garmentCount(): Flow<Int> = garmentRepository.getGarmentsCount(
         excludedCategories = listOf(),
         excludedColors =  listOf(),
@@ -69,5 +88,31 @@ class UserViewModel (
         }
 
         return colorPalette
+    }
+
+    fun toggleConfig(){
+        showConfig.update {
+            !showConfig.value
+        }
+    }
+    fun updateConfig(userConfig: UserConfig) {
+        viewModelScope.launch(dispatcherIO) {
+            userConfigRepository.updateUserConfig(userConfig)
+            _userConfig.update {
+                userConfig
+            }
+        }
+    }
+
+    private fun getUserConfig(){
+        viewModelScope.launch(dispatcherIO) {
+            userConfigRepository.getUserConfigStream().flowOn(dispatcherIO).collectLatest { config ->
+                config?.let {
+                    _userConfig.update {
+                        config
+                    }
+                }
+            }
+        }
     }
 }

@@ -71,6 +71,7 @@ import dhmp.wearwise.model.GarmentColorNameTable
 import dhmp.wearwise.model.GarmentColorNames
 import dhmp.wearwise.model.Occasion
 import dhmp.wearwise.ui.AppViewModelProvider
+import dhmp.wearwise.ui.screens.common.DropdownMenu
 import dhmp.wearwise.ui.screens.common.DropdownMenuEditable
 import dhmp.wearwise.ui.screens.common.ScreenTitle
 import dhmp.wearwise.ui.screens.common.TestTag
@@ -606,7 +607,7 @@ fun ClothingInfo(
             garment.color = name
             onStoreChanges(garment)
         }
-        dhmp.wearwise.ui.screens.common.DropdownMenu(
+        DropdownMenu(
             "Color",
             colorNames,
             garment.color,
@@ -626,7 +627,7 @@ fun ClothingInfo(
             onStoreChanges(garment)
         }
         val occasions = Occasion.entries.map { it.name }
-        dhmp.wearwise.ui.screens.common.DropdownMenu(
+        DropdownMenu(
             "Occasion",
             occasions,
             garment.occasion?.name,

@@ -5,6 +5,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.test.platform.app.InstrumentationRegistry
 import dhmp.wearwise.data.GarmentsRepository
 import dhmp.wearwise.data.OutfitsRepository
+import dhmp.wearwise.data.UserConfigRepository
 import dhmp.wearwise.model.CategoryCount
 import dhmp.wearwise.model.ColorCount
 import dhmp.wearwise.model.GarmentColorNames
@@ -25,6 +26,7 @@ import org.mockito.Mockito
 class UserViewModelTest {
     private lateinit var mockedGarmentRepo: GarmentsRepository
     private lateinit var mockedOutfitRepo: OutfitsRepository
+    private lateinit var mockedUserConfigRepo: UserConfigRepository
     private lateinit var context: Context
     private lateinit var model: UserViewModel
     private lateinit var testDispatcher: CoroutineDispatcher
@@ -35,8 +37,9 @@ class UserViewModelTest {
         context = InstrumentationRegistry.getInstrumentation().targetContext
         mockedGarmentRepo = Mockito.mock(GarmentsRepository::class.java)
         mockedOutfitRepo = Mockito.mock(OutfitsRepository::class.java)
+        mockedUserConfigRepo = Mockito.mock(UserConfigRepository::class.java)
         testDispatcher = StandardTestDispatcher()
-        model = UserViewModel(mockedGarmentRepo, mockedOutfitRepo)
+        model = UserViewModel(mockedGarmentRepo, mockedOutfitRepo, mockedUserConfigRepo)
     }
 
 //    @Test

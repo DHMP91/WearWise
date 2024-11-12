@@ -16,6 +16,7 @@ import dhmp.wearwise.App
 import dhmp.wearwise.R
 import dhmp.wearwise.data.GarmentsRepository
 import dhmp.wearwise.data.OutfitsRepository
+import dhmp.wearwise.data.UserConfigRepository
 import dhmp.wearwise.model.Category
 import dhmp.wearwise.model.Garment
 import dhmp.wearwise.model.Outfit
@@ -41,6 +42,7 @@ import org.mockito.kotlin.verify
 class OutfitScreenTest: UITest() {
     private lateinit var mockedGarmentRepo: GarmentsRepository
     private lateinit var mockedOutfitRepo: OutfitsRepository
+    private lateinit var mockedUserConfigRepo: UserConfigRepository
     private lateinit var context: Context
     private lateinit var model: OutfitViewModel
     private lateinit var clothingViewModel: ClothingViewModel
@@ -50,8 +52,9 @@ class OutfitScreenTest: UITest() {
         context = InstrumentationRegistry.getInstrumentation().targetContext
         mockedGarmentRepo = Mockito.mock(GarmentsRepository::class.java)
         mockedOutfitRepo = Mockito.mock(OutfitsRepository::class.java)
+        mockedUserConfigRepo = Mockito.mock(UserConfigRepository::class.java)
         model = OutfitViewModel(mockedGarmentRepo, mockedOutfitRepo)
-        clothingViewModel =  ClothingViewModel(mockedGarmentRepo)
+        clothingViewModel =  ClothingViewModel(mockedGarmentRepo, mockedUserConfigRepo)
     }
 
     @Test

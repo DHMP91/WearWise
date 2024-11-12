@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 11,
-    "identityHash": "48dfb64908a2bc25ad8294899cc8dc49",
+    "identityHash": "4c7106ecd530407c4726a1aaf93404c8",
     "entities": [
       {
         "tableName": "Garments",
@@ -184,7 +184,7 @@
       },
       {
         "tableName": "UserConfig",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `AISource` TEXT NOT NULL, `AIModelName` TEXT NOT NULL, `AIApiKey` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `AISource` TEXT, `AIModelName` TEXT NOT NULL, `AIApiKey` TEXT NOT NULL, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -196,7 +196,7 @@
             "fieldPath": "aiSource",
             "columnName": "AISource",
             "affinity": "TEXT",
-            "notNull": true
+            "notNull": false
           },
           {
             "fieldPath": "aiModelName",
@@ -224,7 +224,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '48dfb64908a2bc25ad8294899cc8dc49')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '4c7106ecd530407c4726a1aaf93404c8')"
     ]
   }
 }

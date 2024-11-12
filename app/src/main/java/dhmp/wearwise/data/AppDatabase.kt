@@ -164,10 +164,5 @@ val MIGRATION_10_11 = object : Migration(10, 11) {
                 `AIApiKey` TEXT NOT NULL
             )
         """)
-
-        db.execSQL("""
-            INSERT INTO `UserConfig` (`AISource`, `AIModelName`, `AIApiKey`) 
-            VALUES ('', '', '')
-        """)
     }
 }
