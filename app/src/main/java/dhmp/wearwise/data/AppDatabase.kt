@@ -33,6 +33,7 @@ import dhmp.wearwise.model.UserConfigDao
         AutoMigration(from = 4, to = 5),
         AutoMigration(from = 6, to = 7),
         AutoMigration(from = 8, to = 9),
+        AutoMigration(from = 10, to = 11),
     ]
 )
 @TypeConverters(Converters::class)
@@ -54,8 +55,7 @@ abstract class AppDatabase : RoomDatabase() {
                         MIGRATION_3_4,
                         MIGRATION_5_6,
                         MIGRATION_7_8,
-                        MIGRATION_9_10,
-                        MIGRATION_10_11
+                        MIGRATION_9_10
                     )
                     .build().also {
                         Instance = it
@@ -150,19 +150,5 @@ val MIGRATION_9_10 = object : Migration(9, 10) {
     override fun migrate(db: SupportSQLiteDatabase) {
         // Create the new table if it doesn't exist
         db.execSQL("ALTER TABLE Garments ADD COLUMN subCategoryId INTEGER")
-    }
-}
-
-val MIGRATION_10_11 = object : Migration(10, 11) {
-    override fun migrate(db: SupportSQLiteDatabase) {
-        // Create the new table if it doesn't exist
-        db.execSQL("""
-            CREATE TABLE IF NOT EXISTS `UserConfig` (
-                `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-                `AISource` TEXT NOT NULL,
-                `AIModelName` TEXT NOT NULL,
-                `AIApiKey` TEXT NOT NULL
-            )
-        """)
     }
 }

@@ -90,13 +90,18 @@ class OutfitBuilderScreenTest: UITest() {
     fun outfitBuilder_default() = runTest(timeout = 5.minutes){
         base()
         verifyScreenTitle("Outfit #${outfitId}")
+
+        //Validate display of outfit action buttons
         composeTestRule.onNode(hasContentDescriptionExactly("Delete Outfit")).assertIsDisplayed()
         composeTestRule.onNode(hasContentDescriptionExactly("Crop Image")).assertIsDisplayed()
         composeTestRule.onNode(hasContentDescriptionExactly("Retake Image")).assertIsDisplayed()
         composeTestRule.onNode(hasText("Save")).assertIsDisplayed()
+
+        //Validate outfit selected garment is displayed
         val selectedGarmentsCount = composeTestRule.onAllNodes(hasTestTag(TestTag.SELECTED_GARMENT)).fetchSemanticsNodes().size
         Assert.assertEquals(fakeOutfit.garmentsId.size, selectedGarmentsCount)
 
+        //Validate the garment are categorized in outfit screen
         for(c in Category.categories()) {
             val categorizedGarmentsCount =
                 composeTestRule.onAllNodes(hasTestTag("${TestTag.CATEGORIZED_GARMENT_PREFIX}${c.id}")).fetchSemanticsNodes().size
@@ -123,6 +128,7 @@ class OutfitBuilderScreenTest: UITest() {
         val selectedGarmentsCount = {
             composeTestRule.onAllNodes(hasTestTag(TestTag.SELECTED_GARMENT)).fetchSemanticsNodes().size
         }
+        //Remove all garments from outfit
         while(selectedGarmentsCount() > 0) {
             composeTestRule.onAllNodes(
                 hasContentDescription("Remove From Outfit")
@@ -130,9 +136,13 @@ class OutfitBuilderScreenTest: UITest() {
             ).onFirst().performClick()
             composeTestRule.waitForIdle()
         }
+
+        //Validate no garment is displayed
         Assert.assertEquals(0, selectedGarmentsCount())
         composeTestRule.onNode(hasText("Save")).performClick()
         composeTestRule.waitForIdle()
+
+        //Validate call to model is correct on save
         verify(mockedGarmentRepo, times(3)).updateGarment(
             any()
         )
@@ -157,6 +167,7 @@ class OutfitBuilderScreenTest: UITest() {
             composeTestRule.onNode(hasText("Save")).isDisplayed()
         }
 
+        //Validate that no call to model when clicking save with no changes
         composeTestRule.onNode(hasText("Save")).performClick()
         composeTestRule.waitForIdle()
         verify(mockedGarmentRepo, times(0)).updateGarment(
@@ -190,6 +201,7 @@ class OutfitBuilderScreenTest: UITest() {
         composeTestRule.waitForIdle()
         composeTestRule.onAllNodes(hasTestTag("${TestTag.CATEGORIZED_GARMENT_PREFIX}${category.id}")).onFirst().performClick()
 
+        //Validate proper call to model on new garment
         delay(1000)
         composeTestRule.onNode(hasText("Save")).performClick()
         composeTestRule.waitForIdle()
@@ -207,6 +219,8 @@ class OutfitBuilderScreenTest: UITest() {
     fun outfitBuilder_garmentCategoryScroll() = runTest(timeout = 5.minutes){
         base()
         var lastCategory: String? = null
+
+        //Test the ability to exercise each category and scrolling on garments
         for(c in Category.categories()) {
             val categoryNode =  composeTestRule.onNode(hasText("${c.name} ($garmentsPerCategory)"))
             if(lastCategory != null)
@@ -276,7 +290,7 @@ class OutfitBuilderScreenTest: UITest() {
         }
         composeTestRule.onNode(hasTestTag(TestTag.SAVE_BUTTON_DISABLED)).assertIsDisplayed()
 
-        //Season
+        //Set Season on outfit
         val selectSeason = Season.entries.first()
         composeTestRule.onNode(hasTestTag("${TestTag.DROPDOWN_MENU_PREFIX}Season"))
             .performClick()
@@ -288,12 +302,14 @@ class OutfitBuilderScreenTest: UITest() {
         composeTestRule.waitUntil { composeTestRule.onNode(hasTestTag(TestTag.SAVE_BUTTON_ENABLED)).isDisplayed() }
         composeTestRule.onNode(hasText("Save")).performClick()
         composeTestRule.waitForIdle()
+
+        // Validate call on outfit update
         verify(mockedOutfitRepo, times(1)).updateOutfit(
             any()
         )
     }
 
-    private suspend fun base(
+    private fun base(
         mockedOutfitRepo: OutfitsRepository = this.mockedOutfitRepo,
         mockedGarmentRepo: GarmentsRepository = this.mockedGarmentRepo,
         outfitViewModel: OutfitViewModel = model,
@@ -376,7 +392,4 @@ class OutfitBuilderScreenTest: UITest() {
             }
         }
     }
-
-    // Test outfit image processing
-
 }

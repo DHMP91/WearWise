@@ -33,7 +33,6 @@ class UserViewModel (
 ): ViewModel() {
     private val _userConfig: MutableStateFlow<UserConfig> = MutableStateFlow(UserConfig(-1, AISource.GOOGLE, "", ""))
     val userConfig: StateFlow<UserConfig> = _userConfig.asStateFlow()
-
     val showConfig = MutableStateFlow(false)
 
     init {
@@ -101,6 +100,13 @@ class UserViewModel (
             _userConfig.update {
                 userConfig
             }
+        }
+    }
+
+    fun getAIModels(source: AISource): List<String>? {
+        return when(source){
+            AISource.GOOGLE -> listOf("gemini-1.5-flash-latest")
+            else -> null
         }
     }
 

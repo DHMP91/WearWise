@@ -43,6 +43,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -50,6 +51,7 @@ import dhmp.wearwise.model.AISource
 import dhmp.wearwise.model.UserConfig
 import dhmp.wearwise.ui.AppViewModelProvider
 import dhmp.wearwise.ui.screens.common.DropdownMenu
+import dhmp.wearwise.ui.screens.common.TestTag
 
 //More info on Pie chart code:
 // https://medium.com/@developerchunk/create-custom-pie-chart-with-animations-in-jetpack-compose-android-studio-kotlin-49cf95ef321e
@@ -81,7 +83,8 @@ fun UserScreen(
         userViewModel::toggleConfig,
         showConfig,
         userConfig,
-        onSaveUserConfig
+        onSaveUserConfig,
+        userViewModel::getAIModels
     )
 }
 
@@ -98,7 +101,8 @@ fun UserScreenContent(
     onConfig: () -> Unit,
     showConfig: Boolean,
     userConfig: UserConfig,
-    onSaveUserConfig: (UserConfig) -> Unit
+    onSaveUserConfig: (UserConfig) -> Unit,
+    onGetAIModel: (AISource) -> List<String>?
 ){
 
     Column(
@@ -121,7 +125,7 @@ fun UserScreenContent(
                 .padding(vertical = 2.dp)
                 .fillMaxWidth()
             ) {
-                UserConfigSlideOut(showConfig, userConfig, onSaveUserConfig)
+                UserConfigSlideOut(showConfig, userConfig, onSaveUserConfig, onGetAIModel)
             }
         }
 
@@ -256,6 +260,7 @@ fun UserConfigSlideOut(
     showConfig: Boolean,
     userConfig: UserConfig,
     onSaveUserConfig: (UserConfig) ->  Unit,
+    onGetAIModel: (AISource) -> List<String>?
 ){
     val density = LocalDensity.current
     val comingSoon = listOf(AISource.OPENAI)
@@ -313,36 +318,43 @@ fun UserConfigSlideOut(
                     if(comingSoon.contains(aiSource)) "${sourceFieldValue}${comingSoonPrefix}" else sourceFieldValue,
                     onSourceChange
                 )
-                if(!comingSoon.contains(aiSource)) {
-                    if (aiSource == AISource.GOOGLE) {
+                aiSource?.let { source ->
+                    val models = onGetAIModel(source)
+                    models?.let {
                         DropdownMenu(
                             "AI Model",
-                            listOf("gemini-1.5-flash-latest"),
+                            models,
                             userConfig.aiModelName,
                             { model ->
                                 aiModel = model
                             }
                         )
-                    }
-                    OutlinedTextField(
-                        value = apiKey,
-                        onValueChange = {
-                           apiKey = it
-                        },
-                        label = { Text("AI API Key") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Button(
-                        onClick = {
-                            userConfig.aiSource = aiSource
-                            userConfig.aiModelName = aiModel
-                            userConfig.aiApiKey = apiKey
-                            onSaveUserConfig(userConfig)
+                        OutlinedTextField(
+                            value = apiKey,
+                            onValueChange = {
+                                apiKey = it
+                            },
+                            label = { Text("AI API Key") },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .testTag(TestTag.AI_API_KEY_INPUT)
+                        )
+                        Button(
+                            onClick = {
+                                userConfig.aiSource = aiSource
+                                userConfig.aiModelName = aiModel
+                                userConfig.aiApiKey = apiKey
+                                onSaveUserConfig(userConfig)
+                            },
+                            modifier = Modifier
+                                .testTag(TestTag.CONFIG_SAVE_BUTTON)
+                        ) {
+                            Text("Save")
                         }
-                    ) {
-                        Text("Save")
                     }
                 }
+
+
             }
         }
     }

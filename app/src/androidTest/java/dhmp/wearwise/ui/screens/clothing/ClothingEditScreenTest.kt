@@ -96,11 +96,14 @@ class ClothingEditScreenTest : UITest()  {
         composeTestRule.waitUntil(5000L) {
             composeTestRule.onNode(hasText(category.name)).isDisplayed()
         }
+
+        //Validate display of clothing info
         Assert.assertTrue(composeTestRule.onNode(hasContentDescriptionExactly("GarmentImage")).isDisplayed())
         Assert.assertTrue(composeTestRule.onNode(hasText(subCategory!!.name)).isDisplayed())
         Assert.assertTrue(composeTestRule.onNode(hasText(color)).isDisplayed())
         Assert.assertTrue(composeTestRule.onNode(hasText(occasion.name)).isDisplayed())
 
+        //Validate relationship count with outfits
         val firstOutfitCountNode = composeTestRule.onAllNodes(hasTestTag(TestTag.OUTFIT_COUNT), useUnmergedTree = true).fetchSemanticsNodes()[0]
         var text: String? = null
         for(node in firstOutfitCountNode.children){
@@ -147,7 +150,7 @@ class ClothingEditScreenTest : UITest()  {
             Assert.assertTrue(composeTestRule.onNode(hasText(label)).isDisplayed())
         }
 
-        //Categpry
+        //Category
         composeTestRule.onNode(hasTestTag("${TestTag.DROPDOWN_MENU_PREFIX}Category")).performClick()
         for(c in categories){
             if(!composeTestRule.onNode(hasText(c.name)).isDisplayed()){
@@ -240,8 +243,11 @@ class ClothingEditScreenTest : UITest()  {
             }
         }
 
+        //Click delete clothing icon
         composeTestRule.onNode(hasContentDescriptionExactly("Delete Clothing")).performClick()
         composeTestRule.waitForIdle()
+
+        //Validate call to view model
         verify(mockedGarmentRepo, times(1)).deleteGarment(
             fakedGarment
         )
