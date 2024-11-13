@@ -8,6 +8,16 @@ Features:
 - Build outfits based on your inventory of clothing.
 - Track which outfits include specific clothing items.
 - Easily filter through the list of clothing items to find what you're looking for.
+- Use AI to autofill fields for quicker clothing logging.
+
+## v2 AI Integration for Autocomplete
+https://github.com/user-attachments/assets/6e6711c8-0c7f-4b8c-81b7-7dc37f8f8392
+
+<img src="https://github.com/user-attachments/assets/5179f7e3-0cfd-483b-a62d-6ce23d854506" width="300">
+
+User can now leverage AI to make the autocomplete feature much more powerful. 
+Performance of autocomplete is highly dependent on configured AI and AI models. 
+
 
 ## Screenshots for clothing management
 <p align="left">
