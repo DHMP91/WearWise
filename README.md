@@ -1,4 +1,4 @@
-# Inspration
+# Inspiration?
 I’ve always wanted to build a native Android app that I’d actually use myself. 
 Over time, I realized I needed a tool to log my clothing and track my outfits. 
 While there are existing options, I decided to dive in and create my own without exploring what’s already out there. 
