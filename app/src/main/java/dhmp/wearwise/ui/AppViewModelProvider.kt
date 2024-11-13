@@ -14,6 +14,7 @@ object AppViewModelProvider {
         initializer {
             ClothingViewModel(
                 wearWiseApplication().container.garmentsRespository,
+                wearWiseApplication().container.userConfigRepository,
             )
         }
     }
@@ -31,7 +32,8 @@ object AppViewModelProvider {
         initializer {
             UserViewModel(
                 wearWiseApplication().container.garmentsRespository,
-                wearWiseApplication().container.outfitsRepository
+                wearWiseApplication().container.outfitsRepository,
+                wearWiseApplication().container.userConfigRepository,
             )
         }
     }

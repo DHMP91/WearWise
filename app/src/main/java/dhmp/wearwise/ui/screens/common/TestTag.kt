@@ -6,6 +6,10 @@ object TestTag {
 
     //Common
     val SCREEN_TITLE = randomUUIDStr()
+    val DROPDOWN_MENU_PREFIX = "DROPDOWN_MENU_"
+    val SAVE_BUTTON_ENABLED = randomUUIDStr()
+    val SAVE_BUTTON_DISABLED = randomUUIDStr()
+    val RESULT_COUNT = randomUUIDStr()
 
 
     //BottomBar
@@ -25,13 +29,6 @@ object TestTag {
     val FILTER_ROW_PREFIX = "FILTER_ROW_"
     val MAIN_MENU = randomUUIDStr()
 
-
-    //Common
-    val DROPDOWN_MENU_PREFIX = "DROPDOWN_MENU_"
-    val SAVE_BUTTON_ENABLED = randomUUIDStr()
-    val SAVE_BUTTON_DISABLED = randomUUIDStr()
-    val RESULT_COUNT = randomUUIDStr()
-
     //Outfit
     val NEW_OUTFIT_BUTTON = randomUUIDStr()
     val OUTFIT_CARD = randomUUIDStr()
@@ -46,6 +43,10 @@ object TestTag {
     val CAMERA_TAKE_ICON = randomUUIDStr()
     val USE_CAMERA_SELECTION = randomUUIDStr()
     val USE_GALLERY_SELECTION = randomUUIDStr()
+
+    //User Screen
+    val AI_API_KEY_INPUT = randomUUIDStr()
+    val CONFIG_SAVE_BUTTON = randomUUIDStr()
 
     private fun randomUUIDStr(): String {
         return UUID.randomUUID().toString()

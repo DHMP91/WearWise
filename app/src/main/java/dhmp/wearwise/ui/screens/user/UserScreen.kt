@@ -1,8 +1,16 @@
 package dhmp.wearwise.ui.screens.user
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,24 +22,36 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import dhmp.wearwise.model.AISource
+import dhmp.wearwise.model.UserConfig
 import dhmp.wearwise.ui.AppViewModelProvider
+import dhmp.wearwise.ui.screens.common.DropdownMenu
+import dhmp.wearwise.ui.screens.common.TestTag
 
 //More info on Pie chart code:
 // https://medium.com/@developerchunk/create-custom-pie-chart-with-animations-in-jetpack-compose-android-studio-kotlin-49cf95ef321e
@@ -47,7 +67,11 @@ fun UserScreen(
     val occasionData by userViewModel.occasionCount().collectAsState(initial = mapOf())
     val outfitSeasonData by userViewModel.outfitSeasonCount().collectAsState(initial = mapOf())
     val clothingColors = userViewModel.getColorPalette(colorData.keys.toList())
-
+    val userConfig by userViewModel.userConfig.collectAsState()
+    val showConfig by userViewModel.showConfig.collectAsState()
+    val onSaveUserConfig = { config: UserConfig ->
+        userViewModel.updateConfig(config)
+    }
     UserScreenContent(
         garmentCount,
         outfitCount,
@@ -55,7 +79,12 @@ fun UserScreen(
         categoryData,
         occasionData,
         outfitSeasonData,
-        clothingColors
+        clothingColors,
+        userViewModel::toggleConfig,
+        showConfig,
+        userConfig,
+        onSaveUserConfig,
+        userViewModel::getAIModels
     )
 }
 
@@ -68,13 +97,38 @@ fun UserScreenContent(
     categoryData: Map<String? , Int>,
     occasionData: Map<String? , Int>,
     outfitSeasonData: Map<String? , Int>,
-    clothingColors: List<Color>
+    clothingColors: List<Color>,
+    onConfig: () -> Unit,
+    showConfig: Boolean,
+    userConfig: UserConfig,
+    onSaveUserConfig: (UserConfig) -> Unit,
+    onGetAIModel: (AISource) -> List<String>?
 ){
 
     Column(
         modifier = Modifier
             .verticalScroll(rememberScrollState())
     ) {
+
+        Column( modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 5.dp, horizontal = 10.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.End
+        ){
+            Row (modifier = Modifier
+                .clickable { onConfig() }
+            ) {
+                Icon(Icons.Filled.Settings, "User Settings")
+            }
+            Row (modifier = Modifier
+                .padding(vertical = 2.dp)
+                .fillMaxWidth()
+            ) {
+                UserConfigSlideOut(showConfig, userConfig, onSaveUserConfig, onGetAIModel)
+            }
+        }
+
         Row( modifier = Modifier
             .fillMaxWidth()
             .height(100.dp)
@@ -195,6 +249,113 @@ fun CountCard(
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
             )
+        }
+    }
+}
+
+
+
+@Composable
+fun UserConfigSlideOut(
+    showConfig: Boolean,
+    userConfig: UserConfig,
+    onSaveUserConfig: (UserConfig) ->  Unit,
+    onGetAIModel: (AISource) -> List<String>?
+){
+    val density = LocalDensity.current
+    val comingSoon = listOf(AISource.OPENAI)
+    val comingSoonPrefix = "(Coming Soon)"
+    var aiSource by remember { mutableStateOf(userConfig.aiSource) }
+    var apiKey by remember { mutableStateOf(userConfig.aiApiKey) }
+    var aiModel by remember { mutableStateOf(userConfig.aiModelName) }
+
+    LaunchedEffect(userConfig.id) {
+        aiSource = userConfig.aiSource
+        apiKey = userConfig.aiApiKey
+        aiModel = userConfig.aiModelName
+    }
+
+    AnimatedVisibility(
+        showConfig,
+        enter = slideInVertically {
+            // Slide in from 40 dp from the top.
+            with(density) { -40.dp.roundToPx() }
+        } + expandVertically(
+            // Expand from the top.
+            expandFrom = Alignment.Top
+        ) + fadeIn(
+            // Fade in with the initial alpha of 0.3f.
+            initialAlpha = 0.3f
+        ),
+        exit = slideOutVertically{
+            with(density) { 40.dp.roundToPx() }
+        } + shrinkVertically(
+
+        ) + fadeOut( targetAlpha = 0.0f)
+    ){
+        Card(
+            modifier = Modifier
+                .fillMaxSize(),
+            elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
+            colors = CardDefaults.cardColors(Color.White),
+        ) {
+
+            var sourceFieldValue = aiSource?.name
+            if(comingSoon.contains(aiSource)){
+                sourceFieldValue = "${sourceFieldValue}${comingSoonPrefix}"
+            }
+            val onSourceChange = { sourceString: String ->
+                val name = sourceString.replace(comingSoonPrefix, "")
+                aiSource = AISource.valueOf(name)
+            }
+
+            Column (
+                modifier = Modifier.padding(10.dp)
+            ){
+                DropdownMenu(
+                    "AI Source",
+                    AISource.entries.map { if(comingSoon.contains(it)) "${it.name}${comingSoonPrefix}" else it.name },
+                    if(comingSoon.contains(aiSource)) "${sourceFieldValue}${comingSoonPrefix}" else sourceFieldValue,
+                    onSourceChange
+                )
+                aiSource?.let { source ->
+                    val models = onGetAIModel(source)
+                    models?.let {
+                        DropdownMenu(
+                            "AI Model",
+                            models,
+                            userConfig.aiModelName,
+                            { model ->
+                                aiModel = model
+                            }
+                        )
+                        OutlinedTextField(
+                            value = apiKey,
+                            onValueChange = {
+                                apiKey = it
+                            },
+                            label = { Text("AI API Key") },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .testTag(TestTag.AI_API_KEY_INPUT)
+                        )
+                        Button(
+                            onClick = {
+                                userConfig.aiSource = aiSource
+                                userConfig.aiModelName = aiModel
+                                userConfig.aiApiKey = apiKey
+                                onSaveUserConfig(userConfig)
+                            },
+                            modifier = Modifier
+                                .testTag(TestTag.CONFIG_SAVE_BUTTON)
+                        ) {
+                            Text("Save")
+                        }
+                    }
+                }
+
+
+            }
         }
     }
 }

@@ -19,11 +19,13 @@ import dhmp.wearwise.model.MLLabel
 import dhmp.wearwise.model.MLMetaData
 import dhmp.wearwise.model.Outfit
 import dhmp.wearwise.model.OutfitDao
+import dhmp.wearwise.model.UserConfig
+import dhmp.wearwise.model.UserConfigDao
 
 
 @Database(
-    entities = [Garment::class, Outfit::class, MLMetaData::class, MLLabel::class],
-    version = 10,
+    entities = [Garment::class, Outfit::class, MLMetaData::class, MLLabel::class, UserConfig::class],
+    version = 11,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
@@ -31,6 +33,7 @@ import dhmp.wearwise.model.OutfitDao
         AutoMigration(from = 4, to = 5),
         AutoMigration(from = 6, to = 7),
         AutoMigration(from = 8, to = 9),
+        AutoMigration(from = 10, to = 11),
     ]
 )
 @TypeConverters(Converters::class)
@@ -38,6 +41,7 @@ abstract class AppDatabase : RoomDatabase() {
 
     abstract fun garmentDao(): GarmentDao
     abstract fun outfitDao(): OutfitDao
+    abstract fun userConfigDao(): UserConfigDao
 
     companion object {
         @Volatile

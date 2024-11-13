@@ -16,6 +16,7 @@ import dhmp.wearwise.App
 import dhmp.wearwise.R
 import dhmp.wearwise.data.GarmentsRepository
 import dhmp.wearwise.data.OutfitsRepository
+import dhmp.wearwise.data.UserConfigRepository
 import dhmp.wearwise.model.Category
 import dhmp.wearwise.model.Garment
 import dhmp.wearwise.model.Outfit
@@ -41,6 +42,7 @@ import org.mockito.kotlin.verify
 class OutfitScreenTest: UITest() {
     private lateinit var mockedGarmentRepo: GarmentsRepository
     private lateinit var mockedOutfitRepo: OutfitsRepository
+    private lateinit var mockedUserConfigRepo: UserConfigRepository
     private lateinit var context: Context
     private lateinit var model: OutfitViewModel
     private lateinit var clothingViewModel: ClothingViewModel
@@ -50,8 +52,9 @@ class OutfitScreenTest: UITest() {
         context = InstrumentationRegistry.getInstrumentation().targetContext
         mockedGarmentRepo = Mockito.mock(GarmentsRepository::class.java)
         mockedOutfitRepo = Mockito.mock(OutfitsRepository::class.java)
+        mockedUserConfigRepo = Mockito.mock(UserConfigRepository::class.java)
         model = OutfitViewModel(mockedGarmentRepo, mockedOutfitRepo)
-        clothingViewModel =  ClothingViewModel(mockedGarmentRepo)
+        clothingViewModel =  ClothingViewModel(mockedGarmentRepo, mockedUserConfigRepo)
     }
 
     @Test
@@ -186,11 +189,13 @@ class OutfitScreenTest: UITest() {
                 emptyOutfit
             )
 
+            // Validate outfit displayed count
             val outfitsCount = composeTestRule.onAllNodes(hasTestTag(TestTag.OUTFIT_CARD)).fetchSemanticsNodes().size
             val outfitsThumbnailCount = composeTestRule.onAllNodes(hasTestTag(TestTag.OUTFIT_THUMBNAIL), useUnmergedTree = true).fetchSemanticsNodes().size
             Assert.assertEquals(outfits.size - 1, outfitsCount)
             Assert.assertEquals(outfits.size - 2, outfitsThumbnailCount)
 
+            // Validate proper garment category icon is displayed
             for(icon in icons){
                 val foundCount = composeTestRule.onAllNodes(
                     hasTestTag("${TestTag.CLOTHING_LIST_CATEGORY_PREFIX}${icon}"),
@@ -199,6 +204,7 @@ class OutfitScreenTest: UITest() {
                 Assert.assertTrue(foundCount > 0)
             }
 
+            //Validate thumbnails are present
             val garmentThumbnailCount = composeTestRule.onAllNodes(hasTestTag(TestTag.OUTFIT_GARMENT_THUMBNAIL), useUnmergedTree = true).fetchSemanticsNodes().size
             var garmentUsedCount = 0
             outfits.map {
@@ -232,16 +238,20 @@ class OutfitScreenTest: UITest() {
         composeTestRule.onNode(hasTestTag(TestTag.NEW_OUTFIT_BUTTON)).performClick()
         composeTestRule.waitForIdle()
 
+        //Validate new outfit screen
         verifyScreenTitle("Outfit #0")
         val clickToTakePictureMatcher = hasText("Click to take a picture of your outfit")
         composeTestRule.waitUntilAtLeastOneExists(clickToTakePictureMatcher)
         composeTestRule.onNode(clickToTakePictureMatcher).performClick()
+
+        //Select camera option on outfit image
         composeTestRule.waitUntilDoesNotExist(clickToTakePictureMatcher, timeoutMillis = 5000)
         composeTestRule.waitUntilAtLeastOneExists(hasTestTag(TestTag.USE_CAMERA_SELECTION), timeoutMillis = 5000)
         composeTestRule.onNode(hasTestTag(TestTag.USE_CAMERA_SELECTION)).performClick()
         composeTestRule.waitUntilDoesNotExist(hasTestTag(TestTag.USE_CAMERA_SELECTION))
         composeTestRule.waitForIdle()
 
+        //Capture outfit image on camera screen
         while(
             composeTestRule.onAllNodes(hasTestTag(TestTag.CAMERA_TAKE_ICON), useUnmergedTree = true)
                 .fetchSemanticsNodes().isEmpty()
@@ -262,7 +272,7 @@ class OutfitScreenTest: UITest() {
                 .isNotEmpty()
         }
         composeTestRule.waitForIdle()
-
+        //Validate new outfit is created
         val afterOutfitCount = composeTestRule.onAllNodes(hasTestTag(TestTag.OUTFIT_CARD)).fetchSemanticsNodes().size
         Assert.assertEquals(initialOutfitCount + 1, afterOutfitCount)
     }

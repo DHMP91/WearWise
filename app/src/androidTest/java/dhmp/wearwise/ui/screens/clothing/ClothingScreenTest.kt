@@ -19,6 +19,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import dhmp.wearwise.App
 import dhmp.wearwise.R
 import dhmp.wearwise.data.GarmentsRepository
+import dhmp.wearwise.data.UserConfigRepository
 import dhmp.wearwise.model.Category
 import dhmp.wearwise.model.Garment
 import dhmp.wearwise.model.GarmentColorNames
@@ -42,6 +43,7 @@ import kotlin.time.Duration.Companion.minutes
 
 class ClothingScreenUITest: UITest() {
     private lateinit var mockedGarmentRepo: GarmentsRepository
+    private lateinit var mockedUserConfigRepo: UserConfigRepository
     private lateinit var context: Context
     private lateinit var model: ClothingViewModel
     private val clothingTitle = "Clothing"
@@ -51,7 +53,8 @@ class ClothingScreenUITest: UITest() {
     fun setup() {
         context = InstrumentationRegistry.getInstrumentation().targetContext
         mockedGarmentRepo = Mockito.mock(GarmentsRepository::class.java)
-        model = ClothingViewModel(mockedGarmentRepo)
+        mockedUserConfigRepo = Mockito.mock(UserConfigRepository::class.java)
+        model = ClothingViewModel(mockedGarmentRepo, mockedUserConfigRepo)
     }
 
 
@@ -482,6 +485,7 @@ class ClothingScreenUITest: UITest() {
             }
         }
 
+        // Click new clothing button
         val resultCount = getText(composeTestRule.onNode(hasTestTag(TestTag.RESULT_COUNT)))
         val number = resultCount?.let {  extractNumber(it) }
         Assert.assertNotNull(number)
@@ -489,6 +493,7 @@ class ClothingScreenUITest: UITest() {
         composeTestRule.onNode(hasTestTag(TestTag.NEW_CLOTHING_BUTTON)).performClick()
         composeTestRule.waitForIdle()
 
+        // Select camera option for new clothing
         composeTestRule.waitUntilAtLeastOneExists(hasTestTag(TestTag.USE_CAMERA_SELECTION))
         composeTestRule.onNode(hasTestTag(TestTag.USE_CAMERA_SELECTION)).performClick()
         composeTestRule.waitUntilDoesNotExist(hasTestTag(TestTag.USE_CAMERA_SELECTION))
@@ -500,6 +505,7 @@ class ClothingScreenUITest: UITest() {
                 delay(1000)
             }
         }
+        // Click on camera capturre
         composeTestRule.onNode(hasTestTag(TestTag.CAMERA_TAKE_ICON), useUnmergedTree = true).performClick()
         composeTestRule.waitUntilAtLeastOneExists(hasTestTag(TestTag.SCREEN_TITLE), 10000)
         verifyScreenTitle(Regex("Clothing #\\d+"))
@@ -508,12 +514,14 @@ class ClothingScreenUITest: UITest() {
         composeTestRule.waitForIdle()
         verifyScreenTitle(clothingTitle)
 
+        //Validate new clothing is displayed in list
+        //Validate counter
         val resultCountAfter = getText(composeTestRule.onNode(hasTestTag(TestTag.RESULT_COUNT)))
         val numberAfter = resultCountAfter?.let {  extractNumber(it) }
         Assert.assertNotNull(numberAfter)
         Assert.assertTrue(numberAfter!!.toInt() == number!!.toInt() + 1)
 
-
+        //Validate screen navigate to edit clothing
         composeTestRule.onAllNodes(hasTestTag(TestTag.CLOTHING_ITEM)).onFirst().performClick()
         val editClothingTitle = getText(composeTestRule.onNode(hasTestTag(TestTag.SCREEN_TITLE)))
         Assert.assertNotNull(editClothingTitle)

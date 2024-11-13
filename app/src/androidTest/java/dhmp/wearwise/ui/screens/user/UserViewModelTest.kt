@@ -1,10 +1,13 @@
 package dhmp.wearwise.ui.screens.user
 
 import android.content.Context
+import android.util.Log
 import androidx.compose.ui.graphics.Color
 import androidx.test.platform.app.InstrumentationRegistry
 import dhmp.wearwise.data.GarmentsRepository
 import dhmp.wearwise.data.OutfitsRepository
+import dhmp.wearwise.data.UserConfigRepository
+import dhmp.wearwise.model.AISource
 import dhmp.wearwise.model.CategoryCount
 import dhmp.wearwise.model.ColorCount
 import dhmp.wearwise.model.GarmentColorNames
@@ -12,11 +15,13 @@ import dhmp.wearwise.model.Occasion
 import dhmp.wearwise.model.OccasionCount
 import dhmp.wearwise.model.Season
 import dhmp.wearwise.model.SeasonCount
+import dhmp.wearwise.model.UserConfig
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withTimeoutOrNull
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
@@ -25,9 +30,11 @@ import org.mockito.Mockito
 class UserViewModelTest {
     private lateinit var mockedGarmentRepo: GarmentsRepository
     private lateinit var mockedOutfitRepo: OutfitsRepository
+    private lateinit var mockedUserConfigRepo: UserConfigRepository
     private lateinit var context: Context
     private lateinit var model: UserViewModel
     private lateinit var testDispatcher: CoroutineDispatcher
+    private val defaultTimeout = 5000L
 
 
     @Before
@@ -35,8 +42,13 @@ class UserViewModelTest {
         context = InstrumentationRegistry.getInstrumentation().targetContext
         mockedGarmentRepo = Mockito.mock(GarmentsRepository::class.java)
         mockedOutfitRepo = Mockito.mock(OutfitsRepository::class.java)
+        mockedUserConfigRepo = Mockito.mock(UserConfigRepository::class.java)
+        Mockito.`when`(mockedUserConfigRepo.getUserConfigStream()).thenAnswer {
+            flow { emit(null) }
+        }
         testDispatcher = StandardTestDispatcher()
-        model = UserViewModel(mockedGarmentRepo, mockedOutfitRepo)
+        model = UserViewModel(mockedGarmentRepo, mockedOutfitRepo, mockedUserConfigRepo)
+
     }
 
 //    @Test
@@ -148,6 +160,45 @@ class UserViewModelTest {
 
         val actual = model.getColorPalette(colors)
         Assert.assertEquals(expected, actual)
+    }
+
+    @Test
+    fun toggleConfig() = runTest{
+        val showConfig = model.showConfig.value
+        model.toggleConfig()
+        val showConfigAfter = model.showConfig.value
+        Assert.assertEquals(showConfigAfter, !showConfig)
+    }
+
+    @Test
+    fun updateConfig() = runTest{
+        val fakeUserConfig = UserConfig(120, AISource.OPENAI, "model", "oijsadiojasiod1111122222")
+        model.updateConfig(fakeUserConfig)
+        withTimeoutOrNull(defaultTimeout) {
+            while (model.userConfig.value.id == -1){
+                Log.d("userConfigInitTest", "waiting for user config to update")
+            }
+        }
+        Assert.assertEquals(model.userConfig.value, fakeUserConfig)
+    }
+
+    @Test
+    fun userConfigInit() = runTest {
+        val fakeUserConfig = UserConfig(99, AISource.OPENAI, "model", "oijsadiojasiod11111")
+        mockedGarmentRepo = Mockito.mock(GarmentsRepository::class.java)
+        mockedOutfitRepo = Mockito.mock(OutfitsRepository::class.java)
+        mockedUserConfigRepo = Mockito.mock(UserConfigRepository::class.java)
+        Mockito.`when`(mockedUserConfigRepo.getUserConfigStream()).thenAnswer {
+            flow { emit(fakeUserConfig) }
+        }
+        model = UserViewModel(mockedGarmentRepo, mockedOutfitRepo, mockedUserConfigRepo)
+
+        withTimeoutOrNull(defaultTimeout) {
+            while (model.userConfig.value.id == -1){
+                Log.d("userConfigInitTest", "waiting for user config to update")
+            }
+        }
+        Assert.assertEquals(model.userConfig.value, fakeUserConfig)
     }
 
 }

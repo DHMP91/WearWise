@@ -20,7 +20,10 @@ import androidx.palette.graphics.Palette
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.segmentation.subject.SubjectSegmentation
 import com.google.mlkit.vision.segmentation.subject.SubjectSegmenterOptions
+import dhmp.wearwise.data.AIGarmentRepository
+import dhmp.wearwise.data.AIRepository
 import dhmp.wearwise.data.GarmentsRepository
+import dhmp.wearwise.data.UserConfigRepository
 import dhmp.wearwise.model.Category
 import dhmp.wearwise.model.Garment
 import dhmp.wearwise.model.nearestColorMatchList
@@ -48,6 +51,7 @@ import kotlin.math.sqrt
 
 class ClothingViewModel(
     private val garmentRepository: GarmentsRepository,
+    private val userConfigRepository: UserConfigRepository,
     private val dispatcherIO: CoroutineDispatcher = Dispatchers.IO,
 ): ViewModel() {
     private val pageSize = 10
@@ -61,6 +65,8 @@ class ClothingViewModel(
 
     private val _uiMenuState = MutableStateFlow(ClothingMenuUIState())
     val uiMenuState: StateFlow<ClothingMenuUIState> = _uiMenuState.asStateFlow()
+
+    val analyzing = MutableStateFlow(false)
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val garments: Flow<PagingData<Garment>> = combine(
@@ -324,29 +330,24 @@ class ClothingViewModel(
     }
 
     fun analyzeGarment(id: Long){
-        viewModelScope.launch(dispatcherIO) {
-            val garment = garmentRepository.getGarmentStream(id).flowOn(dispatcherIO).firstOrNull()
-            garment?.let {
-                val image = it.imageOfSubject ?: it.image
-                val bitmap = BitmapFactory.decodeFile(Uri.parse(image).path!!)
-                    Palette.Builder(bitmap).generate { it2 ->
-                    it2?.let { palette ->
-                        val color = palette.getDominantColor(0)
-                        if (color != 0 ) {
-                            // Convert Color to RGB components
-//                            val red = color.red
-//                            val green = color.green
-//                            val blue = color.blue
-//                            val hex = String.format("#%02X%02X%02X", red, green, blue)
-                            val colorName = getNearestColorName(color)
-                            it.color = colorName
-                            storeChanges(it)
-                        }else{
-                            Log.w(tag, "Could not determine dominant color from image")
-                        }
+        viewModelScope.launch(Dispatchers.IO) {
+            val userConfig = userConfigRepository.getUserConfigStream().flowOn(dispatcherIO).firstOrNull()
+            analyzing.update { true }
+            if(userConfig != null){
+                val aiRepo = AIGarmentRepository()
+                val model: AIRepository? = aiRepo.getModel(userConfig)
+                if (model != null) {
+                    try {
+                        analyzeByAI(id, model)
+                    } catch (e: Exception) {
+                        Log.e(tag, e.toString())
+                        dumbAnalyze(id)
                     }
                 }
+            }else{
+                dumbAnalyze(id)
             }
+            analyzing.update { false }
         }
     }
 
@@ -485,6 +486,46 @@ class ClothingViewModel(
 
     private fun reset() {
         _uiMenuState.value = ClothingMenuUIState()
+    }
+
+    private suspend fun dumbAnalyze(id: Long){
+        val garment = garmentRepository.getGarmentStream(id).flowOn(dispatcherIO).firstOrNull()
+        garment?.let {
+            val image = it.imageOfSubject ?: it.image
+            val bitmap = BitmapFactory.decodeFile(Uri.parse(image).path!!)
+            Palette.Builder(bitmap).generate { it2 ->
+                it2?.let { palette ->
+                    val color = palette.getDominantColor(0)
+                    if (color != 0 ) {
+                        val colorName = getNearestColorName(color)
+                        it.color = colorName
+                        storeChanges(it)
+                    }else{
+                        Log.w(tag, "Could not determine dominant color from image")
+                    }
+                }
+            }
+        }
+    }
+
+    private suspend fun analyzeByAI(id: Long, model: AIRepository){
+        val garment = garmentRepository.getGarmentStream(id).flowOn(dispatcherIO).firstOrNull()
+        garment?.let {
+            val image = it.imageOfSubject ?: it.image
+            val bitmap = BitmapFactory.decodeFile(Uri.parse(image).path!!)
+            image?.let { img ->
+                model.garmentCategory(bitmap)?.let { c -> it.categoryId = c.id }
+                model.garmentColor(bitmap)?.let { c -> it.color = c.name }
+                model.garmentBrand(bitmap)?.let { b -> it.brand = b }
+                model.garmentOccasion(bitmap)?.let { o -> it.occasion = o }
+                it.categoryId?.let { id ->
+                    model.garmentSubCategory(bitmap, id)?.let { c ->
+                        it.subCategoryId = c.id
+                    }
+                }
+                storeChanges(it)
+            }
+        }
     }
 
 }

@@ -15,6 +15,7 @@ import androidx.core.net.toUri
 import androidx.test.platform.app.InstrumentationRegistry
 import dhmp.wearwise.data.DefaultAppContainer
 import dhmp.wearwise.data.GarmentsRepository
+import dhmp.wearwise.data.UserConfigRepository
 import dhmp.wearwise.model.Category
 import dhmp.wearwise.model.Garment
 import dhmp.wearwise.model.GarmentColorNames
@@ -36,6 +37,7 @@ import kotlin.time.Duration.Companion.minutes
 
 class ClothingEditScreenTest : UITest()  {
     private lateinit var mockedGarmentRepo: GarmentsRepository
+    private lateinit var userConfigRepo: UserConfigRepository
     private lateinit var context: Context
     private lateinit var model: ClothingViewModel
     private lateinit var appContainer: DefaultAppContainer
@@ -47,7 +49,8 @@ class ClothingEditScreenTest : UITest()  {
     fun setup() = runBlocking{
         context = InstrumentationRegistry.getInstrumentation().targetContext
         mockedGarmentRepo = Mockito.mock(GarmentsRepository::class.java)
-        model = ClothingViewModel(mockedGarmentRepo)
+        userConfigRepo = Mockito.mock(UserConfigRepository::class.java)
+        model = ClothingViewModel(mockedGarmentRepo, userConfigRepo)
         appContainer = DefaultAppContainer(context)
 
         val testImage = fakeImage(context, "testImage.png")
@@ -93,11 +96,14 @@ class ClothingEditScreenTest : UITest()  {
         composeTestRule.waitUntil(5000L) {
             composeTestRule.onNode(hasText(category.name)).isDisplayed()
         }
+
+        //Validate display of clothing info
         Assert.assertTrue(composeTestRule.onNode(hasContentDescriptionExactly("GarmentImage")).isDisplayed())
         Assert.assertTrue(composeTestRule.onNode(hasText(subCategory!!.name)).isDisplayed())
         Assert.assertTrue(composeTestRule.onNode(hasText(color)).isDisplayed())
         Assert.assertTrue(composeTestRule.onNode(hasText(occasion.name)).isDisplayed())
 
+        //Validate relationship count with outfits
         val firstOutfitCountNode = composeTestRule.onAllNodes(hasTestTag(TestTag.OUTFIT_COUNT), useUnmergedTree = true).fetchSemanticsNodes()[0]
         var text: String? = null
         for(node in firstOutfitCountNode.children){
@@ -144,7 +150,7 @@ class ClothingEditScreenTest : UITest()  {
             Assert.assertTrue(composeTestRule.onNode(hasText(label)).isDisplayed())
         }
 
-        //Categpry
+        //Category
         composeTestRule.onNode(hasTestTag("${TestTag.DROPDOWN_MENU_PREFIX}Category")).performClick()
         for(c in categories){
             if(!composeTestRule.onNode(hasText(c.name)).isDisplayed()){
@@ -237,8 +243,11 @@ class ClothingEditScreenTest : UITest()  {
             }
         }
 
+        //Click delete clothing icon
         composeTestRule.onNode(hasContentDescriptionExactly("Delete Clothing")).performClick()
         composeTestRule.waitForIdle()
+
+        //Validate call to view model
         verify(mockedGarmentRepo, times(1)).deleteGarment(
             fakedGarment
         )
