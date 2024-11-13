@@ -1,3 +1,11 @@
+# Inspration
+I’ve always wanted to build a native Android app that I’d actually use myself. 
+Over time, I realized I needed a tool to log my clothing and track my outfits. 
+While there are existing options, I decided to dive in and create my own without exploring what’s already out there. 
+I’m not particularly into fashion; I just wanted something custom built for that part of my life. 
+
+FYI: If you notice any quirky animations or unconventional design choices, that’s intentional—it’s a personal project, so I figured, why not have some fun with it?
+
 # MyApp
 An Android app that helps you organize and track your clothing items, build outfits, and manage your wardrobe effortlessly.
 
