@@ -3,6 +3,7 @@ package dhmp.wearwise.ui.screens.user
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dhmp.wearwise.data.GarmentGeminiRepository
 import dhmp.wearwise.data.GarmentsRepository
 import dhmp.wearwise.data.OutfitsRepository
 import dhmp.wearwise.data.UserConfigRepository
@@ -24,6 +25,7 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
 class UserViewModel (
     private val garmentRepository: GarmentsRepository,
@@ -34,10 +36,12 @@ class UserViewModel (
     private val _userConfig: MutableStateFlow<UserConfig> = MutableStateFlow(UserConfig(-1, AISource.GOOGLE, "", ""))
     val userConfig: StateFlow<UserConfig> = _userConfig.asStateFlow()
     val showConfig = MutableStateFlow(false)
+    val configMessage = MutableStateFlow("")
 
     init {
         getUserConfig()
     }
+
     fun garmentCount(): Flow<Int> = garmentRepository.getGarmentsCount(
         excludedCategories = listOf(),
         excludedColors =  listOf(),
@@ -94,11 +98,34 @@ class UserViewModel (
             !showConfig.value
         }
     }
+    fun testConfig(userConfig: UserConfig): Boolean {
+        var success: Boolean
+        runBlocking {
+            success = when(userConfig.aiSource) {
+                AISource.GOOGLE -> {
+                    val response = GarmentGeminiRepository.testConfig(
+                        userConfig.aiModelName,
+                        userConfig.aiApiKey
+                    )
+                    configMessage.update {
+                        response.second
+                    }
+                    response.first
+                }
+                else -> false
+            }
+        }
+        return success
+    }
+
     fun updateConfig(userConfig: UserConfig) {
         viewModelScope.launch(dispatcherIO) {
             userConfigRepository.updateUserConfig(userConfig)
             _userConfig.update {
                 userConfig
+            }
+            configMessage.update {
+                "Successfully saved settings"
             }
         }
     }
