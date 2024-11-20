@@ -81,8 +81,10 @@ class PieScreenshotTest {
                         {},
                         false,
                         UserConfig(-1, AISource.GOOGLE, "", ""),
+                        "",
                         { _ -> },
-                        {_ -> listOf<String>()}
+                        { _ -> listOf<String>()},
+                        { _ -> true}
                     )
                 }
             }

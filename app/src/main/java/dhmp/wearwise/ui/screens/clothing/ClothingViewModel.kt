@@ -512,8 +512,8 @@ class ClothingViewModel(
         val garment = garmentRepository.getGarmentStream(id).flowOn(dispatcherIO).firstOrNull()
         garment?.let {
             val image = it.imageOfSubject ?: it.image
-            val bitmap = BitmapFactory.decodeFile(Uri.parse(image).path!!)
             image?.let { img ->
+                val bitmap = BitmapFactory.decodeFile(Uri.parse(img).path!!)
                 model.garmentCategory(bitmap)?.let { c -> it.categoryId = c.id }
                 model.garmentColor(bitmap)?.let { c -> it.color = c.name }
                 model.garmentBrand(bitmap)?.let { b -> it.brand = b }

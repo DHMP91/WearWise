@@ -3,9 +3,11 @@ package dhmp.wearwise.data
 import android.graphics.Bitmap
 import android.util.Log
 import com.google.ai.client.generativeai.GenerativeModel
+import com.google.ai.client.generativeai.common.InvalidAPIKeyException
+import com.google.ai.client.generativeai.common.ServerException
+import com.google.ai.client.generativeai.type.Content
+import com.google.ai.client.generativeai.type.CountTokensResponse
 import com.google.ai.client.generativeai.type.GenerateContentResponse
-import com.google.ai.client.generativeai.type.InvalidAPIKeyException
-import com.google.ai.client.generativeai.type.ServerException
 import com.google.ai.client.generativeai.type.content
 import dhmp.wearwise.model.AISource
 import dhmp.wearwise.model.Category
@@ -24,7 +26,17 @@ interface AIRepository {
     suspend fun garmentBrand(bitmap: Bitmap): String?
 }
 
+interface AIModel {
+    suspend fun countTokens(content: Content): CountTokensResponse
+}
 
+class GenerativeModelAdapter(private val modelName: String, private val apiKey: String) : AIModel {
+    private val generativeModel = GenerativeModel(modelName, apiKey)
+
+    override suspend fun countTokens(content: Content): CountTokensResponse {
+        return generativeModel.countTokens(content)
+    }
+}
 
 class AIGarmentRepository(){
     fun getModel(userConfig: UserConfig): AIRepository? {
@@ -129,7 +141,11 @@ class GarmentGeminiRepository(val apiKey: String, val modelName: String) : AIRep
 
     companion object {
         suspend fun testConfig(modelName: String, apiKey: String): Pair<Boolean, String> {
-            val model = GenerativeModel(modelName = modelName, apiKey)
+            val model = GenerativeModelAdapter(modelName = modelName, apiKey)
+            return testConfig(model)
+        }
+
+        suspend fun testConfig(model: AIModel): Pair<Boolean, String> {
             val content = content() { text("Check request") }
 
             var response = Pair(true, "Success")
@@ -143,22 +159,8 @@ class GarmentGeminiRepository(val apiKey: String, val modelName: String) : AIRep
                 exception = e
                 response = Pair(false, "Setting is not valid. Verify the model selection")
             } catch (e: Exception){
-                // Issue with google throwing exception not available for use:
-                // e.g thrown class is under ...common.InvalidAPIKeyException vs ...type.InvalidAPIKeyException
-                when(e::class.qualifiedName) {
-                    "com.google.ai.client.generativeai.common.InvalidAPIKeyException" -> {
-                        exception = e
-                        response = Pair(false, "Setting is not valid. Double check your API Key")
-                    }
-                    "com.google.ai.client.generativeai.common.ServerException"  -> {
-                            exception = e
-                            response = Pair(false, "Setting is not valid. Verify the model selection")
-                    }
-                    else -> {
-                        exception = e
-                        response = Pair(false, "Error validating config. Network related?")
-                    }
-                }
+                exception = e
+                response = Pair(false, "Error validating config. Network related?")
             } finally {
                 exception?.let {
                     it.message?.let { msg ->

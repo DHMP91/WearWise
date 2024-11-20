@@ -31,7 +31,7 @@ class UserViewModel (
     private val garmentRepository: GarmentsRepository,
     private val outfitsRepository: OutfitsRepository,
     private val userConfigRepository: UserConfigRepository,
-    private val dispatcherIO: CoroutineDispatcher = Dispatchers.IO
+    private val dispatcherIO: CoroutineDispatcher = Dispatchers.IO,
 ): ViewModel() {
     private val _userConfig: MutableStateFlow<UserConfig> = MutableStateFlow(UserConfig(-1, AISource.GOOGLE, "", ""))
     val userConfig: StateFlow<UserConfig> = _userConfig.asStateFlow()
