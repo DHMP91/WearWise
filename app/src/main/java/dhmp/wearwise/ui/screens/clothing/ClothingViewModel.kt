@@ -20,8 +20,8 @@ import androidx.palette.graphics.Palette
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.segmentation.subject.SubjectSegmentation
 import com.google.mlkit.vision.segmentation.subject.SubjectSegmenterOptions
-import dhmp.wearwise.data.AIGarmentRepository
 import dhmp.wearwise.data.AIRepository
+import dhmp.wearwise.data.AIRepositoryProvider
 import dhmp.wearwise.data.GarmentsRepository
 import dhmp.wearwise.data.UserConfigRepository
 import dhmp.wearwise.model.Category
@@ -53,6 +53,7 @@ class ClothingViewModel(
     private val garmentRepository: GarmentsRepository,
     private val userConfigRepository: UserConfigRepository,
     private val dispatcherIO: CoroutineDispatcher = Dispatchers.IO,
+    private val aiRepositoryProvider: AIRepositoryProvider = AIRepositoryProvider(),
 ): ViewModel() {
     private val pageSize = 10
     private val tag: String = "ClothingViewModel"
@@ -334,8 +335,7 @@ class ClothingViewModel(
             val userConfig = userConfigRepository.getUserConfigStream().flowOn(dispatcherIO).firstOrNull()
             analyzing.update { true }
             if(userConfig != null){
-                val aiRepo = AIGarmentRepository()
-                val model: AIRepository? = aiRepo.getModel(userConfig)
+                val model: AIRepository? = aiRepositoryProvider.getRepository(userConfig)
                 if (model != null) {
                     try {
                         analyzeByAI(id, model)

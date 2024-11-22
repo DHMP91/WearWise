@@ -87,8 +87,7 @@ fun UserScreen(
         userConfig,
         configMessage,
         onSaveUserConfig,
-        userViewModel::getAIModels,
-        userViewModel::testConfig
+        userViewModel::getAIModels
     )
 }
 
@@ -107,8 +106,7 @@ fun UserScreenContent(
     userConfig: UserConfig,
     configMessage: String,
     onSaveUserConfig: (UserConfig) -> Unit,
-    onGetAIModel: (AISource) -> List<String>?,
-    onTestConfig: (UserConfig) -> Boolean
+    onGetAIModel: (AISource) -> List<String>?
 ){
 
     Column(
@@ -131,7 +129,7 @@ fun UserScreenContent(
                 .padding(vertical = 2.dp)
                 .fillMaxWidth()
             ) {
-                UserConfigSlideOut(showConfig, userConfig, configMessage, onSaveUserConfig, onGetAIModel, onTestConfig)
+                UserConfigSlideOut(showConfig, userConfig, configMessage, onSaveUserConfig, onGetAIModel)
             }
         }
 
@@ -268,7 +266,6 @@ fun UserConfigSlideOut(
     configMessage: String,
     onSaveUserConfig: (UserConfig) ->  Unit,
     onGetAIModel: (AISource) -> List<String>?,
-    onTestConfig: (UserConfig) -> Boolean
 ){
     val density = LocalDensity.current
     val comingSoon = listOf(AISource.OPENAI)
@@ -355,11 +352,7 @@ fun UserConfigSlideOut(
                                     userConfig.aiSource = aiSource
                                     userConfig.aiModelName = aiModel
                                     userConfig.aiApiKey = apiKey
-                                    if(onTestConfig(userConfig)){
-                                        onSaveUserConfig(userConfig)
-                                    } else {
-
-                                    }
+                                    onSaveUserConfig(userConfig)
                                 },
                                 modifier = Modifier
                                     .testTag(TestTag.CONFIG_SAVE_BUTTON)

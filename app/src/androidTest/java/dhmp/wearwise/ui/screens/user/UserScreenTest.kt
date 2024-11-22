@@ -7,6 +7,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.hasContentDescriptionExactly
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
@@ -14,6 +15,8 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.test.platform.app.InstrumentationRegistry
+import dhmp.wearwise.data.AIRepository
+import dhmp.wearwise.data.AIRepositoryProvider
 import dhmp.wearwise.data.GarmentsRepository
 import dhmp.wearwise.data.OutfitsRepository
 import dhmp.wearwise.data.UserConfigRepository
@@ -39,6 +42,7 @@ import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import org.mockito.Mockito
+import org.mockito.kotlin.any
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import kotlin.time.Duration.Companion.minutes
@@ -94,6 +98,7 @@ class UserScreenTest : UITest() {
         Assert.assertEquals(fakeUserConfig.aiApiKey, aiAPIText)
     }
 
+    @OptIn(ExperimentalTestApi::class)
     @Test
     fun userConfigSaved() = runTest (timeout = 5.minutes){
         baseMock()
@@ -101,7 +106,21 @@ class UserScreenTest : UITest() {
         Mockito.`when`(mockedUserConfigRepo.getUserConfigStream()).thenAnswer {
             flow { emit(fakeUserConfig) }
         }
-        model = UserViewModel(mockedGarmentRepo, mockedOutfitRepo, mockedUserConfigRepo)
+        val aiModel = model.getAIModels(AISource.GOOGLE)!!.first()
+        val apiKey = "test test sss11111"
+        val updateText = "userConfigSaved_AnythingGoes"
+
+        val mockedGeminiRepoCompanion = Mockito.mock(AIRepository::class.java)
+        Mockito.`when`(mockedGeminiRepoCompanion.testConfig()).thenAnswer {
+            Pair(true, updateText)
+        }
+
+        val mockedAIProvider = Mockito.mock(AIRepositoryProvider::class.java)
+        Mockito.`when`(mockedAIProvider.getRepository(any())).thenAnswer {
+            mockedGeminiRepoCompanion
+        }
+
+        model = UserViewModel(mockedGarmentRepo, mockedOutfitRepo, mockedUserConfigRepo, aiRepositoryProvider = mockedAIProvider)
         launchUserScreen()
 
         //Open User Config
@@ -114,7 +133,6 @@ class UserScreenTest : UITest() {
             .onNode(hasText(AISource.GOOGLE.name)).performClick()
 
         // Select Google AI Model
-        val aiModel = model.getAIModels(AISource.GOOGLE)!!.first()
         composeTestRule
             .onNode(hasTestTag("${TestTag.DROPDOWN_MENU_PREFIX}AI Model"))
             .performClick()
@@ -122,7 +140,7 @@ class UserScreenTest : UITest() {
             .onNode(hasText(aiModel)).performClick()
 
         //Input API Key
-        val apiKey = "test test sss11111"
+
         composeTestRule
             .onNode(hasTestTag(TestTag.AI_API_KEY_INPUT)).performTextClearance()
         composeTestRule
@@ -132,10 +150,76 @@ class UserScreenTest : UITest() {
         composeTestRule
             .onNode(hasTestTag(TestTag.CONFIG_SAVE_BUTTON)).performClick()
 
-        composeTestRule.waitForIdle()
+        val successUserConfig = "Successfully saved settings"
+        composeTestRule.waitUntilAtLeastOneExists(
+            hasText(successUserConfig)
+        )
 
         //Validate
         verify(mockedUserConfigRepo, times(1)).updateUserConfig(
+            fakeUserConfig.copy(aiSource = AISource.GOOGLE, aiModelName = aiModel, aiApiKey = apiKey)
+        )
+    }
+
+
+    @OptIn(ExperimentalTestApi::class)
+    @Test
+    fun userConfigFailedSaved() = runTest (timeout = 5.minutes){
+        baseMock()
+        val fakeUserConfig = UserConfig(120, AISource.OPENAI, "model y", "apiapiapiapiapi")
+        Mockito.`when`(mockedUserConfigRepo.getUserConfigStream()).thenAnswer {
+            flow { emit(fakeUserConfig) }
+        }
+        val aiModel = model.getAIModels(AISource.GOOGLE)!!.first()
+        val apiKey = "test test sss11111"
+        val updateText = "Wrong!!!"
+
+        val mockedGeminiRepoCompanion = Mockito.mock(AIRepository::class.java)
+        Mockito.`when`(mockedGeminiRepoCompanion.testConfig()).thenAnswer {
+            Pair(false, updateText)
+        }
+
+        val mockedAIProvider = Mockito.mock(AIRepositoryProvider::class.java)
+        Mockito.`when`(mockedAIProvider.getRepository(any())).thenAnswer {
+            mockedGeminiRepoCompanion
+        }
+
+        model = UserViewModel(mockedGarmentRepo, mockedOutfitRepo, mockedUserConfigRepo, aiRepositoryProvider = mockedAIProvider)
+        launchUserScreen()
+
+        //Open User Config
+        composeTestRule.onNode(hasContentDescriptionExactly("User Settings")).performClick()
+
+        //Select Google Source
+        composeTestRule
+            .onNode(hasTestTag("${TestTag.DROPDOWN_MENU_PREFIX}AI Source")).performClick()
+        composeTestRule
+            .onNode(hasText(AISource.GOOGLE.name)).performClick()
+
+        // Select Google AI Model
+        composeTestRule
+            .onNode(hasTestTag("${TestTag.DROPDOWN_MENU_PREFIX}AI Model"))
+            .performClick()
+        composeTestRule
+            .onNode(hasText(aiModel)).performClick()
+
+        //Input API Key
+
+        composeTestRule
+            .onNode(hasTestTag(TestTag.AI_API_KEY_INPUT)).performTextClearance()
+        composeTestRule
+            .onNode(hasTestTag(TestTag.AI_API_KEY_INPUT)).performTextInput(apiKey)
+
+        //Click Save
+        composeTestRule
+            .onNode(hasTestTag(TestTag.CONFIG_SAVE_BUTTON)).performClick()
+
+        composeTestRule.waitUntilAtLeastOneExists(
+            hasText(updateText)
+        )
+
+        //Validate
+        verify(mockedUserConfigRepo, times(0)).updateUserConfig(
             fakeUserConfig.copy(aiSource = AISource.GOOGLE, aiModelName = aiModel, aiApiKey = apiKey)
         )
     }

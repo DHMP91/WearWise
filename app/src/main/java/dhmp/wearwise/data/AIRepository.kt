@@ -24,22 +24,11 @@ interface AIRepository {
     suspend fun garmentColor(bitmap: Bitmap): ColorName?
     suspend fun garmentOccasion(bitmap: Bitmap): Occasion?
     suspend fun garmentBrand(bitmap: Bitmap): String?
+    suspend fun testConfig(): Pair<Boolean, String>
 }
 
-interface AIModel {
-    suspend fun countTokens(content: Content): CountTokensResponse
-}
-
-class GenerativeModelAdapter(private val modelName: String, private val apiKey: String) : AIModel {
-    private val generativeModel = GenerativeModel(modelName, apiKey)
-
-    override suspend fun countTokens(content: Content): CountTokensResponse {
-        return generativeModel.countTokens(content)
-    }
-}
-
-class AIGarmentRepository(){
-    fun getModel(userConfig: UserConfig): AIRepository? {
+open class AIRepositoryProvider  {
+    open fun getRepository(userConfig: UserConfig): AIRepository? {
         val model = when(userConfig.aiSource) {
             AISource.GOOGLE ->
                 GarmentGeminiRepository(
@@ -53,11 +42,23 @@ class AIGarmentRepository(){
     }
 }
 
-class GarmentGeminiRepository(val apiKey: String, val modelName: String) : AIRepository {
-    private var model: GenerativeModel = GenerativeModel(
-        modelName = modelName,
-        apiKey
-    )
+
+//Mainly for mocking due to android final class mockito limitation
+open class GenerativeModelWrapper(private val generativeModel: GenerativeModel) {
+    open suspend fun countTokens(prompt: Content): CountTokensResponse = generativeModel.countTokens(prompt)
+    open suspend fun generateContent(prompt: Content): GenerateContentResponse = generativeModel.generateContent()
+}
+
+class GarmentGeminiRepository : AIRepository {
+    private var model: GenerativeModelWrapper
+
+    constructor(apiKey: String, modelName: String){
+        model = GenerativeModelWrapper(GenerativeModel(modelName = modelName, apiKey))
+    }
+
+    constructor(model: GenerativeModelWrapper){
+        this.model = model
+    }
 
     override suspend fun garmentCategory(bitmap: Bitmap): Category? {
         val categoryNames = Category.categories().map { c -> c.name }
@@ -130,6 +131,31 @@ class GarmentGeminiRepository(val apiKey: String, val modelName: String) : AIRep
         }
     }
 
+    override suspend fun testConfig(): Pair<Boolean, String> {
+        val content = content() { text("Check request") }
+
+        var response = Pair(true, "Success")
+        var exception: Exception? = null
+        try{
+            model.countTokens(content)
+        } catch (e: InvalidAPIKeyException) {
+            exception = e
+            response = Pair(false, "Setting is not valid. Double check your API Key")
+        } catch (e: ServerException) {
+            exception = e
+            response = Pair(false, "Setting is not valid. Verify the model selection")
+        } catch (e: Exception){
+            exception = e
+            response = Pair(false, "Error validating config. Network related?")
+        } finally {
+            exception?.let {
+                it.message?.let { msg ->
+                    Log.w(tag, msg)
+                }
+            }
+        }
+        return response
+    }
 
     private suspend fun generateImageContent(bitmap: Bitmap, question: String): GenerateContentResponse{
         val colorInput = content() {
@@ -137,38 +163,5 @@ class GarmentGeminiRepository(val apiKey: String, val modelName: String) : AIRep
             text(question)
         }
         return model.generateContent(colorInput)
-    }
-
-    companion object {
-        suspend fun testConfig(modelName: String, apiKey: String): Pair<Boolean, String> {
-            val model = GenerativeModelAdapter(modelName = modelName, apiKey)
-            return testConfig(model)
-        }
-
-        suspend fun testConfig(model: AIModel): Pair<Boolean, String> {
-            val content = content() { text("Check request") }
-
-            var response = Pair(true, "Success")
-            var exception: Exception? = null
-            try{
-                model.countTokens(content)
-            } catch (e: InvalidAPIKeyException) {
-                exception = e
-                response = Pair(false, "Setting is not valid. Double check your API Key")
-            } catch (e: ServerException) {
-                exception = e
-                response = Pair(false, "Setting is not valid. Verify the model selection")
-            } catch (e: Exception){
-                exception = e
-                response = Pair(false, "Error validating config. Network related?")
-            } finally {
-                exception?.let {
-                    it.message?.let { msg ->
-                        Log.w(tag, msg)
-                    }
-                }
-            }
-            return response
-        }
     }
 }

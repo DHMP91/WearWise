@@ -3,7 +3,7 @@ package dhmp.wearwise.ui.screens.user
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dhmp.wearwise.data.GarmentGeminiRepository
+import dhmp.wearwise.data.AIRepositoryProvider
 import dhmp.wearwise.data.GarmentsRepository
 import dhmp.wearwise.data.OutfitsRepository
 import dhmp.wearwise.data.UserConfigRepository
@@ -32,6 +32,7 @@ class UserViewModel (
     private val outfitsRepository: OutfitsRepository,
     private val userConfigRepository: UserConfigRepository,
     private val dispatcherIO: CoroutineDispatcher = Dispatchers.IO,
+    private val aiRepositoryProvider: AIRepositoryProvider = AIRepositoryProvider(),
 ): ViewModel() {
     private val _userConfig: MutableStateFlow<UserConfig> = MutableStateFlow(UserConfig(-1, AISource.GOOGLE, "", ""))
     val userConfig: StateFlow<UserConfig> = _userConfig.asStateFlow()
@@ -98,19 +99,21 @@ class UserViewModel (
             !showConfig.value
         }
     }
-    fun testConfig(userConfig: UserConfig): Boolean {
+
+    private fun testConfig(userConfig: UserConfig): Boolean {
         var success: Boolean
         runBlocking {
             success = when(userConfig.aiSource) {
                 AISource.GOOGLE -> {
-                    val response = GarmentGeminiRepository.testConfig(
-                        userConfig.aiModelName,
-                        userConfig.aiApiKey
-                    )
-                    configMessage.update {
-                        response.second
+                    val response = aiRepositoryProvider.getRepository(userConfig)?.testConfig()
+                    if(response != null) {
+                        configMessage.update {
+                            response.second
+                        }
+                        response.first
+                    }else{
+                        false
                     }
-                    response.first
                 }
                 else -> false
             }
@@ -119,13 +122,16 @@ class UserViewModel (
     }
 
     fun updateConfig(userConfig: UserConfig) {
-        viewModelScope.launch(dispatcherIO) {
-            userConfigRepository.updateUserConfig(userConfig)
-            _userConfig.update {
-                userConfig
-            }
-            configMessage.update {
-                "Successfully saved settings"
+        val valid = testConfig(userConfig)
+        if(valid) {
+            viewModelScope.launch(dispatcherIO) {
+                userConfigRepository.updateUserConfig(userConfig)
+                _userConfig.update {
+                    userConfig
+                }
+                configMessage.update {
+                    "Successfully saved settings"
+                }
             }
         }
     }
