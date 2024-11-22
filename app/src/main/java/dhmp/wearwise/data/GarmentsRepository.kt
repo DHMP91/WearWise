@@ -136,8 +136,12 @@ class DefaultGarmentsRepository(private val itemDao: GarmentDao) : GarmentsRepos
     override suspend fun getBrands() = itemDao.getBrands()
 
     override suspend fun getGarmentThumbnail(garment: Garment): String? {
-        garment.image?.let {
-            return getThumbnail(it)
+        try {
+            garment.image?.let {
+                return getThumbnail(it)
+            }
+        }catch (e: Exception){
+            Log.e(tag, "Failed to get thumbnail: ${e.localizedMessage}")
         }
         return null
     }

@@ -26,8 +26,9 @@ import dhmp.wearwise.data.GarmentsRepository
 import dhmp.wearwise.data.UserConfigRepository
 import dhmp.wearwise.model.Category
 import dhmp.wearwise.model.Garment
-import dhmp.wearwise.model.nearestColorMatchList
+import dhmp.wearwise.model.NearestColorMatchList
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
@@ -55,8 +56,8 @@ class ClothingViewModel(
     private val dispatcherIO: CoroutineDispatcher = Dispatchers.IO,
     private val aiRepositoryProvider: AIRepositoryProvider = AIRepositoryProvider(),
 ): ViewModel() {
-    private val pageSize = 10
-    private val tag: String = "ClothingViewModel"
+
+    val analyzing = MutableStateFlow(false)
 
     private val _newItemId = MutableStateFlow(0L)
     val newItemId: StateFlow<Long> = _newItemId.asStateFlow()
@@ -67,7 +68,13 @@ class ClothingViewModel(
     private val _uiMenuState = MutableStateFlow(ClothingMenuUIState())
     val uiMenuState: StateFlow<ClothingMenuUIState> = _uiMenuState.asStateFlow()
 
-    val analyzing = MutableStateFlow(false)
+    private val pageSize = 10
+    private val tag: String = "ClothingViewModel"
+    private val exceptionHandler =  CoroutineExceptionHandler { _, exception ->
+        Log.e(tag, "Unhandled Exception: ${exception.localizedMessage}")
+    }
+
+
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val garments: Flow<PagingData<Garment>> = combine(
@@ -248,7 +255,7 @@ class ClothingViewModel(
     }
 
     fun getGarmentById(id: Long) {
-        viewModelScope.launch(dispatcherIO) {
+        viewModelScope.launch(dispatcherIO + exceptionHandler) {
             garmentRepository.getGarmentStream(id).flowOn(dispatcherIO).collect { c ->
                 c?.let {
                     _uiEditState.update { currentState ->
@@ -308,7 +315,7 @@ class ClothingViewModel(
     }.flowOn(dispatcherIO)
 
     fun saveImage(appDir: File, image:Bitmap, rotation: Float): Job {
-        val job = viewModelScope.launch(dispatcherIO) {
+        val job = viewModelScope.launch(dispatcherIO + exceptionHandler) {
             val garmentId = garmentRepository.insertGarment(Garment())
             _newItemId.emit(garmentId)
 
@@ -324,14 +331,14 @@ class ClothingViewModel(
     }
 
     fun saveChanges(garment: Garment){
-        viewModelScope.launch(dispatcherIO) {
+        viewModelScope.launch(dispatcherIO + exceptionHandler) {
             garmentRepository.updateGarment(garment)
             storeChanges(null)
         }
     }
 
     fun analyzeGarment(id: Long){
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(Dispatchers.IO + exceptionHandler) {
             val userConfig = userConfigRepository.getUserConfigStream().flowOn(dispatcherIO).firstOrNull()
             analyzing.update { true }
             if(userConfig != null){
@@ -352,7 +359,7 @@ class ClothingViewModel(
     }
 
     fun removeBackGround(id: Long, path: String) {
-        viewModelScope.launch(dispatcherIO) {
+        viewModelScope.launch(dispatcherIO + exceptionHandler) {
             _isProcessingBackground.value = true
             val file = File(path)
             val image = BitmapFactory.decodeFile(path)
@@ -412,7 +419,7 @@ class ClothingViewModel(
     }
 
     fun deleteGarment(id: Long) {
-        viewModelScope.launch(dispatcherIO) {
+        viewModelScope.launch(dispatcherIO + exceptionHandler) {
             val garment = garmentRepository.getGarmentStream(id).flowOn(dispatcherIO).firstOrNull()
             garment?.let {
                 val deleteUri = { uri: String ->
@@ -441,7 +448,7 @@ class ClothingViewModel(
     }
 
     fun collectBrands(){
-        viewModelScope.launch(dispatcherIO) {
+        viewModelScope.launch(dispatcherIO + exceptionHandler) {
              garmentRepository
                  .getBrands()
                  .flowOn(dispatcherIO)
@@ -455,7 +462,7 @@ class ClothingViewModel(
         var nearestColorName = "Unknown"
         var minDistance = Double.MAX_VALUE
 
-        nearestColorMatchList.forEach { colorName ->
+        NearestColorMatchList.forEach { colorName ->
             val distance = colorDistance(color, colorName.color)
             if (distance < minDistance) {
                 minDistance = distance

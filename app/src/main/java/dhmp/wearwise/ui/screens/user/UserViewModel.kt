@@ -1,5 +1,6 @@
 package dhmp.wearwise.ui.screens.user
 
+import android.util.Log
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -15,6 +16,7 @@ import dhmp.wearwise.model.OccasionCount
 import dhmp.wearwise.model.SeasonCount
 import dhmp.wearwise.model.UserConfig
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -38,6 +40,11 @@ class UserViewModel (
     val userConfig: StateFlow<UserConfig> = _userConfig.asStateFlow()
     val showConfig = MutableStateFlow(false)
     val configMessage = MutableStateFlow("")
+
+    private val tag = "UserViewModel"
+    private val exceptionHandler =  CoroutineExceptionHandler { _, exception ->
+        Log.e(tag, "Unhandled Exception: ${exception.localizedMessage}")
+    }
 
     init {
         getUserConfig()
@@ -124,7 +131,7 @@ class UserViewModel (
     fun updateConfig(userConfig: UserConfig) {
         val valid = testConfig(userConfig)
         if(valid) {
-            viewModelScope.launch(dispatcherIO) {
+            viewModelScope.launch(dispatcherIO + exceptionHandler) {
                 userConfigRepository.updateUserConfig(userConfig)
                 _userConfig.update {
                     userConfig
@@ -144,7 +151,7 @@ class UserViewModel (
     }
 
     private fun getUserConfig(){
-        viewModelScope.launch(dispatcherIO) {
+        viewModelScope.launch(dispatcherIO + exceptionHandler) {
             userConfigRepository.getUserConfigStream().flowOn(dispatcherIO).collectLatest { config ->
                 config?.let {
                     _userConfig.update {

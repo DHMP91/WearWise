@@ -271,9 +271,11 @@ class OutfitScreenTest: UITest() {
                 .fetchSemanticsNodes()
                 .isNotEmpty()
         }
-        composeTestRule.waitForIdle()
+
         //Validate new outfit is created
-        val afterOutfitCount = composeTestRule.onAllNodes(hasTestTag(TestTag.OUTFIT_CARD)).fetchSemanticsNodes().size
-        Assert.assertEquals(initialOutfitCount + 1, afterOutfitCount)
+        composeTestRule.waitUntil {
+            val afterOutfitCount = composeTestRule.onAllNodes(hasTestTag(TestTag.OUTFIT_CARD)).fetchSemanticsNodes().size
+            initialOutfitCount + 1 == afterOutfitCount
+        }
     }
 }

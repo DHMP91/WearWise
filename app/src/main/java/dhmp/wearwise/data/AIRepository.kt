@@ -12,9 +12,9 @@ import com.google.ai.client.generativeai.type.content
 import dhmp.wearwise.model.AISource
 import dhmp.wearwise.model.Category
 import dhmp.wearwise.model.ColorName
+import dhmp.wearwise.model.NearestColorMatchList
 import dhmp.wearwise.model.Occasion
 import dhmp.wearwise.model.UserConfig
-import dhmp.wearwise.model.nearestColorMatchList
 
 val tag = "AIRepository"
 
@@ -46,7 +46,11 @@ open class AIRepositoryProvider  {
 //Mainly for mocking due to android final class mockito limitation
 open class GenerativeModelWrapper(private val generativeModel: GenerativeModel) {
     open suspend fun countTokens(prompt: Content): CountTokensResponse = generativeModel.countTokens(prompt)
-    open suspend fun generateContent(prompt: Content): GenerateContentResponse = generativeModel.generateContent()
+    open suspend fun generateContent(prompt: Content): GenerateContentResponseWrapper = GenerateContentResponseWrapper(generativeModel.generateContent())
+}
+
+open class GenerateContentResponseWrapper(private val response: GenerateContentResponse) {
+    open val text: String? = response.text
 }
 
 class GarmentGeminiRepository : AIRepository {
@@ -64,9 +68,8 @@ class GarmentGeminiRepository : AIRepository {
         val categoryNames = Category.categories().map { c -> c.name }
         val categoryQuestion = "This clothing piece belong to which category: ${categoryNames.joinToString(separator = ",")}?"
         val result = generateImageContent(bitmap, categoryQuestion)
-        val categoryAns = result.text
 
-        return categoryAns?.let { ans ->
+        return result.text?.let { ans ->
             Category.categories().find { c -> ans.lowercase().contains(c.name.lowercase()) }
         }
     }
@@ -80,8 +83,7 @@ class GarmentGeminiRepository : AIRepository {
                     names.joinToString(separator = ",")
                 }?"
             val result = generateImageContent(bitmap, subCategoryQuestion)
-            val subCategoryAns = result.text
-            return subCategoryAns?.let { ans ->
+            return result.text?.let { ans ->
                 subCats.find {
                         c -> ans.lowercase().contains(c.name.lowercase())
                 }
@@ -91,13 +93,12 @@ class GarmentGeminiRepository : AIRepository {
     }
 
     override suspend fun garmentColor(bitmap: Bitmap): ColorName? {
-        val colorNames = nearestColorMatchList.map { it.name }
+        val colorNames = NearestColorMatchList.map { it.name }
         val colorQuestion = "This clothing piece belong to closest to which color: ${colorNames.joinToString(separator = ",")}?"
         val result = generateImageContent(bitmap, colorQuestion)
-        val colorAns = result.text
 
-        return colorAns?.let { ans ->
-            nearestColorMatchList.find {
+        return result.text?.let { ans ->
+            NearestColorMatchList.find {
                     c -> ans.lowercase().contains(c.name.lowercase())
             }
         }
@@ -107,9 +108,7 @@ class GarmentGeminiRepository : AIRepository {
         val occasions = Occasion.entries.map { it.name }
         val occasionQuestion = "This clothing piece is best for which occasion: ${occasions.joinToString(separator = ",")}?"
         val result = generateImageContent(bitmap, occasionQuestion)
-        val occasionAns = result.text
-
-        return occasionAns?.let { ans ->
+        return result.text?.let { ans ->
             Occasion.entries.find {
                     c -> ans.lowercase().contains(c.name.lowercase())
             }
@@ -120,10 +119,9 @@ class GarmentGeminiRepository : AIRepository {
         val noBrand = "None"
         val brandQuestion = "What's the brand of this clothing piece, if no brand reply \"${noBrand}\"?"
         val result = generateImageContent(bitmap, brandQuestion)
-        val brandAns = result.text
 
-        return brandAns?.let { ans ->
-            if(brandAns.contains(noBrand)){
+        return result.text?.let { ans ->
+            if(ans.contains(noBrand)){
                 return null
             }else{
                 return ans
@@ -157,11 +155,12 @@ class GarmentGeminiRepository : AIRepository {
         return response
     }
 
-    private suspend fun generateImageContent(bitmap: Bitmap, question: String): GenerateContentResponse{
+    private suspend fun generateImageContent(bitmap: Bitmap, question: String): GenerateContentResponseWrapper{
         val colorInput = content() {
             image(bitmap)
             text(question)
         }
+
         return model.generateContent(colorInput)
     }
 }
