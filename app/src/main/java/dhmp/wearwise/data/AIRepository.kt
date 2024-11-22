@@ -1,15 +1,22 @@
 package dhmp.wearwise.data
 
 import android.graphics.Bitmap
+import android.util.Log
 import com.google.ai.client.generativeai.GenerativeModel
+import com.google.ai.client.generativeai.common.InvalidAPIKeyException
+import com.google.ai.client.generativeai.common.ServerException
+import com.google.ai.client.generativeai.type.Content
+import com.google.ai.client.generativeai.type.CountTokensResponse
 import com.google.ai.client.generativeai.type.GenerateContentResponse
 import com.google.ai.client.generativeai.type.content
 import dhmp.wearwise.model.AISource
 import dhmp.wearwise.model.Category
 import dhmp.wearwise.model.ColorName
+import dhmp.wearwise.model.NearestColorMatchList
 import dhmp.wearwise.model.Occasion
 import dhmp.wearwise.model.UserConfig
-import dhmp.wearwise.model.nearestColorMatchList
+
+val tag = "AIRepository"
 
 interface AIRepository {
     suspend fun garmentCategory(bitmap: Bitmap): Category?
@@ -17,12 +24,11 @@ interface AIRepository {
     suspend fun garmentColor(bitmap: Bitmap): ColorName?
     suspend fun garmentOccasion(bitmap: Bitmap): Occasion?
     suspend fun garmentBrand(bitmap: Bitmap): String?
+    suspend fun testConfig(): Pair<Boolean, String>
 }
 
-
-
-class AIGarmentRepository(){
-    fun getModel(userConfig: UserConfig): AIRepository? {
+open class AIRepositoryProvider  {
+    open fun getRepository(userConfig: UserConfig): AIRepository? {
         val model = when(userConfig.aiSource) {
             AISource.GOOGLE ->
                 GarmentGeminiRepository(
@@ -35,19 +41,35 @@ class AIGarmentRepository(){
         return model
     }
 }
-class GarmentGeminiRepository(val apiKey: String, val modelName: String) : AIRepository {
-    private var model: GenerativeModel = GenerativeModel(
-        modelName = modelName,
-        apiKey
-    )
+
+
+//Mainly for mocking due to android final class mockito limitation
+open class GenerativeModelWrapper(private val generativeModel: GenerativeModel) {
+    open suspend fun countTokens(prompt: Content): CountTokensResponse = generativeModel.countTokens(prompt)
+    open suspend fun generateContent(prompt: Content): GenerateContentResponseWrapper = GenerateContentResponseWrapper(generativeModel.generateContent())
+}
+
+open class GenerateContentResponseWrapper(private val response: GenerateContentResponse) {
+    open val text: String? = response.text
+}
+
+class GarmentGeminiRepository : AIRepository {
+    private var model: GenerativeModelWrapper
+
+    constructor(apiKey: String, modelName: String){
+        model = GenerativeModelWrapper(GenerativeModel(modelName = modelName, apiKey))
+    }
+
+    constructor(model: GenerativeModelWrapper){
+        this.model = model
+    }
 
     override suspend fun garmentCategory(bitmap: Bitmap): Category? {
         val categoryNames = Category.categories().map { c -> c.name }
         val categoryQuestion = "This clothing piece belong to which category: ${categoryNames.joinToString(separator = ",")}?"
         val result = generateImageContent(bitmap, categoryQuestion)
-        val categoryAns = result.text
 
-        return categoryAns?.let { ans ->
+        return result.text?.let { ans ->
             Category.categories().find { c -> ans.lowercase().contains(c.name.lowercase()) }
         }
     }
@@ -61,8 +83,7 @@ class GarmentGeminiRepository(val apiKey: String, val modelName: String) : AIRep
                     names.joinToString(separator = ",")
                 }?"
             val result = generateImageContent(bitmap, subCategoryQuestion)
-            val subCategoryAns = result.text
-            return subCategoryAns?.let { ans ->
+            return result.text?.let { ans ->
                 subCats.find {
                         c -> ans.lowercase().contains(c.name.lowercase())
                 }
@@ -72,13 +93,12 @@ class GarmentGeminiRepository(val apiKey: String, val modelName: String) : AIRep
     }
 
     override suspend fun garmentColor(bitmap: Bitmap): ColorName? {
-        val colorNames = nearestColorMatchList.map { it.name }
+        val colorNames = NearestColorMatchList.map { it.name }
         val colorQuestion = "This clothing piece belong to closest to which color: ${colorNames.joinToString(separator = ",")}?"
         val result = generateImageContent(bitmap, colorQuestion)
-        val colorAns = result.text
 
-        return colorAns?.let { ans ->
-            nearestColorMatchList.find {
+        return result.text?.let { ans ->
+            NearestColorMatchList.find {
                     c -> ans.lowercase().contains(c.name.lowercase())
             }
         }
@@ -88,9 +108,7 @@ class GarmentGeminiRepository(val apiKey: String, val modelName: String) : AIRep
         val occasions = Occasion.entries.map { it.name }
         val occasionQuestion = "This clothing piece is best for which occasion: ${occasions.joinToString(separator = ",")}?"
         val result = generateImageContent(bitmap, occasionQuestion)
-        val occasionAns = result.text
-
-        return occasionAns?.let { ans ->
+        return result.text?.let { ans ->
             Occasion.entries.find {
                     c -> ans.lowercase().contains(c.name.lowercase())
             }
@@ -101,10 +119,9 @@ class GarmentGeminiRepository(val apiKey: String, val modelName: String) : AIRep
         val noBrand = "None"
         val brandQuestion = "What's the brand of this clothing piece, if no brand reply \"${noBrand}\"?"
         val result = generateImageContent(bitmap, brandQuestion)
-        val brandAns = result.text
 
-        return brandAns?.let { ans ->
-            if(brandAns.contains(noBrand)){
+        return result.text?.let { ans ->
+            if(ans.contains(noBrand)){
                 return null
             }else{
                 return ans
@@ -112,12 +129,38 @@ class GarmentGeminiRepository(val apiKey: String, val modelName: String) : AIRep
         }
     }
 
-    private suspend fun generateImageContent(bitmap: Bitmap, question: String): GenerateContentResponse{
+    override suspend fun testConfig(): Pair<Boolean, String> {
+        val content = content() { text("Check request") }
+
+        var response = Pair(true, "Success")
+        var exception: Exception? = null
+        try{
+            model.countTokens(content)
+        } catch (e: InvalidAPIKeyException) {
+            exception = e
+            response = Pair(false, "Setting is not valid. Double check your API Key")
+        } catch (e: ServerException) {
+            exception = e
+            response = Pair(false, "Setting is not valid. Verify the model selection")
+        } catch (e: Exception){
+            exception = e
+            response = Pair(false, "Error validating config. Network related?")
+        } finally {
+            exception?.let {
+                it.message?.let { msg ->
+                    Log.w(tag, msg)
+                }
+            }
+        }
+        return response
+    }
+
+    private suspend fun generateImageContent(bitmap: Bitmap, question: String): GenerateContentResponseWrapper{
         val colorInput = content() {
             image(bitmap)
             text(question)
         }
+
         return model.generateContent(colorInput)
     }
-
 }

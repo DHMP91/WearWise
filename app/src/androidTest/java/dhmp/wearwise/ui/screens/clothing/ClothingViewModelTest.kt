@@ -7,6 +7,8 @@ import android.util.Log
 import androidx.core.net.toUri
 import androidx.paging.testing.asSnapshot
 import androidx.test.platform.app.InstrumentationRegistry
+import dhmp.wearwise.data.AIRepository
+import dhmp.wearwise.data.AIRepositoryProvider
 import dhmp.wearwise.data.GarmentsRepository
 import dhmp.wearwise.data.UserConfigRepository
 import dhmp.wearwise.model.Category
@@ -312,6 +314,29 @@ class ClothingViewModelTest {
             }
 
         }
+    }
+
+    @Test
+    fun analyzeGarment_ExceptionHandling() = runTest(timeout = 5.minutes){
+        val fileName = "test_analyzeGarment_ExceptionHandling.png"
+        val file = fakeImage(context, fileName)
+
+        val fakeGarment = Garment(id = 9090, imageOfSubject = file.toURI().toString())
+        `when`(mockedGarmentRepo.getGarmentStream(any())).thenAnswer {
+            flow {
+                emit(fakeGarment)
+            }
+        }
+
+        val mockedAIRepo = Mockito.mock(AIRepository::class.java)
+        `when`(mockedAIRepo.garmentCategory(any())).thenAnswer { Exception("An exception") }
+        val mockedAIProvider = Mockito.mock(AIRepositoryProvider::class.java)
+        `when`(mockedAIProvider.getRepository(any())).thenReturn(mockedAIRepo)
+
+        model = ClothingViewModel(mockedGarmentRepo, mockedUserConfigRepo, aiRepositoryProvider = mockedAIProvider)
+        model.analyzeGarment(fakeGarment.id)
+        while(model.analyzing.first())
+        Assert.assertEquals(model.analyzing.first(), false)
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)

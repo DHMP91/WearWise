@@ -6,7 +6,7 @@ class ColorName(
     val color: Int
 )
 
-val nearestColorMatchList = listOf(
+val NearestColorMatchList = listOf(
     ColorName("Black", 0xFF000000.toInt()),
     ColorName("Gray", 0xFF808080.toInt()),
     ColorName("White", 0xFFFFFFFF.toInt()),

@@ -60,6 +60,7 @@ google-mlkit-image-labeling = {group = "com.google.mlkit", name= "image-labeling
 google-mlkit-subject-segmentation = {group = "com.google.android.gms", name= "play-services-mlkit-subject-segmentation", version.ref = "mlKitSubjectSegmentationVersion"}
 google-gson = {group = "com.google.code.gson", name= "gson", version.ref = "gsonVersion"}
 google-generative-ai = { group = "com.google.ai.client.generativeai", name = "generativeai", version.ref = "generativeAI"}
+google-generative-ai-common = { group = "com.google.ai.client.generativeai", name = "common", version.ref = "generativeAI" }
 androidx-palette-ktx = { group = "androidx.palette", name = "palette-ktx", version.ref = "paletteKtx" }
 androidx-paging-runtime = { group = "androidx.paging", name = "paging-runtime", version.ref = "pagingVersion" }
 androidx-paging-rx-java2 = { group = "androidx.paging", name = "paging-rxjava2", version.ref = "pagingVersion" }
@@ -71,6 +72,7 @@ mockito-core = {group = "org.mockito", name = "mockito-core", version.ref ="mock
 mockito-kotlin = {group = "org.mockito.kotlin", name = "mockito-kotlin", version.ref ="mockitoKotlinVersion"}
 mockito-android = {group = "org.mockito", name = "mockito-android", version.ref ="mockitoVersion"}
 androidx-compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling"}
+
 
 
 

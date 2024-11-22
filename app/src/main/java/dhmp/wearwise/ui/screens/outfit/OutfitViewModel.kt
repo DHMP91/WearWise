@@ -16,6 +16,7 @@ import dhmp.wearwise.model.Garment
 import dhmp.wearwise.model.Outfit
 import dhmp.wearwise.model.Season
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
@@ -54,6 +55,9 @@ class OutfitViewModel (
             .flow
             .cachedIn(viewModelScope)
 
+    private val exceptionHandler =  CoroutineExceptionHandler { _, exception ->
+        Log.e(tag, "Unhandled Exception: ${exception.localizedMessage}")
+    }
 
     fun getOutfitsByListOfId(outfitIds: List<Long>): Flow<PagingData<Outfit>> {
         val data =  Pager(
@@ -92,7 +96,7 @@ class OutfitViewModel (
 
     fun saveImage(appDir: File, image: Bitmap, rotation: Float, id: Long?): Job {
         outfitUri.value = Uri.EMPTY // Let UI continue to next screen while processing image
-        val job = viewModelScope.launch(dispatcherIO) {
+        val job = viewModelScope.launch(dispatcherIO + exceptionHandler) {
             if(!(id == null || id == 0L)) {
 
                 // Let UI know image is processing
@@ -141,7 +145,7 @@ class OutfitViewModel (
     }
 
     fun deleteOutfit(){
-        viewModelScope.launch(dispatcherIO) {
+        viewModelScope.launch(dispatcherIO + exceptionHandler) {
             _outfit.value?.let {
                 deleteOutfit(it)
                 _outfit.update {
@@ -152,7 +156,7 @@ class OutfitViewModel (
     }
 
     fun deleteOutfit(id: Long){
-        viewModelScope.launch(dispatcherIO) {
+        viewModelScope.launch(dispatcherIO + exceptionHandler) {
             outfitsRepository.getOutfitStream(id).flowOn(dispatcherIO).collect { outfit ->
                 outfit?.let {
                     deleteOutfit(it)
@@ -163,7 +167,7 @@ class OutfitViewModel (
 
 
     fun getOutfit(id: Long) {
-        viewModelScope.launch(dispatcherIO) {
+        viewModelScope.launch(dispatcherIO + exceptionHandler) {
             outfitsRepository.getOutfitStream(id).flowOn(dispatcherIO).collect { outfit ->
                 outfit?.let {
                     _outfit.update {
@@ -175,7 +179,7 @@ class OutfitViewModel (
     }
 
     fun addToOutfit(garment: Garment){
-        viewModelScope.launch(dispatcherIO) {
+        viewModelScope.launch(dispatcherIO + exceptionHandler) {
             _outfit.value?.let { outfit ->
                 if(!outfit.garmentsId.contains(garment.id)) {
                     _outfit.update {
@@ -192,7 +196,7 @@ class OutfitViewModel (
     }
 
     fun removeFromOutfit(garment: Garment){
-        viewModelScope.launch(dispatcherIO) {
+        viewModelScope.launch(dispatcherIO + exceptionHandler) {
             _outfit.value?.let { outfit ->
                 if(outfit.garmentsId.contains(garment.id)) {
                     _outfit.update {
@@ -209,7 +213,7 @@ class OutfitViewModel (
     }
 
     fun setSeason(season: Season){
-        viewModelScope.launch(dispatcherIO) {
+        viewModelScope.launch(dispatcherIO + exceptionHandler) {
             _outfit.value?.let { it ->
                 it.season = season
             }
@@ -220,7 +224,7 @@ class OutfitViewModel (
     }
 
     suspend fun saveOutfit(outfit: Outfit): Long {
-        return withContext(dispatcherIO) {
+        return withContext(dispatcherIO + exceptionHandler) {
             val id = if (outfit.id == 0L) {
                 val newId = outfitsRepository.insertOutfit(outfit)
 
@@ -263,7 +267,7 @@ class OutfitViewModel (
 
 
     private fun saveImageToOutfit(outfitId: Long) {
-        viewModelScope.launch(dispatcherIO) {
+        viewModelScope.launch(dispatcherIO + exceptionHandler) {
             val outfit = outfitsRepository.getOutfitStream(outfitId).first()
             outfit?.let {
                 it.image = outfitUri.value.toString()

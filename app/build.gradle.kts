@@ -95,6 +95,7 @@ dependencies {
     implementation(libs.google.mlkit.image.labeling)
     implementation(libs.google.mlkit.subject.segmentation)
     implementation(libs.google.generative.ai)
+    implementation(libs.google.generative.ai.common)
 
     //Paging
     implementation(libs.androidx.paging.runtime)

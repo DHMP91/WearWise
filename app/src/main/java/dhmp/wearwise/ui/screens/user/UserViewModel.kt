@@ -1,8 +1,10 @@
 package dhmp.wearwise.ui.screens.user
 
+import android.util.Log
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dhmp.wearwise.data.AIRepositoryProvider
 import dhmp.wearwise.data.GarmentsRepository
 import dhmp.wearwise.data.OutfitsRepository
 import dhmp.wearwise.data.UserConfigRepository
@@ -14,6 +16,7 @@ import dhmp.wearwise.model.OccasionCount
 import dhmp.wearwise.model.SeasonCount
 import dhmp.wearwise.model.UserConfig
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,20 +27,29 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
 class UserViewModel (
     private val garmentRepository: GarmentsRepository,
     private val outfitsRepository: OutfitsRepository,
     private val userConfigRepository: UserConfigRepository,
-    private val dispatcherIO: CoroutineDispatcher = Dispatchers.IO
+    private val dispatcherIO: CoroutineDispatcher = Dispatchers.IO,
+    private val aiRepositoryProvider: AIRepositoryProvider = AIRepositoryProvider(),
 ): ViewModel() {
     private val _userConfig: MutableStateFlow<UserConfig> = MutableStateFlow(UserConfig(-1, AISource.GOOGLE, "", ""))
     val userConfig: StateFlow<UserConfig> = _userConfig.asStateFlow()
     val showConfig = MutableStateFlow(false)
+    val configMessage = MutableStateFlow("")
+
+    private val tag = "UserViewModel"
+    private val exceptionHandler =  CoroutineExceptionHandler { _, exception ->
+        Log.e(tag, "Unhandled Exception: ${exception.localizedMessage}")
+    }
 
     init {
         getUserConfig()
     }
+
     fun garmentCount(): Flow<Int> = garmentRepository.getGarmentsCount(
         excludedCategories = listOf(),
         excludedColors =  listOf(),
@@ -94,11 +106,39 @@ class UserViewModel (
             !showConfig.value
         }
     }
+
+    private fun testConfig(userConfig: UserConfig): Boolean {
+        var success: Boolean
+        runBlocking {
+            success = when(userConfig.aiSource) {
+                AISource.GOOGLE -> {
+                    val response = aiRepositoryProvider.getRepository(userConfig)?.testConfig()
+                    if(response != null) {
+                        configMessage.update {
+                            response.second
+                        }
+                        response.first
+                    }else{
+                        false
+                    }
+                }
+                else -> false
+            }
+        }
+        return success
+    }
+
     fun updateConfig(userConfig: UserConfig) {
-        viewModelScope.launch(dispatcherIO) {
-            userConfigRepository.updateUserConfig(userConfig)
-            _userConfig.update {
-                userConfig
+        val valid = testConfig(userConfig)
+        if(valid) {
+            viewModelScope.launch(dispatcherIO + exceptionHandler) {
+                userConfigRepository.updateUserConfig(userConfig)
+                _userConfig.update {
+                    userConfig
+                }
+                configMessage.update {
+                    "Successfully saved settings"
+                }
             }
         }
     }
@@ -111,7 +151,7 @@ class UserViewModel (
     }
 
     private fun getUserConfig(){
-        viewModelScope.launch(dispatcherIO) {
+        viewModelScope.launch(dispatcherIO + exceptionHandler) {
             userConfigRepository.getUserConfigStream().flowOn(dispatcherIO).collectLatest { config ->
                 config?.let {
                     _userConfig.update {

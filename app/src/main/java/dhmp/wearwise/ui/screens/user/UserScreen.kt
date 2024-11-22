@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -69,6 +70,7 @@ fun UserScreen(
     val clothingColors = userViewModel.getColorPalette(colorData.keys.toList())
     val userConfig by userViewModel.userConfig.collectAsState()
     val showConfig by userViewModel.showConfig.collectAsState()
+    val configMessage by userViewModel.configMessage.collectAsState()
     val onSaveUserConfig = { config: UserConfig ->
         userViewModel.updateConfig(config)
     }
@@ -83,6 +85,7 @@ fun UserScreen(
         userViewModel::toggleConfig,
         showConfig,
         userConfig,
+        configMessage,
         onSaveUserConfig,
         userViewModel::getAIModels
     )
@@ -101,6 +104,7 @@ fun UserScreenContent(
     onConfig: () -> Unit,
     showConfig: Boolean,
     userConfig: UserConfig,
+    configMessage: String,
     onSaveUserConfig: (UserConfig) -> Unit,
     onGetAIModel: (AISource) -> List<String>?
 ){
@@ -125,7 +129,7 @@ fun UserScreenContent(
                 .padding(vertical = 2.dp)
                 .fillMaxWidth()
             ) {
-                UserConfigSlideOut(showConfig, userConfig, onSaveUserConfig, onGetAIModel)
+                UserConfigSlideOut(showConfig, userConfig, configMessage, onSaveUserConfig, onGetAIModel)
             }
         }
 
@@ -259,8 +263,9 @@ fun CountCard(
 fun UserConfigSlideOut(
     showConfig: Boolean,
     userConfig: UserConfig,
+    configMessage: String,
     onSaveUserConfig: (UserConfig) ->  Unit,
-    onGetAIModel: (AISource) -> List<String>?
+    onGetAIModel: (AISource) -> List<String>?,
 ){
     val density = LocalDensity.current
     val comingSoon = listOf(AISource.OPENAI)
@@ -339,17 +344,33 @@ fun UserConfigSlideOut(
                                 .fillMaxWidth()
                                 .testTag(TestTag.AI_API_KEY_INPUT)
                         )
-                        Button(
-                            onClick = {
-                                userConfig.aiSource = aiSource
-                                userConfig.aiModelName = aiModel
-                                userConfig.aiApiKey = apiKey
-                                onSaveUserConfig(userConfig)
-                            },
-                            modifier = Modifier
-                                .testTag(TestTag.CONFIG_SAVE_BUTTON)
+                        Row(
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("Save")
+                            Button(
+                                onClick = {
+                                    userConfig.aiSource = aiSource
+                                    userConfig.aiModelName = aiModel
+                                    userConfig.aiApiKey = apiKey
+                                    onSaveUserConfig(userConfig)
+                                },
+                                modifier = Modifier
+                                    .testTag(TestTag.CONFIG_SAVE_BUTTON)
+                            ) {
+                                Text("Save")
+                            }
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxHeight()
+                                    .align(Alignment.CenterVertically)
+                                    .padding(horizontal = 10.dp)
+                            ) {
+                                Text(
+                                    configMessage,
+                                    color = Color.Gray,
+                                    style = MaterialTheme.typography.titleSmall
+                                )
+                            }
                         }
                     }
                 }

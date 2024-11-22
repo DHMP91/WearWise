@@ -4,6 +4,8 @@ import android.content.Context
 import android.util.Log
 import androidx.compose.ui.graphics.Color
 import androidx.test.platform.app.InstrumentationRegistry
+import dhmp.wearwise.data.AIRepository
+import dhmp.wearwise.data.AIRepositoryProvider
 import dhmp.wearwise.data.GarmentsRepository
 import dhmp.wearwise.data.OutfitsRepository
 import dhmp.wearwise.data.UserConfigRepository
@@ -26,6 +28,7 @@ import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import org.mockito.Mockito
+import org.mockito.kotlin.any
 
 class UserViewModelTest {
     private lateinit var mockedGarmentRepo: GarmentsRepository
@@ -172,14 +175,29 @@ class UserViewModelTest {
 
     @Test
     fun updateConfig() = runTest{
-        val fakeUserConfig = UserConfig(120, AISource.OPENAI, "model", "oijsadiojasiod1111122222")
-        model.updateConfig(fakeUserConfig)
+        val fakeUserConfig = UserConfig(120, AISource.GOOGLE, "model", "oijsadiojasiod1111122222")
+        val mockedGeminiRepoCompanion = Mockito.mock(AIRepository::class.java)
+        Mockito.`when`(mockedGeminiRepoCompanion.testConfig()).thenAnswer {
+            Pair(true, "not important")
+        }
+
+        val mockedAIProvider = Mockito.mock(AIRepositoryProvider::class.java)
+        Mockito.`when`(mockedAIProvider.getRepository(any())).thenAnswer {
+            mockedGeminiRepoCompanion
+        }
+        val localModel = UserViewModel(
+            mockedGarmentRepo,
+            mockedOutfitRepo,
+            mockedUserConfigRepo,
+            aiRepositoryProvider = mockedAIProvider
+        )
+        localModel.updateConfig(fakeUserConfig)
         withTimeoutOrNull(defaultTimeout) {
-            while (model.userConfig.value.id == -1){
+            while (localModel.userConfig.value.id == -1){
                 Log.d("userConfigInitTest", "waiting for user config to update")
             }
         }
-        Assert.assertEquals(model.userConfig.value, fakeUserConfig)
+        Assert.assertEquals(localModel.userConfig.value, fakeUserConfig)
     }
 
     @Test
@@ -200,5 +218,7 @@ class UserViewModelTest {
         }
         Assert.assertEquals(model.userConfig.value, fakeUserConfig)
     }
+
+
 
 }

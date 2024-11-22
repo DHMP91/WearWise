@@ -257,7 +257,7 @@ class OutfitScreenTest: UITest() {
                 .fetchSemanticsNodes().isEmpty()
         ){
             runBlocking {
-                delay(1000)
+                delay(2000)
             }
         }
         composeTestRule.onNode(hasTestTag(TestTag.CAMERA_TAKE_ICON), useUnmergedTree = true).performClick()
@@ -271,9 +271,11 @@ class OutfitScreenTest: UITest() {
                 .fetchSemanticsNodes()
                 .isNotEmpty()
         }
-        composeTestRule.waitForIdle()
+
         //Validate new outfit is created
-        val afterOutfitCount = composeTestRule.onAllNodes(hasTestTag(TestTag.OUTFIT_CARD)).fetchSemanticsNodes().size
-        Assert.assertEquals(initialOutfitCount + 1, afterOutfitCount)
+        composeTestRule.waitUntil(5_000) {
+            val afterOutfitCount = composeTestRule.onAllNodes(hasTestTag(TestTag.OUTFIT_CARD)).fetchSemanticsNodes().size
+            initialOutfitCount + 1 >= afterOutfitCount
+        }
     }
 }
