@@ -145,7 +145,7 @@ class UserViewModel (
 
     fun getAIModels(source: AISource): List<String>? {
         return when(source){
-            AISource.GOOGLE -> listOf("gemini-1.5-flash-latest")
+            AISource.GOOGLE -> listOf("gemini-1.5-flash-latest", "gemini-2.0-flash")
             else -> null
         }
     }

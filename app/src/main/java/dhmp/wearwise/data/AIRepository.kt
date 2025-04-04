@@ -46,7 +46,7 @@ open class AIRepositoryProvider  {
 //Mainly for mocking due to android final class mockito limitation
 open class GenerativeModelWrapper(private val generativeModel: GenerativeModel) {
     open suspend fun countTokens(prompt: Content): CountTokensResponse = generativeModel.countTokens(prompt)
-    open suspend fun generateContent(prompt: Content): GenerateContentResponseWrapper = GenerateContentResponseWrapper(generativeModel.generateContent())
+    open suspend fun generateContent(prompt: Content): GenerateContentResponseWrapper = GenerateContentResponseWrapper(generativeModel.generateContent(prompt))
 }
 
 open class GenerateContentResponseWrapper(private val response: GenerateContentResponse) {
@@ -134,7 +134,7 @@ class GarmentGeminiRepository : AIRepository {
 
         var response = Pair(true, "Success")
         var exception: Exception? = null
-        try{
+        try {
             model.countTokens(content)
         } catch (e: InvalidAPIKeyException) {
             exception = e
@@ -156,11 +156,9 @@ class GarmentGeminiRepository : AIRepository {
     }
 
     private suspend fun generateImageContent(bitmap: Bitmap, question: String): GenerateContentResponseWrapper{
-        val colorInput = content() {
+        return model.generateContent(content {
             image(bitmap)
             text(question)
-        }
-
-        return model.generateContent(colorInput)
+        })
     }
 }
